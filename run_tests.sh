@@ -6,3 +6,4 @@ cd "$(dirname "$0")"
 "$G" --headless --path . --script res://tests/run_tests.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_columpio.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_recorrido.gd || exit 1
+"$G" --headless --path . --script res://tests/sim_clics.gd || exit 1
