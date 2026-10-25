@@ -74,4 +74,6 @@ func test_el_aro_quema_el_papel() -> void:
 	j.quemarse(Vector2(60, 0))
 	comprobar(j.papel == null, "se le quema el papel")
 	comprobar(j.velocity.x > 300.0 and j.velocity.y < 0.0, "sale despedido hacia fuera del aro")
+	comprobar(j.get_node("Visual").modulate.r < 0.8, "se le ve chamuscado")
+	comprobar(j.get_node("Efectos/Humo").emitting, "echa humo")
 	n.free()

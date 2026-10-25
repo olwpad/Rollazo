@@ -237,7 +237,6 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 42
 text = "¡A CORRER!"
 script = ExtResource("7")
-principal = true
 
 [node name="Estado" type="Label" parent="SalaUI"]
 layout_mode = 1

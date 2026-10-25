@@ -8,11 +8,27 @@ const ESTELA_PUNTOS := 10
 @onready var estela: Line2D = $Estela
 @onready var salpicadura: CPUParticles2D = $Salpicadura
 @onready var goteo: CPUParticles2D = $Goteo
+var humo := CPUParticles2D.new()  # al quemarse en un aro
 
 
 func _ready() -> void:
 	top_level = true  # los efectos se quedan en el mundo aunque el jugador se mueva
 	jugador.efecto_red.connect(_al_efecto)
+	humo.name = "Humo"
+	humo.emitting = false
+	humo.one_shot = true
+	humo.amount = 18
+	humo.lifetime = 1.0
+	humo.explosiveness = 0.7
+	humo.direction = Vector2.UP
+	humo.spread = 35.0
+	humo.gravity = Vector2(0, -60)
+	humo.initial_velocity_min = 40.0
+	humo.initial_velocity_max = 110.0
+	humo.scale_amount_min = 6.0
+	humo.scale_amount_max = 14.0
+	humo.color = Color(Acuarela.CIRUELA, 0.35)
+	add_child(humo)
 
 
 # Intensidad según la importancia del evento: enganchar es pequeño, caer y romperse, medio.
@@ -56,10 +72,15 @@ func _al_efecto(tipo: String, pos: Vector2) -> void:
 		"poder":  # cogiste una burbuja
 			_salpicar(pos)
 			_moco().aplastar(Vector2(1.3, 0.75))
-		"fuego":  # un aro te quemó el papel
+		"fuego":  # un aro te quemó el papel: chamuscado un momento, humo y buena sacudida
 			_trozos(pos)
-			_moco().aplastar(Vector2(1.3, 0.7))
-			_temblar(0.5)
+			humo.global_position = pos
+			humo.restart()
+			_moco().aplastar(Vector2(1.4, 0.6))
+			var visual: Node2D = jugador.get_node("Visual")
+			visual.modulate = Color(0.45, 0.32, 0.32)
+			create_tween().tween_property(visual, "modulate", Color.WHITE, 1.2).set_ease(Tween.EASE_IN)
+			_temblar(0.7)
 		"congelado":  # te congelaron: se encoge de golpe
 			_moco().aplastar(Vector2(0.75, 0.75))
 			_temblar(0.25)
