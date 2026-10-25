@@ -12,15 +12,25 @@ const ESTELA_PUNTOS := 10
 
 func _ready() -> void:
 	top_level = true  # los efectos se quedan en el mundo aunque el jugador se mueva
-	# Intensidad según la importancia del evento: enganchar es pequeño, caer y romperse, medio.
-	jugador.papel_lanzado.connect(func():
-		_salpicar(jugador.papel.ancla)
-		_moco().aplastar(Vector2(0.8, 1.25)))
-	jugador.aterrizaje_fuerte.connect(func():
-		_salpicar(jugador.global_position + Vector2(0, 18))
-		_moco().aplastar(Vector2(1.35, 0.65))
-		_temblar(0.35))
-	jugador.papel_roto.connect(func(): _temblar(0.45))
+	jugador.efecto_red.connect(_al_efecto)
+
+
+# Intensidad según la importancia del evento: enganchar es pequeño, caer y romperse, medio.
+# El temblor solo lo nota el dueño del moco; lo demás lo ven todos.
+func _al_efecto(tipo: String, pos: Vector2) -> void:
+	match tipo:
+		"enganche":
+			_salpicar(pos)
+			_moco().aplastar(Vector2(0.8, 1.25))
+		"aterrizaje":
+			_salpicar(pos)
+			_moco().aplastar(Vector2(1.35, 0.65))
+			_temblar(0.35)
+		"rotura":
+			var trozos: CPUParticles2D = jugador.get_node("PapelVisual/Trozos")
+			trozos.global_position = pos
+			trozos.restart()
+			_temblar(0.45)
 
 
 func _process(_delta: float) -> void:
@@ -40,6 +50,8 @@ func _salpicar(pos: Vector2) -> void:
 
 
 func _temblar(trauma: float) -> void:
+	if jugador.id_dueno() != multiplayer.get_unique_id():
+		return
 	var camara := get_viewport().get_camera_2d()
 	if camara != null and camara.has_method("add_trauma"):
 		camara.add_trauma(trauma)

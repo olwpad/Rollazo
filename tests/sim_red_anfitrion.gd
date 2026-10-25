@@ -8,6 +8,8 @@ var espera := 0.0
 var t_carrera := -1.0
 var id_cliente := 0
 var vistos_dos := false
+var x_cliente_inicial := INF
+var x_cliente_min := INF
 var fallos: Array[String] = []
 
 
@@ -31,7 +33,14 @@ func _process(delta: float) -> bool:
 		vistos_dos = true
 		if jugadores == null or jugadores.get_node_or_null("1") == null or jugadores.get_node_or_null(str(id_cliente)) == null:
 			fallos.append("el anfitrión no ve los 2 mocos")
-	if vistos_dos and jugadores != null and jugadores.get_node_or_null(str(id_cliente)) == null:
+	var cliente: Node2D = jugadores.get_node_or_null(str(id_cliente)) if jugadores else null
+	if cliente != null:
+		if x_cliente_inicial == INF:
+			x_cliente_inicial = cliente.global_position.x
+		x_cliente_min = minf(x_cliente_min, cliente.global_position.x)
+	if vistos_dos and jugadores != null and cliente == null:
+		if x_cliente_min > x_cliente_inicial - 100.0:
+			fallos.append("el anfitrión no movió el moco del cliente con su entrada")
 		_fin("")  # el cliente se fue y su moco desapareció
 	elif espera - t_carrera > 8.0:
 		_fin("el moco del cliente no desaparece al irse")

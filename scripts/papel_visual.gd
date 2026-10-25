@@ -3,15 +3,11 @@
 # igual en el anfitrión y en los demás PCs.
 extends Line2D
 
-var _ultimo_tramo := [Vector2.ZERO, Vector2.ZERO]
-
 @onready var jugador: Jugador = get_parent()
-@onready var trozos: CPUParticles2D = $Trozos
 
 
 func _ready() -> void:
 	top_level = true  # los puntos van en coordenadas del mundo, no del jugador
-	jugador.papel_roto.connect(_al_romperse)
 
 
 func _process(_delta: float) -> void:
@@ -24,9 +20,3 @@ func _process(_delta: float) -> void:
 	add_point(jugador.global_position)
 	add_point(ancla)
 	default_color = Acuarela.LAVANDA.darkened(0.25).lerp(Acuarela.ROSA.darkened(0.2), 1.0 - jugador.papel_aguante)
-	_ultimo_tramo = [jugador.global_position, jugador.papel_ancla]
-
-
-func _al_romperse() -> void:
-	trozos.global_position = (_ultimo_tramo[0] + _ultimo_tramo[1]) / 2.0
-	trozos.restart()
