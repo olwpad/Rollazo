@@ -57,6 +57,6 @@ func _miniatura(foto: Rect2) -> void:
 		var color := Acuarela.ROSA if p.enganchable else Acuarela.AZOTEA
 		var poly := PackedVector2Array()
 		for v: Vector2 in p.poly:
-			var punto: Vector2 = origen + (p.pos + v) * escala
-			poly.append(punto.clamp(foto.position, foto.end))  # los pilares no se salen de la foto
-		Acuarela.pintar(self, poly, color, hash(p.nombre))
+			poly.append(origen + (p.pos + v) * escala)
+		if Array(poly).all(func(q: Vector2) -> bool: return foto.has_point(q)):  # lo que no cabe entero, fuera
+			Acuarela.pintar(self, poly, color, hash(p.nombre))

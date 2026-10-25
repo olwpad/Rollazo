@@ -25,3 +25,13 @@ RC=${PIPESTATUS[0]}
 wait $ANF; R=$?
 grep "sim_red:" "$LOG"
 [ $R -eq 0 ] && [ $RC -eq 0 ] || exit 1
+# Bots de un torneo entero de 3 rondas: listos, pausa compartida, metas y vuelta a la sala.
+"$G" --headless --path . --script res://tests/sim_torneo_anfitrion.gd > "$LOG" 2>&1 &
+ANF=$!
+sleep 1
+CLI=$("$G" --headless --path . --script res://tests/sim_torneo_cliente.gd 2>&1); RC=$?
+wait $ANF; R=$?
+echo "$CLI" | grep "sim_torneo_cliente"
+grep "sim_torneo:" "$LOG"
+if cat "$LOG" <(echo "$CLI") | grep -q "SCRIPT ERROR"; then echo "FALLO: errores de script en el torneo"; exit 1; fi
+[ $R -eq 0 ] && [ $RC -eq 0 ] || exit 1

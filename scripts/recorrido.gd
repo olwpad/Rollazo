@@ -53,6 +53,10 @@ func _ready() -> void:
 	move_child(piezas, $Jugadores.get_index())  # detrás de los mocos
 	construir(Red.semilla)
 	hud.get_node("Menu").pressed.connect(volver_al_menu)
+	var pausa := Node.new()  # mismo nombre en todos los PCs: así le llegan los rpc
+	pausa.name = "Pausa"
+	pausa.set_script(preload("res://scripts/pausa.gd"))
+	add_child(pausa)
 	reiniciar()
 
 

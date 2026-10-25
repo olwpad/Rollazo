@@ -98,7 +98,7 @@ func _leer_teclado() -> Dictionary:
 # como contadores que solo suben: si se pierde un paquete, el siguiente trae el clic igual.
 @rpc("any_peer", "call_remote", "unreliable_ordered")
 func recibir_input(estado: Dictionary, contadores: Dictionary) -> void:
-	if not multiplayer.is_server() or multiplayer.get_remote_sender_id() != id_dueno():
+	if not is_inside_tree() or not multiplayer.is_server() or multiplayer.get_remote_sender_id() != id_dueno():  # puede llegar justo al cambiar de escena
 		return  # solo el dueño de este moco puede moverlo
 	# Lo que llega por red no es de fiar: solo se aceptan claves y tipos conocidos.
 	_remoto = {
