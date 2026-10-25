@@ -101,7 +101,7 @@ func tocar(nombre: String, pos = null) -> void:
 		p = _planos[_siguiente]
 	_siguiente = (_siguiente + 1) % POOL  # si todos suenan, pisa el más antiguo
 	p.stream = streams[nombre]
-	p.volume_db = BASE_DB + linear_to_db(Musica.volumen / 100.0)
+	p.volume_db = BASE_DB  # shortcut: el deslizador es solo de la música (el usuario la baja y los efectos se perdían); si piden bajar efectos, un deslizador propio
 	p.pitch_scale = 1.0 if nombre in SIN_VARIAR else randf_range(0.94, 1.06)
 	p.play()
 
