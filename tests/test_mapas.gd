@@ -85,3 +85,29 @@ func test_el_aro_quema_el_papel() -> void:
 	comprobar(j.get_node("Visual").modulate.r < 0.8, "se le ve chamuscado")
 	comprobar(j.get_node("Efectos/Humo").emitting, "echa humo")
 	n.free()
+
+
+func test_sierra_en_riel_va_y_vuelve() -> void:
+	var s := Sierra.new()
+	s.riel = Vector2(200, 0)
+	comprobar(s.posicion_en(0.0).is_equal_approx(Vector2.ZERO), "empieza en su sitio")
+	comprobar(s.posicion_en(1.5).x > 150.0, "a mitad llega al otro lado")
+	comprobar(s.posicion_en(3.0).x < 50.0, "y vuelve")
+	s.riel = Vector2.ZERO
+	comprobar(s.posicion_en(1.5) == Vector2.ZERO, "la quieta no se mueve")
+	s.free()
+
+
+func test_el_nivel_monta_las_sierras() -> void:
+	var red: Node = Engine.get_main_loop().root.get_node("Red")
+	var semilla := 0
+	while Generador.generar(semilla).sierras.size() < 2:
+		semilla += 1
+	red.semilla = semilla
+	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
+	Engine.get_main_loop().root.add_child(nivel)
+	var sierras: Array = nivel.get_node("Piezas").find_children("Sierra*", "", false, false)
+	comprobar(sierras.size() == Generador.generar(semilla).sierras.size(), "una sierra por cada una del mapa")
+	comprobar(sierras[0] is Sierra and sierras[0].body_entered.get_connections().size() > 0, "y tocarla hace algo")
+	nivel.free()
+	red.semilla = 0

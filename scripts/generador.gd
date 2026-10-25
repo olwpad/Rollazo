@@ -34,7 +34,8 @@ const EMPALME_ANCHO := 250.0  # el descanso entre dos tramos
 # Devuelve un Dictionary con:
 #   piezas: [{nombre, pos, poly, enganchable}], controles: [Vector2], meta: Vector2,
 #   forma, inicio, limites: Rect2, meta_tam, caida_y, caida_x, caida_ancho, camino: [Vector2] (techos principales, para los tests),
-#   salidas_descanso: [Vector2] (borde de cada descanso, para los tests)
+#   salidas_descanso: [Vector2] (borde de cada descanso, para los tests),
+#   sierras: [{pos, riel: Vector2 (ZERO = quieta), fase, color}]
 static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
@@ -81,6 +82,7 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 	if not m.forma in ["horizontal", "torre"]:  # caida_y es el centro de una franja de 200 px: que su borde de arriba quede bajo todo
 		m.caida_y = maxf(m.caida_y, m.limites.end.y + 150.0)
 	m.aros = _aros(semilla, m)
+	m.sierras = _sierras(semilla, m)
 	return m
 
 
@@ -294,6 +296,44 @@ static func _aros(semilla: int, m: Dictionary) -> Array:
 		var pos: Vector2 = huecos.pop_at(rng.randi_range(0, huecos.size() - 1))
 		aros.append({"pos": pos, "mov": "quieto" if rng.randf() < 0.5 else "sube"})
 	return aros
+
+
+# Sierras: hasta 3 en los huecos del arco de las bajadas y 1 más entre dos techos de un tramo
+# horizontal; en la torre no, que se trepa pegado a las paredes. Con su propio azar, como los aros.
+static func _sierras(semilla: int, m: Dictionary) -> Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector2i(semilla, 11))
+	# Que se vea venir y no te devuelva lejos: nada cerca de controles, salida ni meta
+	var libre := func(pos: Vector2) -> bool:
+		return m.limites.has_point(pos) and pos.distance_to(m.inicio) > 400.0 and pos.distance_to(m.meta) > 350.0 \
+				and m.controles.all(func(c: Vector2) -> bool: return pos.distance_to(c) > 250.0) \
+				and m.piezas.all(func(p: Dictionary) -> bool: return _distancia(pos, p) > 60.0) \
+				and m.burbujas.all(func(b: Dictionary) -> bool: return pos.distance_to(b.pos) > 100.0) \
+				and m.aros.all(func(a: Dictionary) -> bool: return pos.distance_to(a.pos) > 200.0)
+	var bajada: Array = m.huecos_sierra.filter(libre)
+	var llano := []
+	for i in range(1, m.camino.size()):
+		var a: Vector2 = m.camino[i - 1]
+		var b: Vector2 = m.camino[i]
+		var pos := Vector2((a.x + b.x) / 2.0, maxf(a.y, b.y) + SIERRA_BAJO_TECHO)
+		# b.x - a.x > 300: un paso de torre va de pared a pared, casi en vertical
+		if b.x - a.x > 300.0 and libre.call(pos) and m.huecos_sierra.all(func(h: Vector2) -> bool: return pos.distance_to(h) > 200.0):
+			llano.append(pos)
+	var sitios := []
+	for k in mini(3, bajada.size()):
+		sitios.append(bajada.pop_at(rng.randi_range(0, bajada.size() - 1)))
+	if not llano.is_empty():
+		sitios.append(llano[rng.randi_range(0, llano.size() - 1)])
+	var sierras := []
+	for pos: Vector2 in sitios:
+		var riel := Vector2.ZERO
+		if rng.randf() < 0.5:  # en riel: de lado a lo largo del hueco, o subiendo hacia el techo
+			var lado := rng.randf_range(160.0, 220.0) * (1.0 if rng.randf() < 0.5 else -1.0)
+			riel = Vector2(lado, 0.0) if rng.randf() < 0.5 else Vector2(0.0, -rng.randf_range(100.0, 150.0))
+			if not (libre.call(pos + riel) and libre.call(pos + riel / 2.0)):
+				riel = Vector2.ZERO
+		sierras.append({"pos": pos, "riel": riel, "fase": rng.randf(), "color": rng.randi_range(0, Sierra.COLORES.size() - 1)})
+	return sierras
 
 
 # Distancia de `pos` al borde de la pieza `p`; 0 si está dentro (una pared es larga: su centro no basta).

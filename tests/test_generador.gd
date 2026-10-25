@@ -219,3 +219,31 @@ func test_todas_las_formas_traen_burbujas() -> void:
 			for b: Dictionary in m.burbujas:
 				for p in m.piezas:
 					comprobar(not Geometry2D.is_point_in_polygon(b.pos - p.pos, p.poly), "%s %d: burbuja dentro de %s" % [forma, semilla, p.nombre])
+
+
+func test_sierras_justas() -> void:
+	for semilla in 60:
+		var m := Generador.generar(semilla)
+		for s in m.sierras:
+			for c: Vector2 in m.controles:
+				comprobar(s.pos.distance_to(c) > 250.0 and (s.pos + s.riel).distance_to(c) > 250.0, "semilla %d: sierra pegada a un control" % semilla)
+			comprobar(s.pos.distance_to(m.inicio) > 400.0, "semilla %d: sierra en la salida" % semilla)
+			comprobar(s.color >= 0 and s.color < Sierra.COLORES.size(), "semilla %d: color de sierra" % semilla)
+			for p in m.piezas:  # ni dentro de una pieza ni rozándola, en ninguna punta del riel
+				comprobar(Generador._distancia(s.pos, p) > 60.0 and Generador._distancia(s.pos + s.riel, p) > 60.0, "semilla %d: sierra %s en %s" % [semilla, s.pos, p.nombre])
+	comprobar(Generador.generar(9).piezas == Generador.generar(9).piezas, "las sierras no cambian el resto del mapa")
+
+
+func test_sierras_sobre_todo_en_bajada() -> void:
+	var en_riel := 0
+	for semilla in 40:
+		var m := Generador.generar(semilla, "bajada")
+		comprobar(m.sierras.size() >= 1, "bajada %d: al menos una sierra" % semilla)
+		en_riel += m.sierras.filter(func(s: Dictionary) -> bool: return s.riel != Vector2.ZERO).size()
+	comprobar(en_riel > 0, "alguna va en riel")
+	var horizontal := 0
+	var bajada := 0
+	for semilla in 20:
+		horizontal += Generador.generar(semilla, "horizontal").sierras.size()
+		bajada += Generador.generar(semilla, "bajada").sierras.size()
+	comprobar(horizontal > 0 and bajada > horizontal, "también en horizontal, pero más en bajada (%d / %d)" % [horizontal, bajada])

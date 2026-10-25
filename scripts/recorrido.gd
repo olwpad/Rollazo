@@ -115,6 +115,16 @@ func construir(semilla: int) -> void:
 			a.set("mov", mapa.aros[i].mov)
 			a.body_entered.connect(_al_tocar_aro.bind(a))
 			piezas.add_child(a)
+	for i in mapa.sierras.size():
+		var s := Sierra.new()
+		s.name = "Sierra%d" % i
+		s.position = mapa.sierras[i].pos
+		s.riel = mapa.sierras[i].riel
+		s.fase = mapa.sierras[i].fase
+		s.color = mapa.sierras[i].color
+		s.nivel = self
+		s.body_entered.connect(_al_tocar_sierra.bind(s))
+		piezas.add_child(s)
 	limites = mapa.limites
 	$Inicio.position = mapa.inicio
 	$SueloInicio.position = mapa.inicio + Vector2(100, 80)
@@ -362,6 +372,18 @@ func _al_tocar_aro(cuerpo: Node2D, _aro: Area2D) -> void:
 	if cuerpo is Jugador and multiplayer.is_server() and not cuerpo.congelado:
 		(cuerpo as Jugador).quemarse()
 		_volver_al_control(cuerpo)
+
+
+# Sierra: el papel salta en trozos y el moco salpica de vuelta en su último control, como al
+# caer; si ya llegó (online), a mirar. Lo decide el anfitrión.
+func _al_tocar_sierra(cuerpo: Node2D, _sierra: Sierra) -> void:
+	if not (cuerpo is Jugador and multiplayer.is_server()) or cuerpo.congelado:
+		return
+	cuerpo.efecto.rpc("rotura", cuerpo.global_position)
+	if Red.es_online() and cuerpo.id_dueno() in clasificacion.llegadas:
+		_mandar_a_mirar(cuerpo as Jugador)
+		return
+	_volver_al_control(cuerpo)  # con el efecto "reaparecer": la salpicadura
 
 
 @rpc("authority", "call_local", "reliable")
