@@ -162,7 +162,7 @@ func _draw() -> void:
 # punteado con un "+" y la sombra en el suelo de donde irá su moco.
 func _dibujar_tarjetas() -> void:
 	var azotea := PackedVector2Array([Vector2(-330, 27), Vector2(1060, 14), Vector2(1060, 400), Vector2(-330, 400)])
-	draw_colored_polygon(azotea, Acuarela.AZOTEA.lightened(0.12))  # base opaca: es grande y los edificios de detrás ensuciaban
+	draw_colored_polygon(azotea, Color(Acuarela.AZOTEA.lightened(0.12), 0.55))  # base: deja asomar un poco los edificios, sin ensuciar
 	Acuarela.pintar(self, azotea, Acuarela.AZOTEA, 12)
 	for i in huecos.size():
 		var x := i * separacion
