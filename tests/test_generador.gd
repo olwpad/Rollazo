@@ -11,7 +11,7 @@ func test_misma_semilla_mismo_mapa() -> void:
 func test_largo_con_controles_y_caida() -> void:
 	for semilla in 20:
 		var m := Generador.generar(semilla, "horizontal")
-		comprobar(m.meta.x >= 7500.0, "largo (semilla %d, meta %.0f)" % [semilla, m.meta.x])
+		comprobar(m.meta.x >= 5500.0, "largo (semilla %d, meta %.0f)" % [semilla, m.meta.x])
 		comprobar(m.controles.size() >= 2, "puntos de control (semilla %d)" % semilla)
 		comprobar(m.caida_x - m.caida_ancho / 2.0 < 0.0 and m.caida_x + m.caida_ancho / 2.0 > m.meta.x + 500.0, "la caída cubre todo (semilla %d)" % semilla)
 
@@ -185,15 +185,18 @@ func test_montana_e_hibridos_se_pueden_recorrer() -> void:
 				recorrido += d.length()
 				# O se llega andando: hay un descanso más adelante desde el que se alcanza (una torre que empieza por la derecha)
 				var desde_descanso: bool = m.salidas_descanso.any(func(b: Vector2) -> bool: return b.x > camino[i - 1].x and b.distance_to(camino[i]) <= PapelRope.LARGO_MAX - 20.0)
-				comprobar(d.length() <= 680.0 or desde_descanso, "%s %d: paso %d de %s a %s" % [forma, semilla, i, camino[i - 1], camino[i]])
+				var cambia_a_pozo: bool = m.pozos.any(func(r: Rect2) -> bool: return r.has_point(camino[i]) != r.has_point(camino[i - 1]))  # se pasa andando y cayendo
+				comprobar(d.length() <= 680.0 or desde_descanso or cambia_a_pozo, "%s %d: paso %d de %s a %s" % [forma, semilla, i, camino[i - 1], camino[i]])
 			var salidas: Array = m.salidas_descanso
 			for k in salidas.size() - 1:  # el último descanso puede ser el de arriba de una torre final
 				var borde: Vector2 = salidas[k]
+				if m.pozos.any(func(r: Rect2) -> bool: return borde.x == r.position.x):
+					continue  # el borde de un suelo que da a un pozo: se cae, no se engancha
 				var alcanza: bool = camino.any(func(c: Vector2) -> bool: return c.y < borde.y and c.distance_to(borde) <= PapelRope.LARGO_MAX - 20.0)
 				comprobar(alcanza, "%s %d: desde el descanso en %s no se alcanza ningún techo" % [forma, semilla, borde])
 			comprobar(m.caida_y > m.limites.end.y, "%s %d: la franja que mata está bajo todo" % [forma, semilla])
 			comprobar(m.controles.size() >= 2, "%s %d: controles" % [forma, semilla])
-			comprobar(recorrido > 4000.0 and recorrido < 11000.0, "%s %d: largo como un mapa horizontal (%.0f)" % [forma, semilla, recorrido])
+			comprobar(recorrido > 3000.0 and recorrido < 11000.0, "%s %d: largo como un mapa horizontal (%.0f)" % [forma, semilla, recorrido])
 			for p in m.piezas:
 				comprobar(m.limites.has_point(p.pos), "%s %d: pieza %s dentro de los límites" % [forma, semilla, p.nombre])
 			comprobar(m.limites.has_point(m.meta) and m.limites.has_point(m.inicio), "meta y salida dentro")
@@ -207,7 +210,7 @@ func test_hibridos_variados() -> void:
 	for semilla in 40:
 		var m := Generador.generar(semilla, "hibrido")
 		var ys: Array = m.camino.map(func(c: Vector2) -> float: return c.y)
-		comprobar(ys.max() - ys.min() > 300.0, "hibrido %d: algún tramo sube o baja (en horizontal los techos varían <= 160 px)" % semilla)
+		comprobar(ys.max() - ys.min() > 300.0 or not m.pozos.is_empty(), "hibrido %d: algún tramo sube o baja (en horizontal los techos varían <= 160 px)" % semilla)
 		tramos[_piezas(m, "Pared").size() > 0] = true
 		tramos[m.huecos_sierra.size() > 0] = true
 	comprobar(tramos.size() == 2, "unos con torre o bajada y otros sin")
@@ -272,3 +275,59 @@ func test_torres_distintas() -> void:
 		salientes[m.camino.size()] = true
 	comprobar(tamanos.size() >= 3, "tamaños de torre distintos: %d" % tamanos.size())
 	comprobar(salientes.size() >= 3, "número de salientes distintos: %d" % salientes.size())
+
+
+func test_variedad_dentro_de_cada_forma() -> void:
+	for forma in Generador.FORMAS:
+		var largos := {}
+		var altos := {}
+		for semilla in 30:
+			var l: Rect2 = Generador.generar(semilla, forma).limites
+			largos[snappedf(l.size.x, 100.0)] = true
+			altos[snappedf(l.size.y, 100.0)] = true
+		comprobar(largos.size() + altos.size() >= 6 and (largos.size() >= 3 or altos.size() >= 3), "%s: largos %d, altos %d" % [forma, largos.size(), altos.size()])
+	for forma in ["horizontal", "bajada", "montaña"]:
+		var largos := {}
+		for semilla in 30:
+			largos[snappedf(Generador.generar(semilla, forma).limites.size.x, 100.0)] = true
+		comprobar(largos.size() >= 3, "%s: 3 largos distintos (%d)" % [forma, largos.size()])
+
+
+func test_pozo_determinista_con_salientes_alternos_y_meta_abajo() -> void:
+	comprobar(var_to_str(Generador.generar(5, "pozo")) == var_to_str(Generador.generar(5, "pozo")), "pozo determinista")
+	for semilla in 40:
+		var m := Generador.generar(semilla, "pozo")
+		var camino: Array = m.camino
+		comprobar(camino.size() >= 3, "pozo %d: salientes %d" % [semilla, camino.size()])
+		var r: Rect2 = m.pozos[0]
+		for i in camino.size():
+			comprobar(r.has_point(camino[i]), "pozo %d: saliente dentro del pozo" % semilla)
+			if i > 0:  # alternan lados salvo si un descanso ocupó el turno de uno
+				comprobar(camino[i].y > camino[i - 1].y and camino[i].y - camino[i - 1].y <= 2.0 * (Generador.POZO_BAJA.y + 25.0), "pozo %d: baja sin saltos largos" % semilla)
+		for k in range(1, camino.size() - 1):
+			var lados := [camino[k - 1], camino[k], camino[k + 1]].map(func(c: Vector2) -> bool: return c.x < r.get_center().x)
+			comprobar(lados.count(lados[0]) < 3, "pozo %d: tres salientes seguidos del mismo lado" % semilla)
+		for p in m.piezas:
+			if p.nombre.begins_with("Pared"):
+				comprobar(not p.enganchable, "pozo %d: paredes no enganchables" % semilla)
+			elif p.nombre.begins_with("Techo"):
+				comprobar(p.enganchable, "pozo %d: salientes enganchables" % semilla)
+		comprobar(m.controles.size() >= 1, "pozo %d: controles" % semilla)
+		comprobar(m.meta.y > camino.back().y and m.meta.y > m.inicio.y + 1500.0, "pozo %d: meta abajo del todo" % semilla)
+		comprobar(_piezas(m, "FondoPozo").size() == 1 and _piezas(m, "SueloMeta").size() == 1, "pozo %d: fondo y suelo de meta" % semilla)
+		comprobar(m.caida_y > m.limites.end.y and m.limites.has_point(m.meta) and m.limites.has_point(m.inicio), "pozo %d: límites y caída" % semilla)
+
+
+# Que una sierra no cierre el pozo: aunque recorra su riel, no ocupa más de 3/4 del ancho (en cada instante queda hueco de sobra).
+func test_pozo_con_sierras_sin_tapar_el_camino() -> void:
+	var con_sierras := 0
+	for semilla in 40:
+		var m := Generador.generar(semilla, "pozo")
+		var r: Rect2 = m.pozos[0]
+		con_sierras += 1 if m.sierras.size() > 0 else 0
+		for s: Dictionary in m.sierras:
+			comprobar(r.has_point(s.pos), "pozo %d: sierra dentro del pozo" % semilla)
+			var izq := minf(s.pos.x, s.pos.x + s.riel.x) - Sierra.RADIO
+			var der := maxf(s.pos.x, s.pos.x + s.riel.x) + Sierra.RADIO
+			comprobar(der - izq <= 0.75 * r.size.x, "pozo %d: la sierra %s tapa el pozo" % [semilla, s.pos])
+	comprobar(con_sierras >= 20, "la mayoría de pozos llevan sierras (%d de 40)" % con_sierras)

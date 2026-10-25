@@ -302,6 +302,7 @@ func crear_jugador(datos: Array) -> Node:
 	j.pintar(Red.color_de(id))
 	j.vestir(Red.aspecto_de(id))
 	colores[id] = j.get_node("Visual/Moco").color
+	j.aterrizado.connect(_al_aterrizar.bind(j))
 	nombres[id] = "JUGADOR %d" % (indice + 1)  # el mismo que en la sala
 	if id == multiplayer.get_unique_id():  # cada PC sigue con la cámara solo a su moco
 		var camara := Camera2D.new()
@@ -421,6 +422,22 @@ func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
 		if ultimos_controles.get(cuerpo.name) != control.global_position:  # solo al estrenarlo
 			Sonidos.tocar("control", control.global_position)
 		ultimos_controles[cuerpo.name] = control.global_position
+
+
+# Llegar al fondo de un pozo sin haber frenado: salpicadura y vuelta al último control. Lo decide el anfitrión.
+func _al_aterrizar(caida: float, cuerpo: Jugador) -> void:
+	var choque := cuerpo.get_last_slide_collision()
+	if choque != null:
+		_choque_en_pozo(caida, cuerpo, (choque.get_collider() as Node).name)
+
+
+# true si se estrelló
+func _choque_en_pozo(caida: float, cuerpo: Jugador, suelo: String) -> bool:
+	if not multiplayer.is_server() or cuerpo.congelado or caida < Generador.ESTRELLON or not suelo.begins_with("FondoPozo"):
+		return false
+	cuerpo.efecto.rpc("aterrizaje", cuerpo.global_position + Vector2(0, 18))
+	_volver_al_control(cuerpo)
+	return true
 
 
 func _al_caer(cuerpo: Node2D) -> void:
