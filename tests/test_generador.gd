@@ -246,3 +246,15 @@ func test_sierras_sobre_todo_en_bajada() -> void:
 		horizontal += Generador.generar(semilla, "horizontal").sierras.size()
 		bajada += Generador.generar(semilla, "bajada").sierras.size()
 	comprobar(horizontal > 0 and bajada > horizontal, "también en horizontal, pero más en bajada (%d / %d)" % [horizontal, bajada])
+
+
+func test_formas_con_pesos() -> void:
+	var cuenta := {}
+	for semilla in 1000:
+		var f := Generador.forma_de(semilla)
+		cuenta[f] = cuenta.get(f, 0) + 1
+		if semilla < 20:
+			comprobar(Generador.generar(semilla).forma == f, "generar usa forma_de (semilla %d)" % semilla)
+	comprobar(cuenta.get("torre", 0) >= 60 and cuenta.get("torre", 0) <= 140, "torre ~10 %%: %d de 1000" % cuenta.get("torre", 0))
+	comprobar(cuenta.get("horizontal", 0) >= 250 and cuenta.get("horizontal", 0) <= 350, "horizontal ~30 %%: %d de 1000" % cuenta.get("horizontal", 0))
+	print("    formas en 1000 semillas: ", cuenta)

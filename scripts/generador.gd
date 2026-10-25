@@ -12,6 +12,7 @@ const NOMBRE := "LA AZOTEA"  # el nombre que sale en las postales
 const LARGO := 7600.0  # a partir de aquí se pone la meta
 const SUELO_Y := 690.0  # centro de los descansos (la parte de arriba queda en y=670)
 const FORMAS := ["horizontal", "torre", "bajada", "montaña", "hibrido"]
+const PESOS_FORMA := {"horizontal": 30, "bajada": 25, "hibrido": 20, "montaña": 15, "torre": 10}  # en %
 const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 px)
 # Torre. Con estas medidas dos salientes seguidos quedan a <= 372 px (el papel llega a 420)
 const TORRE_ALTO := 2400.0  # lo que sube el pozo desde el suelo
@@ -38,10 +39,8 @@ const EMPALME_ANCHO := 250.0  # el descanso entre dos tramos
 static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
-	if forma == "":  # con su propio azar: añadir o quitar formas no cambia el interior de cada mapa
-		var elige := RandomNumberGenerator.new()
-		elige.seed = hash(Vector2i(semilla, 3))
-		forma = FORMAS[elige.randi_range(0, FORMAS.size() - 1)]
+	if forma == "":
+		forma = forma_de(semilla)
 	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": []}
 	m.forma = forma if forma in FORMAS else "horizontal"
 	m.huecos_sierra = []
@@ -83,6 +82,13 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 	m.aros = _aros(semilla, m)
 	m.sierras = _sierras(semilla, m)
 	return m
+
+
+# La forma que toca a esta semilla. Con su propio azar: añadir o quitar formas no cambia el interior de cada mapa.
+static func forma_de(semilla: int) -> String:
+	var elige := RandomNumberGenerator.new()
+	elige.seed = hash(Vector2i(semilla, 3))
+	return PESOS_FORMA.keys()[elige.rand_weighted(PackedFloat32Array(PESOS_FORMA.values()))]
 
 
 # Los tramos de cada forma, con su medida (largo en x para el horizontal, altura para torre y bajada).
