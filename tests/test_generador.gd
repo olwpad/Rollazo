@@ -114,3 +114,46 @@ func test_torre_mapa_completo() -> void:
 	comprobar(m.limites.has_point(m.meta) and m.limites.has_point(m.inicio), "meta y salida dentro")
 	comprobar(m.caida_y >= m.limites.end.y, "caída por debajo de todo")
 	comprobar(m.meta_tam.y < 500.0, "la meta solo cubre el suelo de arriba")
+
+
+func test_bajada_baja_y_la_caida_queda_debajo() -> void:
+	for semilla in 40:
+		var m := Generador.generar(semilla, "bajada")
+		comprobar(m.meta.y > m.inicio.y + 800.0, "semilla %d: la meta queda abajo" % semilla)
+		for i in range(1, m.camino.size()):
+			var d: Vector2 = m.camino[i] - m.camino[i - 1]
+			comprobar(d.x > 0.0 and d.y > 0.0 and d.x <= 680.0, "semilla %d: escalón %d %s" % [semilla, i, d])
+		comprobar(m.caida_y > m.limites.end.y, "semilla %d: la franja que mata está bajo todo" % semilla)
+		comprobar(m.huecos_sierra.size() >= 2, "sitio para sierras")
+
+
+func test_bajada_mapa_completo() -> void:
+	for semilla in 40:
+		var m := Generador.generar(semilla, "bajada")
+		comprobar(m.forma == "bajada", "forma")
+		var salida: Array = _piezas(m, "SueloSalida")
+		comprobar(salida.size() == 1 and not salida[0].enganchable and salida[0].poly[1].x - salida[0].poly[0].x >= 700.0, "suelo de salida para 4 mocos")
+		comprobar(salida[0].pos - m.inicio == Vector2(100, 80), "la salida sobre su suelo, como hoy")
+		comprobar(_piezas(m, "SueloMeta").size() == 1, "suelo de meta")
+		comprobar(m.controles.size() >= 2, "semilla %d: controles en la bajada" % semilla)
+		var y_previo := -INF
+		for borde: Vector2 in m.salidas_descanso:
+			comprobar(borde.y > y_previo, "semilla %d: cada descanso más abajo" % semilla)
+			y_previo = borde.y
+			var alcanza: bool = m.camino.any(func(c: Vector2) -> bool: return c.x > borde.x and c.distance_to(borde) <= PapelRope.LARGO_MAX - 20.0)
+			comprobar(alcanza, "semilla %d: desde el descanso en %s no se alcanza ningún techo" % [semilla, borde])
+		for h: Vector2 in m.huecos_sierra:
+			comprobar(h.distance_to(m.inicio) >= 400.0, "semilla %d: sierra lejos de la salida" % semilla)
+			for c: Vector2 in m.controles:
+				comprobar(h.distance_to(c) >= 250.0, "semilla %d: sierra en %s cerca del control %s" % [semilla, h, c])
+		for p in m.piezas:
+			comprobar(m.limites.has_point(p.pos), "pieza %s dentro de los límites" % p.nombre)
+			comprobar(m.caida_y - 100.0 > _bajo(p), "semilla %d: la franja que mata empieza bajo %s" % [semilla, p.nombre])
+	comprobar(Generador.generar(3, "horizontal").huecos_sierra == [] and Generador.generar(3, "torre").huecos_sierra == [], "el campo existe en todas las formas")
+
+
+func _bajo(p: Dictionary) -> float:
+	var abajo := -INF
+	for v: Vector2 in p.poly:
+		abajo = maxf(abajo, v.y)
+	return p.pos.y + abajo

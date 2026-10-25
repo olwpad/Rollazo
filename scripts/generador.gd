@@ -21,6 +21,12 @@ const SALIENTE_ANCHO := Vector2(140.0, 170.0)  # (mín, máx)
 const SALIENTE_SUBIDA := Vector2(180.0, 220.0)  # de un saliente al siguiente, en el otro lado
 const DESCANSO_TORRE_ANCHO := 180.0
 const DESCANSO_BAJO_SALIENTE := 280.0  # el descanso va debajo del saliente siguiente, como el suelo bajo un techo
+# Bajada. Se sale BAJADA_ALTO px más arriba que en horizontal y se acaba a la altura de siempre
+const BAJADA_ALTO := 1600.0
+const ESCALON_X := Vector2(500.0, 600.0)  # de un techo al siguiente (mín, máx)
+const ESCALON_Y := Vector2(110.0, 160.0)  # lo que baja cada techo; poco, para no estamparse
+const SUELO_BAJO_TECHO := Vector2(300.0, 340.0)  # de la parte de arriba de un suelo al techo a tiro (como en horizontal)
+const SIERRA_BAJO_TECHO := 260.0  # el hueco va en la parte baja del arco, como los aros
 
 
 # Devuelve un Dictionary con:
@@ -31,24 +37,32 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
 	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": []}
-	m.forma = "torre" if forma == "torre" else "horizontal"  # shortcut: solo hay horizontal y torre, lo demás cae en horizontal
-	m.inicio = Vector2(200, 640)
-	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0))
+	m.forma = forma if forma in ["torre", "bajada"] else "horizontal"  # shortcut: montaña e híbrido aún caen en horizontal
+	m.huecos_sierra = []
+	var arriba := BAJADA_ALTO if m.forma == "bajada" else 0.0
+	m.inicio = Vector2(200, 640 - arriba)
+	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0 - arriba))
 	var fin: Vector2
 	if m.forma == "torre":
 		fin = _tramo_torre(m, rng, Vector2(INICIO_FIN, SUELO_Y), TORRE_ALTO)
+	elif m.forma == "bajada":
+		_pieza(m, "SueloSalida", m.inicio + Vector2(100, 80), _caja(700.0, 80.0), false)  # como el SueloInicio de la escena
+		fin = _tramo_bajada(m, rng, Vector2(INICIO_FIN, SUELO_Y - arriba), BAJADA_ALTO)
 	else:
 		fin = _tramo_horizontal(m, rng, Vector2(INICIO_FIN, SUELO_Y), LARGO - INICIO_FIN)
 	_quitar_estorbos(m)
 	# En horizontal el borde queda a 100 px del último techo; en la torre se sale andando del último descanso
-	var suelo_meta := fin + Vector2(450.0 if m.forma == "horizontal" else 350.0, 30.0)
+	var suelo_meta := fin + Vector2(350.0 if m.forma == "torre" else 450.0, 30.0)
 	_pieza(m, "SueloMeta", suelo_meta, _caja(700.0, 80.0), false)
 	m.meta = suelo_meta + Vector2(150.0, -120.0)
-	m.meta_tam = Vector2(220, 1600) if m.forma == "horizontal" else Vector2(400, 300)
+	# En la bajada también vale la caja alta: lo único a esa x es el suelo de meta, tras el último techo
+	m.meta_tam = Vector2(400, 300) if m.forma == "torre" else Vector2(220, 1600)
 	m.caida_x = m.meta.x / 2.0  # de x=-2000 a 2000 más allá de la meta
 	m.caida_ancho = m.meta.x + 4000.0
 	m.limites = _limites(m)
 	m.caida_y = maxf(1300.0, m.limites.end.y)
+	if m.forma == "bajada":  # caida_y es el centro de una franja de 200 px: que su borde de arriba quede bajo todo
+		m.caida_y = maxf(m.caida_y, m.limites.end.y + 150.0)
 	m.aros = _aros(semilla, m)
 	return m
 
@@ -100,6 +114,38 @@ static func _tramo_horizontal(m: Dictionary, rng: RandomNumberGenerator, desde: 
 		desde_descanso += 1
 		recien_descanso = false
 	return Vector2(x, desde.y)
+
+
+# Techos en escalera, cada uno más abajo y más a la derecha, desde el borde `desde` del suelo
+# anterior hasta bajar `largo` px. Cada 3-4 techos un descanso, como en horizontal pero bajo
+# el techo siguiente. El truco es frenar. Apunta en m.huecos_sierra los huecos del arco
+# entre techos. Devuelve el borde (a la altura de un suelo) donde acaba.
+static func _tramo_bajada(m: Dictionary, rng: RandomNumberGenerator, desde: Vector2, largo: float) -> Vector2:
+	var hasta := desde.y + largo
+	# El primero a tiro desde el suelo de salida
+	var pos := Vector2(desde.x + rng.randf_range(100.0, 200.0), desde.y - 20.0 - rng.randf_range(SUELO_BAJO_TECHO.x, SUELO_BAJO_TECHO.y))
+	var desde_descanso := 0
+	var sencillo := true
+	while true:
+		_techo(m, rng, pos, sencillo)
+		m.camino.append(pos)
+		desde_descanso += 1
+		var siguiente := pos + Vector2(rng.randf_range(ESCALON_X.x, ESCALON_X.y), rng.randf_range(ESCALON_Y.x, ESCALON_Y.y))
+		if siguiente.y + SUELO_BAJO_TECHO.y > hasta:
+			break
+		sencillo = desde_descanso >= 3 and (desde_descanso >= 4 or rng.randf() < 0.5)
+		if sencillo:  # descanso debajo del techo siguiente, que queda a tiro desde su borde
+			var ancho := rng.randf_range(220.0, 300.0)
+			var suelo := siguiente.y + 20.0 + rng.randf_range(SUELO_BAJO_TECHO.x, SUELO_BAJO_TECHO.y)
+			var borde := siguiente.x - rng.randf_range(100.0, 200.0)
+			_pieza(m, "Descanso", Vector2(borde - ancho / 2.0, suelo), _caja(ancho, 40.0), false)
+			m.controles.append(Vector2(borde - ancho / 2.0, suelo - 80.0))
+			m.salidas_descanso.append(Vector2(borde, suelo - 20.0))
+			desde_descanso = 0
+		else:
+			m.huecos_sierra.append(Vector2((pos.x + siguiente.x) / 2.0, siguiente.y + SIERRA_BAJO_TECHO))
+		pos = siguiente
+	return Vector2(pos.x, pos.y + SUELO_BAJO_TECHO.y + 20.0)
 
 
 # Un pozo entre dos paredes que sube `alto` px desde el borde `desde` del suelo anterior.
