@@ -8,6 +8,7 @@ signal papel_lanzado
 signal aterrizaje_fuerte
 
 const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
+const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a")]  # menta, rosa, lavanda, melocotón
 
 # Valores iniciales: se ajustan jugando desde el Inspector del editor.
 @export var gravedad := 1400.0
@@ -19,10 +20,20 @@ const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
 @export var tiempo_min_impulso := 0.2
 @export var fuerza_salto := 650.0
 
-var papel: PapelRope = null  # null = no está enganchado
+var papel: PapelRope = null  # null = no está enganchado. Solo existe en el anfitrión.
 var _tiempo_enganchado := 0.0
 
+# Lo que ven los demás PCs: el anfitrión lo copia de `papel` y el Sync lo replica.
+var papel_activo := false
+var papel_ancla := Vector2.ZERO
+var papel_aguante := 1.0
+
 @onready var rayo: RayCast2D = $Rayo
+
+
+# Cada moco se llama como el id de red de su dueño ("1" es el anfitrión).
+func id_dueno() -> int:
+	return name.to_int() if name.is_valid_int() else 1
 
 
 # Único sitio donde se lee la entrada. En la fase 2 esto vendrá de la red.
@@ -38,6 +49,8 @@ func _leer_input() -> Dictionary:
 
 
 func _physics_process(delta: float) -> void:
+	if not multiplayer.is_server():
+		return  # solo el anfitrión simula; los demás reciben la posición por el Sync
 	var e := _leer_input()
 	if e.lanzar:
 		_lanzar_papel(e.apunta)
@@ -72,12 +85,21 @@ func _physics_process(delta: float) -> void:
 		if papel.roto:
 			papel = null
 			papel_roto.emit()
+	_publicar_papel()
+
+
+func _publicar_papel() -> void:
+	papel_activo = papel != null
+	if papel_activo:
+		papel_ancla = papel.ancla
+		papel_aguante = papel.aguante
 
 
 func reaparecer(pos: Vector2) -> void:
 	global_position = pos
 	velocity = Vector2.ZERO
 	papel = null
+	_publicar_papel()
 
 
 func _lanzar_papel(objetivo: Vector2) -> void:

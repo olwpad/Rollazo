@@ -7,7 +7,7 @@ func test_recorrido_tiene_lo_necesario() -> void:
 	if e == null:
 		return
 	var n := e.instantiate()
-	for nombre in ["Jugador", "Inicio", "Meta", "Caida", "Controles", "HUD"]:
+	for nombre in ["Jugadores", "Inicio", "Meta", "Caida", "Controles", "HUD"]:
 		comprobar(n.get_node_or_null(nombre) != null, "falta " + nombre)
 	n.free()
 

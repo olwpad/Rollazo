@@ -7,14 +7,16 @@ var frame := 0
 var fallos: Array[String] = []
 
 
-func _initialize() -> void:
-	nivel = load("res://scenes/recorrido_prueba.tscn").instantiate()
-	root.add_child(nivel)
-	j = nivel.get_node("Jugador")
-
-
 func _physics_process(_delta: float) -> bool:
 	frame += 1
+	if frame == 1:  # en el primer frame: así el autoload Red ya existe
+		nivel = load("res://scenes/recorrido_prueba.tscn").instantiate()
+		root.add_child(nivel)
+		j = nivel.get_node_or_null("Jugadores/1")
+		if j == null:
+			print("sim_recorrido: FALLO no se creó el jugador 1")
+			quit(1)
+		return false
 	var inicio: Vector2 = nivel.get_node("Inicio").global_position
 	var control: Area2D = nivel.get_node("Controles").get_child(0)
 	if frame == 10:

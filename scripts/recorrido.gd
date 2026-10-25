@@ -1,16 +1,27 @@
-# Lógica del recorrido: cronómetro, puntos de control, caída al vacío, meta y reinicio.
+# Lógica del recorrido: un moco por jugador, cronómetro, puntos de control, caída al vacío,
+# meta y reinicio. Las áreas solo las decide el anfitrión.
 extends Node2D
+
+const ESCENA_JUGADOR := preload("res://scenes/jugador.tscn")
+const CAMARA := preload("res://scripts/camara.gd")
 
 var tiempo := 0.0
 var mejor := INF
 var corriendo := true
-var ultimo_control: Vector2
+var ultimos_controles := {}  # id de jugador -> último punto de control
 
-@onready var jugador: Jugador = $Jugador
 @onready var hud := $HUD
 
 
 func _ready() -> void:
+	$Spawner.spawn_function = crear_jugador
+	if multiplayer.is_server():
+		var ids: Array[int] = [1]  # sin red: solo el jugador local
+		if Red.es_online():
+			ids = Red.ids
+		for i in ids.size():
+			$Spawner.spawn([ids[i], i])
+		Red.jugadores_cambiaron.connect(_quitar_desconectados)
 	$Caida.body_entered.connect(_al_caer)
 	$Meta.body_entered.connect(_al_llegar)
 	for control: Area2D in $Controles.get_children():
@@ -55,26 +66,63 @@ func _unhandled_input(evento: InputEvent) -> void:
 		reiniciar()
 
 
+# El MultiplayerSpawner llama a esto en todos los PCs con los mismos datos: [id, índice].
+func crear_jugador(datos: Array) -> Node:
+	var id: int = datos[0]
+	var indice: int = datos[1]
+	var j: Jugador = ESCENA_JUGADOR.instantiate()
+	j.name = str(id)
+	j.position = $Inicio.global_position + Vector2(indice * 50, 0)
+	j.get_node("Visual/Moco").color = Jugador.COLORES[indice % Jugador.COLORES.size()]
+	if id == multiplayer.get_unique_id():  # cada PC sigue con la cámara solo a su moco
+		var camara := Camera2D.new()
+		camara.set_script(CAMARA)
+		camara.zoom = Vector2(0.85, 0.85)
+		camara.position_smoothing_enabled = true
+		j.add_child(camara)
+	return j
+
+
+func jugadores() -> Array[Jugador]:
+	var lista: Array[Jugador] = []
+	for j in $Jugadores.get_children():
+		lista.append(j)
+	return lista
+
+
+func jugador_local() -> Jugador:
+	return $Jugadores.get_node_or_null(str(multiplayer.get_unique_id()))
+
+
+func _quitar_desconectados() -> void:
+	for j in jugadores():
+		if not j.id_dueno() in Red.ids:
+			j.queue_free()  # el Spawner lo borra también en los demás PCs
+
+
 func reiniciar() -> void:
 	tiempo = 0.0
 	corriendo = true
-	ultimo_control = $Inicio.global_position
-	jugador.reaparecer(ultimo_control)
+	ultimos_controles.clear()
 	hud.limpiar()
+	if multiplayer.is_server():
+		for j in jugadores():
+			j.reaparecer($Inicio.global_position)
 
 
 func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
-	if cuerpo == jugador:
-		ultimo_control = control.global_position
+	if cuerpo is Jugador and multiplayer.is_server():
+		ultimos_controles[cuerpo.name] = control.global_position
 
 
 func _al_caer(cuerpo: Node2D) -> void:
-	if cuerpo == jugador:
-		jugador.reaparecer.call_deferred(ultimo_control)  # no mover cuerpos dentro de una señal de física
+	if cuerpo is Jugador and multiplayer.is_server():
+		var punto: Vector2 = ultimos_controles.get(cuerpo.name, $Inicio.global_position)
+		cuerpo.reaparecer.call_deferred(punto)  # no mover cuerpos dentro de una señal de física
 
 
 func _al_llegar(cuerpo: Node2D) -> void:
-	if cuerpo == jugador and corriendo:
+	if cuerpo == jugador_local() and corriendo:
 		corriendo = false
 		hud.meta(tiempo, mejor)
 		mejor = minf(mejor, tiempo)

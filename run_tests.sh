@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Importa el proyecto (registra los class_name) y ejecuta todos los tests.
 G="${GODOT:-$LOCALAPPDATA/Microsoft/WinGet/Packages/GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe/Godot_v4.7.2-stable_win64_console.exe}"
 cd "$(dirname "$0")"
@@ -13,7 +13,8 @@ LOG="$(mktemp)"
 "$G" --headless --path . --script res://tests/sim_red_anfitrion.gd > "$LOG" 2>&1 &
 ANF=$!
 sleep 1
-"$G" --headless --path . --script res://tests/sim_red_cliente.gd > /dev/null 2>&1
+"$G" --headless --path . --script res://tests/sim_red_cliente.gd 2>&1 | grep "sim_red_cliente"
+RC=${PIPESTATUS[0]}
 wait $ANF; R=$?
-grep "sim_red" "$LOG"
-[ $R -eq 0 ] || exit 1
+grep "sim_red:" "$LOG"
+[ $R -eq 0 ] && [ $RC -eq 0 ] || exit 1

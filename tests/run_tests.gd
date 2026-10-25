@@ -2,8 +2,14 @@
 # Carga cada tests/test_*.gd, llama a sus métodos test_* y sale con código 1 si algo falla.
 extends SceneTree
 
+var _hecho := false
 
-func _init() -> void:
+
+# En el primer frame, no en _init: así los autoloads (Red) ya existen.
+func _process(_delta: float) -> bool:
+	if _hecho:
+		return false
+	_hecho = true
 	var total := 0
 	var fallidos := 0
 	for archivo in DirAccess.get_files_at("res://tests"):
@@ -29,3 +35,4 @@ func _init() -> void:
 				print("  FALLO ", archivo, " :: ", nombre, " -> ", ", ".join(caso.fallos))
 	print("%d tests, %d fallidos" % [total, fallidos])
 	quit(1 if fallidos > 0 or total == 0 else 0)
+	return false
