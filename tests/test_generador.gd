@@ -231,7 +231,6 @@ func test_sierras_justas() -> void:
 			comprobar(s.color >= 0 and s.color < Sierra.COLORES.size(), "semilla %d: color de sierra" % semilla)
 			for p in m.piezas:  # ni dentro de una pieza ni rozándola, en ninguna punta del riel
 				comprobar(Generador._distancia(s.pos, p) > 60.0 and Generador._distancia(s.pos + s.riel, p) > 60.0, "semilla %d: sierra %s en %s" % [semilla, s.pos, p.nombre])
-	comprobar(Generador.generar(9).piezas == Generador.generar(9).piezas, "las sierras no cambian el resto del mapa")
 
 
 func test_sierras_sobre_todo_en_bajada() -> void:

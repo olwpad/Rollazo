@@ -111,3 +111,14 @@ func test_el_nivel_monta_las_sierras() -> void:
 	comprobar(sierras[0] is Sierra and sierras[0].body_entered.get_connections().size() > 0, "y tocarla hace algo")
 	nivel.free()
 	red.semilla = 0
+
+
+func test_las_sierras_siguen_cuando_llega_el_moco_local() -> void:
+	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
+	Engine.get_main_loop().root.add_child(nivel)
+	nivel.llegada(nivel.multiplayer.get_unique_id(), 1, 5.0)
+	var antes: float = nivel.reloj_ronda
+	nivel._physics_process(0.5)
+	comprobar(nivel.tiempo == 5.0, "el cronómetro local se para en la meta")
+	comprobar(is_equal_approx(nivel.reloj_ronda, antes + 0.5), "pero el reloj de las sierras sigue (el anfitrión decide con él)")
+	nivel.free()

@@ -13,7 +13,7 @@ const RIEL := Color("8f86b8", 0.7)
 var riel := Vector2.ZERO  # de su sitio a su sitio + riel y vuelta; ZERO = quieta
 var fase := 0.0  # en vueltas (0..1): así no van todas a la par
 var color := 0  # índice en COLORES
-var nivel: Node = null  # el recorrido: su `tiempo` de ronda mueve la sierra igual en todos los PCs
+var nivel: Node = null  # el recorrido: su `reloj_ronda` mueve la sierra igual en todos los PCs
 var _base := Vector2.ZERO
 
 
@@ -29,7 +29,7 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	# shortcut: la sierra en riel puede verse unas décimas desfasada en otros PCs, el anfitrión manda; si molesta, enviar el instante de arranque por rpc.
 	if nivel != null:
-		position = _base + posicion_en(nivel.tiempo)
+		position = _base + posicion_en(nivel.reloj_ronda)
 	queue_redraw()
 
 

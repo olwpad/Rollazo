@@ -18,7 +18,7 @@ func _process(_d: float) -> bool:
 	elif f == 10:
 		yo = nivel.get_node("Jugadores/1")
 		sierra = nivel.get_node("Piezas").find_children("Sierra*", "", false, false)[0]
-		var donde: Vector2 = sierra._base + sierra.posicion_en(nivel.tiempo)
+		var donde: Vector2 = sierra._base + sierra.posicion_en(nivel.reloj_ronda)
 		if not sierra.position.is_equal_approx(donde):
 			fallos.append("la sierra no sigue el reloj de la ronda")
 		yo.global_position = sierra.global_position + Vector2(-120, 0)

@@ -23,7 +23,9 @@ var camara_espectador: Camera2D = null
 var objetivo_espectador := 0  # a quién mira; uno más que los que juegan = el mapa entero
 var tiempo := 0.0
 var mejor := INF
-var corriendo := true
+var corriendo := true  # el cronómetro de este PC: se para al llegar su moco
+var reloj_ronda := 0.0  # mueve las sierras: sigue aunque llegue el moco local, igual en todos los PCs
+var en_postal := false
 var ultimos_controles := {}  # id de jugador -> último punto de control
 var clasificacion := Clasificacion.new()  # solo la usa el anfitrión
 var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
@@ -210,6 +212,8 @@ func _estilo_acuarela(dibujo: Polygon2D, i: int, forzado := Color.TRANSPARENT) -
 func _physics_process(delta: float) -> void:
 	if corriendo:
 		tiempo += delta
+	if not (en_postal or en_resultados):
+		reloj_ronda += delta
 	hud.mostrar(tiempo, mejor, not Red.es_online())
 	if cuenta >= 0.0:
 		cuenta = maxf(cuenta - delta, 0.0)
@@ -317,6 +321,7 @@ func _quitar_desconectados() -> void:
 
 func reiniciar() -> void:
 	tiempo = 0.0
+	reloj_ronda = 0.0
 	corriendo = true
 	desde_primero = -1.0
 	en_resultados = false
@@ -339,6 +344,7 @@ func reiniciar() -> void:
 
 # "RONDA N DE M" con los mocos quietos y el reloj parado; luego, a correr.
 func _postal() -> void:
+	en_postal = true
 	corriendo = false
 	_congelar(true)
 	var victorias := _filas_vista().map(func(f: Array) -> Array: return [f[0], f[2]])
@@ -349,6 +355,7 @@ func _postal() -> void:
 		return
 	hud.ocultar_postal()
 	_congelar(false)
+	en_postal = false
 	corriendo = true
 
 
