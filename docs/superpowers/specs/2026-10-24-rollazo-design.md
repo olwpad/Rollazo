@@ -108,6 +108,9 @@ Inspirado, sin copiar, en obras que le gustan al autor: Spider-Man/Spider-Verse,
 
 Las fases 5 y 6 se pueden diseñar más a fondo cuando lleguen.
 
+### Ideas del autor para después de la fase 2 (2026-10-24)
+Obstáculos (incluidas **sierras**), **portales** y **poderes**. Se diseñan después de probar el online con los amigos.
+
 ## 7. Lo que queda en manos del constructor
 
 - Cómo se simula el papel (cadena de segmentos con uniones o una restricción de distancia), siempre que se sienta bien y funcione en red.
