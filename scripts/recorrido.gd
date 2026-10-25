@@ -15,13 +15,26 @@ func _ready() -> void:
 	$Meta.body_entered.connect(_al_llegar)
 	for control: Area2D in $Controles.get_children():
 		control.body_entered.connect(_al_pasar_control.bind(control))
+	var i := 0
 	for dibujo: Polygon2D in find_children("Dibujo", "Polygon2D"):
-		_poner_borde_comic(dibujo)
+		_estilo_neon(dibujo, i)
+		i += 1
 	reiniciar()
 
 
-# Contorno negro grueso, como en los cómics.
-func _poner_borde_comic(dibujo: Polygon2D) -> void:
+# Techos enganchables = carteles de neón; suelos = azoteas oscuras.
+# Copia cian desplazada detrás y contorno negro grueso, como en un cómic mal impreso.
+func _estilo_neon(dibujo: Polygon2D, i: int) -> void:
+	if dibujo.get_parent().is_in_group("enganchable"):
+		dibujo.color = Color(1.0, 0.25, 0.6) if i % 2 == 0 else Color(1.0, 0.88, 0.3)
+	elif dibujo.get_parent() is StaticBody2D:
+		dibujo.color = Color(0.36, 0.14, 0.55)
+	var fantasma := Polygon2D.new()
+	fantasma.polygon = dibujo.polygon
+	fantasma.color = Color(0.0, 0.9, 1.0, 0.6)
+	fantasma.position = Vector2(-6, 4)
+	fantasma.show_behind_parent = true
+	dibujo.add_child(fantasma)
 	var borde := Line2D.new()
 	borde.points = dibujo.polygon
 	borde.closed = true

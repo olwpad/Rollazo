@@ -18,7 +18,6 @@ const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
 @export var segundos_aguante := 3.0
 @export var tiempo_min_impulso := 0.2
 @export var fuerza_salto := 650.0
-@export_enum("hombre", "mujer", "aventurero", "aventurera", "zombi", "robot") var personaje := "hombre"
 
 var papel: PapelRope = null  # null = no está enganchado
 var _tiempo_enganchado := 0.0
@@ -92,26 +91,8 @@ func _lanzar_papel(objetivo: Vector2) -> void:
 		papel_lanzado.emit()
 
 
-# Qué dibujo del personaje toca según lo que está haciendo.
-static func elegir_pose(en_suelo: bool, enganchado: bool, vel: Vector2) -> String:
-	if enganchado:
-		return "rope"
-	if en_suelo:
-		return "walk" if absf(vel.x) > 20.0 else "idle"
-	return "jump" if vel.y < 0.0 else "fall"
-
-
-# Que se vea blando: se inclina con la velocidad y se estira al ir rápido.
+# El moco se estira solo según la velocidad; aquí solo se inclina un poco.
 func _process(_delta: float) -> void:
 	var visual: Node2D = $Visual
-	visual.rotation = lerp_angle(visual.rotation, clampf(velocity.x / 1500.0, -0.5, 0.5), 0.2)
-	var estiron := clampf(velocity.length() / 2000.0, 0.0, 0.25)
-	visual.scale = visual.scale.lerp(Vector2(1.0 - estiron * 0.5, 1.0 + estiron), 0.3)
-
-	var pose := elegir_pose(is_on_floor(), papel != null, velocity)
-	if pose == "walk":
-		pose = "walk%d" % (Time.get_ticks_msec() / 80 % 8)  # 8 dibujos, uno cada 80 ms
-	var sprite: Sprite2D = $Visual/Pose
-	sprite.texture = load("res://assets/personajes/%s/%s.png" % [personaje, pose])  # load() cachea, no relee el disco
-	if absf(velocity.x) > 20.0:
-		sprite.flip_h = velocity.x < 0.0
+	visual.rotation = lerp_angle(visual.rotation, clampf(velocity.x / 3000.0, -0.25, 0.25), 0.2)
+	$Visual/Moco.velocidad = velocity

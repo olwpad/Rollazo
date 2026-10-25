@@ -81,6 +81,12 @@ Una casa gigante: baño, cocina, salón. Los jugadores son muñequitos con físi
 - Si alguien se cae o se queda atascado, reaparece rápido en un punto de control.
 - Al terminar la ronda, se muestra una **repetición del fallo más ridículo**.
 
+## 5a. Cambio de estilo (elegido por el autor en bocetos, 2026-10-24) — sustituye partes de 5b
+
+- **Personaje:** un **moco gotero**. Es viscoso, gotea al moverse y tiene los ojos desiguales. No tiene forma humana. Se rechazaron los personajes humanos de Kenney.
+- **Mapas:** **ciudad nocturna de neón al estilo Spider-Verse**: azoteas, carteles y un cielo rosa y morado con colores desplazados y puntitos de cómic. Os columpiáis con papel higiénico entre edificios. **Sustituye a la casa gigante** como tema del primer mapa.
+- **Efectos:** **solo efectos físicos**: salpicadura de moco, confeti de papel y temblor de pantalla. **Sin onomatopeyas ni texto.** Se rechazó la pared de azulejos y las onomatopeyas.
+
 ## 5b. Estilo visual: "cómic-anime" (aprobado por el autor, 2026-10-24)
 
 Inspirado, sin copiar, en obras que le gustan al autor: Spider-Man/Spider-Verse, Black Clover, Ao Ashi, Steins;Gate y Rocket League.
