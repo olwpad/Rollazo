@@ -10,7 +10,6 @@ var sombrero := "nada"
 var cara := "nada"
 var ropa := "nada"
 
-const FUENTE := preload("res://assets/fuentes/Bangers-Regular.ttf")
 const ROSA := Color("ef8fae")
 const ROJO := Color("e2675f")
 const RUBIO := Color("f0c674")
@@ -44,7 +43,7 @@ const COSAS := {
 			[[[-26, -28], [-16, -21], [0, -19], [16, -21], [26, -28], [22, -17], [0, -14], [-22, -17]], CASTANO]],
 	"boina": [[[[-16, -17], [-17, -29], [2, -31], [19, -29], [18, -21], [5, -16]], ROSA]],
 	"boina_roja": [[[[-17, -14], [-18, -24], [-6, -30], [10, -30], [20, -25], [19, -18], [6, -15]], ROJO]],
-	"bigotito": [[[[-0.5, 3], [4.5, 3], [4.5, 6.5], [-0.5, 6.5]], C]],
+	"bigotito": [[[[-3, 4.5], [7, 4.5], [7, 7.5], [-3, 7.5]], C]],  # ancho y pegado a la boca: estrecho parecía una nariz
 	"estrella": [[[[-17, -10], [16, -12], [15, -5], [10, -1], [4, -4], [0, -5], [-4, -2], [-10, -1], [-16, -4]], C]],
 	"barba": [[[[-17, 4], [-12, 14], [-4, 19], [4, 20], [12, 17], [17, 8], [13, 10], [8, 15], [2, 16], [-4, 15], [-10, 11]], Color("8a5a3a")]],
 	"corbata": [[[[0, 14], [5, 14], [4.5, 16], [6, 22], [2.5, 25], [-1, 22], [0.5, 16]], ROJO]],
@@ -97,7 +96,7 @@ func _draw() -> void:
 	if pelo == "tupe_rubio":  # el magnate, con su moreno naranja
 		draw_colored_polygon(interior, Color("f5a060", 0.35))
 	draw_circle(Vector2(-9, -12), 5.0, Color(1, 1, 1, 0.55))  # brillo viscoso
-	_ropa(cuerpo, foto)
+	_ropa(cuerpo, Tinta.temblar(forma(28, t, Vector2.ZERO), 77, foto, 0.8), foto)
 	if cara == "barba":  # la barba va por debajo de la boca: la sonrisa se ve encima
 		_cosa(COSAS.barba[0][0], COSAS.barba[0][1], foto)
 	var mira := velocidad.normalized() * 3.0 if velocidad.length() > 30.0 else Vector2.ZERO
@@ -212,15 +211,16 @@ func vestir(aspecto: Dictionary) -> void:
 
 
 # Camisetas y uniformes: la parte de abajo del moco (por debajo de la boca) pintada encima del cuerpo.
-func _ropa(cuerpo: PackedVector2Array, foto: int) -> void:
+func _ropa(cuerpo: PackedVector2Array, quieto: PackedVector2Array, foto: int) -> void:
 	if ropa == "corbata":
 		_cosa(COSAS.corbata[0][0], COSAS.corbata[0][1], foto)
 		return
 	if ropa == "nada":
 		return
 	var abajo := PackedVector2Array()
-	for q in cuerpo:
+	for q in quieto:  # sobre el cuerpo sin estirar: la ropa sigue a la cara, no se va hacia la cola
 		abajo.append(Vector2(q.x, maxf(q.y, 15.0 - 0.45 * absf(q.x))))  # cuello curvo: sube por los lados y pasa por debajo de la boca
+	var telas := Geometry2D.intersect_polygons(Tinta.temblar(abajo, 41, foto, 0.6), cuerpo)  # y sin salirse del cuerpo estirado
 	var franjas := []  # [rectángulo, color]
 	match ropa:
 		"militar":
@@ -240,11 +240,10 @@ func _ropa(cuerpo: PackedVector2Array, foto: int) -> void:
 	for f: Array in franjas:
 		var r: Rect2 = f[0]
 		var caja := PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
-		for trozo in Geometry2D.intersect_polygons(Tinta.temblar(abajo, 41, foto, 0.6), caja):
-			draw_colored_polygon(trozo, f[1])
+		for tela in telas:
+			for trozo in Geometry2D.intersect_polygons(tela, caja):
+				draw_colored_polygon(trozo, f[1])
 	match ropa:
-		"diez", "amarilla", "cafetera":
-			draw_string(FUENTE, Vector2(-5, 21.5), "10", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, C if ropa == "diez" else Color("4f7fc9"))
 		"reloj":  # reloj verde de héroe en un lado
 			draw_circle(Vector2(-11, 17.5), 3.5, Color("7cc48a"))
 			draw_circle(Vector2(-11, 17.5), 1.5, Color("2e2a3a"))
@@ -256,8 +255,6 @@ func _ropa(cuerpo: PackedVector2Array, foto: int) -> void:
 				draw_line(Vector2(x, 15.5), Vector2(x + 6, 15.5), Color("4a5530"), 1.2)
 			for lado in [-1.0, 1.0]:
 				draw_rect(Rect2(lado * 17 - 3.5, 8.5, 7, 2.5), Color("f5d38a"))
-		"siete":
-			draw_string(FUENTE, Vector2(-1.5, 21.5), "7", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, CREMA)
 		"traje":
 			draw_colored_polygon(PackedVector2Array([Vector2(-1, 14), Vector2(2, 14), Vector2(2, 20), Vector2(0.5, 22), Vector2(-1, 20)]), ROJO)
 

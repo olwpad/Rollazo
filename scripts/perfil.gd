@@ -23,7 +23,7 @@ const NOMBRES := {"calvo": "CALVO", "cresta": "CRESTA", "skrillex": "MEDIO RAPAD
 		"ciborg": "GAFAS DE CÍBORG", "mascara_roja": "MÁSCARA DE HÉROE", "mascara_negra": "MÁSCARA NEGRA Y ROJA",
 		"cafetera": "CAMISETA CAFETERA", "reloj": "CAMISETA CON RELOJ VERDE"}
 # Candados: partidas jugadas (ganes o pierdas). Lo que no sale aquí es libre.
-# Libres desde el principio: el rey del rock, el cómico mudo y el 10 zurdo (tupe, bombin, bigotito, barba, diez).
+# Libres desde el principio: el rey del rock, el cómico mudo y el 10 zurdo (tupe, bombin, bigotito, corto, diez).
 var partidas_para := {"afro": 4, "vaquero": 5, "melena": 6,
 		"rizado": 7, "boina": 7, "diva": 8, "boina_roja": 9, "militar": 9, "redondas": 10, "tupe_rubio": 11,
 		"corbata": 11, "engominado": 13, "siete": 13, "rizos": 14,
@@ -36,7 +36,7 @@ const FILAS := {"pelo": PELOS, "sombrero": SOMBREROS, "cara": CARAS, "ropa": ROP
 # Famosos ya montados: un clic y el moco va vestido entero. Nombres genéricos, sin apodos reales.
 const LOOKS := {
 	"EL REY DEL ROCK": {"pelo": "tupe"}, "EL CÓMICO MUDO": {"sombrero": "bombin", "cara": "bigotito"},
-	"EL 10 ZURDO": {"pelo": "corto", "cara": "barba", "ropa": "diez"}, "EL DEL AFRO DISCO": {"pelo": "afro"},
+	"EL 10 ZURDO": {"pelo": "corto", "ropa": "diez"}, "EL DEL AFRO DISCO": {"pelo": "afro"},
 	"EL HEAVY": {"pelo": "melena"}, "LA DIVA DEL SOUL": {"pelo": "diva"}, "LA ESTRELLA COUNTRY": {"sombrero": "vaquero"},
 	"EL PINTOR GENIO": {"sombrero": "boina", "cara": "rizado"}, "EL MÚSICO PACIFISTA": {"pelo": "melena", "cara": "redondas"},
 	"LA ESTRELLA DEL POP": {"cara": "estrella"}, "EL COMANDANTE": {"sombrero": "boina_roja", "ropa": "militar"},
