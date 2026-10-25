@@ -67,10 +67,19 @@ func _al_conectar(id: int) -> void:
 	if multiplayer.is_server():
 		ids.append(id)
 		jugadores_cambiaron.emit()
+		_lista.rpc(ids)  # los clientes también quieren saber quién está en la sala
 
 
 func _al_desconectar(id: int) -> void:
 	ids.erase(id)
+	jugadores_cambiaron.emit()
+	if multiplayer.is_server():
+		_lista.rpc(ids)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _lista(nuevos: Array) -> void:
+	ids.assign(nuevos)
 	jugadores_cambiaron.emit()
 
 

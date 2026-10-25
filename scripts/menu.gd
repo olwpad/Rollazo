@@ -1,7 +1,7 @@
 # Menú: crear partida, unirse por IP y empezar (solo el anfitrión).
 extends Control
 
-@onready var ip: LineEdit = $Caja/IP
+@onready var ip: LineEdit = $Caja/Fila/IP
 @onready var estado: Label = $Caja/Estado
 @onready var empezar: Button = $Caja/Empezar
 
@@ -9,7 +9,7 @@ extends Control
 func _ready() -> void:
 	Musica.tocar("menu")
 	$Caja/Crear.pressed.connect(_crear)
-	$Caja/Unirse.pressed.connect(_unirse)
+	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
 	empezar.pressed.connect(func(): Red.empezar_carrera.rpc(randi()))
 	Red.jugadores_cambiaron.connect(_actualizar)
@@ -40,5 +40,9 @@ func _actualizar() -> void:
 	var anfitrion := Red.es_online() and multiplayer.is_server()
 	empezar.visible = anfitrion
 	$Caja/Solo.visible = not Red.es_online()  # practicar con la partida abierta dejaría a los demás colgados
+	var solo_yo: Array[int] = [1]
+	$Sala.mostrar(Red.ids if Red.es_online() else solo_yo, multiplayer.get_unique_id())
+	var mocos := "%d/%d MOCOS · " % [Red.ids.size(), Red.MAX_JUGADORES] if Red.es_online() else ""
+	$Pie.text = mocos + "ESC VOLVER · M MÚSICA"
 	if anfitrion:
-		estado.text = "Jugadores: %d/%d" % [Red.ids.size(), Red.MAX_JUGADORES]
+		estado.text = "Pasa tu IP a los demás y pulsa empezar cuando estéis"

@@ -31,6 +31,8 @@ func _process(delta: float) -> bool:
 			fallos.append("mi moco no se movió a la derecha (x %.0f, máximo %.0f)" % [x_inicial, x_max])
 		if jugadores == null or jugadores.get_child_count() != 2:
 			fallos.append("el cliente no ve 2 mocos")
+		if root.get_node("Red").ids.size() != 2:
+			fallos.append("el cliente no recibió la lista de jugadores (%s)" % [root.get_node("Red").ids])
 		var camaras := current_scene.find_children("*", "Camera2D", true, false)
 		if camaras.size() != 1 or camaras[0].get_parent().name != str(root.get_node("Red").multiplayer.get_unique_id()):
 			fallos.append("el cliente debe tener 1 cámara, la de su moco")
