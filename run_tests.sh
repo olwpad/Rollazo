@@ -3,4 +3,5 @@
 G="${GODOT:-$LOCALAPPDATA/Microsoft/WinGet/Packages/GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe/Godot_v4.7.2-stable_win64_console.exe}"
 cd "$(dirname "$0")"
 "$G" --headless --path . --import >/dev/null 2>&1
-"$G" --headless --path . --script res://tests/run_tests.gd
+"$G" --headless --path . --script res://tests/run_tests.gd || exit 1
+"$G" --headless --path . --script res://tests/sim_columpio.gd || exit 1

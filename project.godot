@@ -4,6 +4,8 @@ config_version=5
 
 [application]
 
+run/main_scene="res://scenes/prueba_columpio.tscn"
+
 config/name="Rollazo"
 config/features=PackedStringArray("4.7")
 
