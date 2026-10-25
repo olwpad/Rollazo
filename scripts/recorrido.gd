@@ -231,6 +231,11 @@ func _physics_process(delta: float) -> void:
 			var id := j.id_dueno()
 			if id in clasificacion.llegadas and not id in espectadores and j.global_position.y > $Meta.position.y + 400.0:
 				_mandar_a_mirar(j)
+	if multiplayer.is_server():  # quien sobrevuela la meta sin tocarla cae fuera de la franja Caida
+		for j in jugadores():
+			var p := j.global_position
+			if not j.id_dueno() in espectadores and (p.y > limites.end.y + 600.0 or p.x < limites.position.x - 1500.0 or p.x > limites.end.x + 1500.0):
+				_al_caer(j)
 	if desde_primero >= 0.0 and not en_resultados and multiplayer.is_server():
 		desde_primero += delta
 		if clasificacion.todos_llegaron(Red.ids) or desde_primero >= ESPERA_TRAS_PRIMERO:

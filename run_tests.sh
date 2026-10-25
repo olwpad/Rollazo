@@ -17,6 +17,7 @@ if echo "$SALIDA" | grep -q "SCRIPT ERROR"; then echo "FALLO: hubo errores de sc
 "$G" --headless --path . --script res://tests/sim_agarrar.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_aro.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_sierra.gd || exit 1
+"$G" --headless --path . --script res://tests/sim_caida.gd || exit 1
 # Prueba de red con dos procesos: anfitrión en segundo plano y cliente.
 LOG="$(mktemp)"
 "$G" --headless --path . --script res://tests/sim_red_anfitrion.gd > "$LOG" 2>&1 &
