@@ -26,6 +26,10 @@ func _al_efecto(tipo: String, pos: Vector2) -> void:
 			_salpicar(pos)
 			_moco().aplastar(Vector2(1.35, 0.65))
 			_temblar(0.35)
+		"choque":
+			_salpicar(pos)
+			_moco().aplastar(Vector2(0.7, 1.3))
+			_temblar(0.5)
 		"rotura":
 			var trozos: CPUParticles2D = jugador.get_node("PapelVisual/Trozos")
 			trozos.global_position = pos

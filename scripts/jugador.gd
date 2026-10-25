@@ -9,6 +9,7 @@ signal aterrizaje_fuerte
 signal efecto_red(tipo: String, pos: Vector2)  # llega a todos los PCs
 
 const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
+const VELOCIDAD_CHOQUE := 300.0  # por debajo, dos mocos solo se tocan
 const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a")]  # menta, rosa, lavanda, melocotón
 
 # Valores iniciales: se ajustan jugando desde el Inspector del editor.
@@ -116,7 +117,9 @@ func _physics_process(delta: float) -> void:
 
 	var caida := velocity.y
 	var estaba_en_aire := not is_on_floor()
+	var antes := velocity  # move_and_slide recorta la parte que va contra el otro moco
 	move_and_slide()
+	_chocar(antes)
 	if estaba_en_aire and is_on_floor() and caida > VELOCIDAD_PLOF:
 		aterrizaje_fuerte.emit()
 		efecto.rpc("aterrizaje", global_position + Vector2(0, 18))
@@ -132,6 +135,20 @@ func _physics_process(delta: float) -> void:
 			papel_roto.emit()
 			efecto.rpc("rotura", (global_position + papel_ancla) / 2.0)
 	_publicar_papel()
+
+
+# Si este moco ha chocado fuerte con otro, ambos rebotan (solo en el anfitrión).
+func _chocar(antes: Vector2) -> void:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		var otro := c.get_collider() as Jugador
+		if otro == null or (antes - otro.velocity).dot(c.get_normal()) > -VELOCIDAD_CHOQUE:
+			continue
+		var r := Rebote.calcular(antes, otro.velocity, c.get_normal())
+		velocity = r[0]
+		otro.velocity = r[1]
+		efecto.rpc("choque", c.get_position())
+		return
 
 
 # El anfitrión avisa de un efecto visual a todos los PCs (también a sí mismo: call_local).

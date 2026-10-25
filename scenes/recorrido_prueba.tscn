@@ -182,6 +182,7 @@ color = Color(0.35, 0.55, 0.75, 1)
 polygon = PackedVector2Array(-350, -40, 350, -40, 350, 40, -350, 40)
 
 [node name="Caida" type="Area2D" parent="." unique_id=1305548216]
+collision_mask = 3
 position = Vector2(1900, 1300)
 
 [node name="Forma" type="CollisionShape2D" parent="Caida" unique_id=1941450898]
@@ -190,12 +191,14 @@ shape = SubResource("r10")
 [node name="Controles" type="Node2D" parent="." unique_id=1306230352]
 
 [node name="Control1" type="Area2D" parent="Controles" unique_id=1445083406]
+collision_mask = 3
 position = Vector2(1560, 610)
 
 [node name="Forma" type="CollisionShape2D" parent="Controles/Control1" unique_id=49763193]
 shape = SubResource("r11")
 
 [node name="Meta" type="Area2D" parent="." unique_id=1881044405]
+collision_mask = 3
 position = Vector2(3800, 600)
 
 [node name="Forma" type="CollisionShape2D" parent="Meta" unique_id=1369543522]
