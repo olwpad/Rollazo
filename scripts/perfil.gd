@@ -6,18 +6,18 @@ const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b3
 		Color("f5d38a"), Color("8ec5e8"), Color("c7d97a"), Color("e8a0d8")]
 const NOMBRES_COLOR := ["MENTA", "ROSA", "LAVANDA", "MELOCOTÓN", "LIMÓN", "CIELO", "PISTACHO", "CHICLE"]
 # Los famosos son homenajes: se reconocen por el estilo, nunca con su nombre (ni marcas ni escudos).
-const PELOS := ["calvo", "cresta", "skrillex", "tupe", "afro", "melena", "diva", "tupe_rubio", "engominado", "rizos", "cinta", "raya", "rulos", "cepillo", "rulos_cortos"]
+const PELOS := ["calvo", "cresta", "skrillex", "tupe", "afro", "melena", "diva", "tupe_rubio", "engominado", "rizos", "cinta", "raya", "corto", "rulos", "cepillo", "rulos_cortos"]
 const SOMBREROS := ["nada", "gorra", "lana", "chistera", "corona", "bombin", "vaquero", "boina", "boina_roja", "oca"]
 const CARAS := ["nada", "bigotito", "rizado", "redondas", "estrella", "barba", "sonrisa", "pasta", "ciborg", "mascara_roja", "mascara_negra"]
-const ROPAS := ["nada", "chandal", "corbata", "diez", "siete", "amarilla", "traje", "cafetera", "reloj"]
+const ROPAS := ["nada", "militar", "corbata", "diez", "siete", "amarilla", "traje", "cafetera", "reloj"]
 const NOMBRES := {"calvo": "CALVO", "cresta": "CRESTA", "skrillex": "MEDIO RAPADO", "tupe": "TUPÉ DE ROCKERO",
 		"afro": "AFRO DISCO", "melena": "MELENA HEAVY", "diva": "MOÑO DE DIVA", "tupe_rubio": "TUPÉ RUBIO",
-		"engominado": "ENGOMINADO", "rizos": "MELENA RUBIA RIZADA", "cinta": "RIZOS CON CINTA", "raya": "RAYA AL LADO",
+		"engominado": "ENGOMINADO", "rizos": "MELENA RUBIA RIZADA", "cinta": "RIZOS CON CINTA", "raya": "RAYA AL LADO", "corto": "PELO CORTO",
 		"nada": "NADA", "gorra": "GORRA", "lana": "GORRO DE LANA", "chistera": "CHISTERA", "corona": "CORONA",
 		"bombin": "BOMBÍN", "vaquero": "SOMBRERO VAQUERO", "boina": "BOINA DE PINTOR", "boina_roja": "BOINA ROJA",
 		"bigotito": "BIGOTITO", "rizado": "BIGOTE RIZADO", "redondas": "GAFAS REDONDAS", "estrella": "GAFAS DE ESTRELLA",
 		"barba": "BARBA", "sonrisa": "SONRISA DE CRACK", "pasta": "GAFAS DE PASTA",
-		"chandal": "CHÁNDAL TRICOLOR", "corbata": "CORBATA LARGA", "diez": "CAMISETA DEL 10", "siete": "CAMISETA DEL 7",
+		"militar": "UNIFORME MILITAR", "corbata": "CORBATA LARGA", "diez": "CAMISETA DEL 10", "siete": "CAMISETA DEL 7",
 		"amarilla": "CAMISETA AMARILLA", "traje": "TRAJE DE DEBATE",
 		"rulos": "RULOS NEGROS", "cepillo": "PELO CEPILLO", "rulos_cortos": "RULOS DE CANTERANO", "oca": "GORRO DE OCA",
 		"ciborg": "GAFAS DE CÍBORG", "mascara_roja": "MÁSCARA DE HÉROE", "mascara_negra": "MÁSCARA NEGRA Y ROJA",
@@ -25,7 +25,7 @@ const NOMBRES := {"calvo": "CALVO", "cresta": "CRESTA", "skrillex": "MEDIO RAPAD
 # Candados: partidas jugadas (ganes o pierdas). Lo que no sale aquí es libre.
 # Libres desde el principio: el rey del rock, el cómico mudo y el 10 zurdo (tupe, bombin, bigotito, barba, diez).
 var partidas_para := {"afro": 4, "vaquero": 5, "melena": 6,
-		"rizado": 7, "boina": 7, "diva": 8, "boina_roja": 9, "chandal": 9, "redondas": 10, "tupe_rubio": 11,
+		"rizado": 7, "boina": 7, "diva": 8, "boina_roja": 9, "militar": 9, "redondas": 10, "tupe_rubio": 11,
 		"corbata": 11, "engominado": 13, "siete": 13, "rizos": 14,
 		"cinta": 15, "sonrisa": 15, "amarilla": 15, "pasta": 16, "raya": 17, "traje": 17,
 		"cafetera": 18, "rulos": 19, "cepillo": 20, "ciborg": 20, "oca": 21, "rulos_cortos": 22,
@@ -36,10 +36,10 @@ const FILAS := {"pelo": PELOS, "sombrero": SOMBREROS, "cara": CARAS, "ropa": ROP
 # Famosos ya montados: un clic y el moco va vestido entero. Nombres genéricos, sin apodos reales.
 const LOOKS := {
 	"EL REY DEL ROCK": {"pelo": "tupe"}, "EL CÓMICO MUDO": {"sombrero": "bombin", "cara": "bigotito"},
-	"EL 10 ZURDO": {"cara": "barba", "ropa": "diez"}, "EL DEL AFRO DISCO": {"pelo": "afro"},
+	"EL 10 ZURDO": {"pelo": "corto", "cara": "barba", "ropa": "diez"}, "EL DEL AFRO DISCO": {"pelo": "afro"},
 	"EL HEAVY": {"pelo": "melena"}, "LA DIVA DEL SOUL": {"pelo": "diva"}, "LA ESTRELLA COUNTRY": {"sombrero": "vaquero"},
 	"EL PINTOR GENIO": {"sombrero": "boina", "cara": "rizado"}, "EL MÚSICO PACIFISTA": {"pelo": "melena", "cara": "redondas"},
-	"LA ESTRELLA DEL POP": {"cara": "estrella"}, "EL COMANDANTE": {"sombrero": "boina_roja", "ropa": "chandal"},
+	"LA ESTRELLA DEL POP": {"cara": "estrella"}, "EL COMANDANTE": {"sombrero": "boina_roja", "ropa": "militar"},
 	"EL MAGNATE": {"pelo": "tupe_rubio", "ropa": "corbata"}, "EL 7 GOLEADOR": {"pelo": "engominado", "ropa": "siete"},
 	"LA DIVA LATINA": {"pelo": "rizos"}, "EL MAGO DEL BALÓN": {"pelo": "cinta", "cara": "sonrisa", "ropa": "amarilla"},
 	"EL DJ": {"pelo": "skrillex", "cara": "pasta"}, "EL DEBATIENTE": {"pelo": "raya", "ropa": "traje"},
