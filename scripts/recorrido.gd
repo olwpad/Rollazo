@@ -20,6 +20,7 @@ var colores := {}  # id -> color de su moco, en todos los PCs
 
 
 func _ready() -> void:
+	Musica.tocar("carrera")
 	$Spawner.spawn_function = crear_jugador
 	if multiplayer.is_server():
 		var ids: Array[int] = [1]  # sin red: solo el jugador local

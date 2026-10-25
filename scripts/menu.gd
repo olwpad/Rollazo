@@ -7,6 +7,7 @@ extends Control
 
 
 func _ready() -> void:
+	Musica.tocar("menu")
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(func(): get_tree().change_scene_to_file(Red.RECORRIDO))
