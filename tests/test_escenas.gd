@@ -16,3 +16,11 @@ func test_prueba_tiene_techo_enganchable() -> void:
 	var n := e.instantiate()
 	comprobar(n.find_child("Techo*", true, false) != null and n.find_child("Techo*", true, false).is_in_group("enganchable"), "techo enganchable")
 	n.free()
+
+
+func test_jugador_tiene_papel_visual() -> void:
+	var j: Node = load("res://scenes/jugador.tscn").instantiate()
+	var l := j.get_node_or_null("PapelVisual")
+	comprobar(l is Line2D, "PapelVisual es Line2D")
+	comprobar(l != null and l.get_node_or_null("Trozos") is CPUParticles2D, "tiene Trozos")
+	j.free()

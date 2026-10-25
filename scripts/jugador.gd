@@ -71,3 +71,11 @@ func _lanzar_papel(objetivo: Vector2) -> void:
 	if choque is Node and (choque as Node).is_in_group("enganchable"):
 		var punto := rayo.get_collision_point()
 		papel = PapelRope.new(punto, global_position.distance_to(punto), segundos_aguante)
+
+
+# Que se vea blando: se inclina con la velocidad y se estira al ir rápido.
+func _process(_delta: float) -> void:
+	var visual: Node2D = $Visual
+	visual.rotation = lerp_angle(visual.rotation, clampf(velocity.x / 1500.0, -0.5, 0.5), 0.2)
+	var estiron := clampf(velocity.length() / 2000.0, 0.0, 0.25)
+	visual.scale = visual.scale.lerp(Vector2(1.0 - estiron * 0.5, 1.0 + estiron), 0.3)
