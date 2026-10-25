@@ -6,7 +6,7 @@ const ESTELA_PUNTOS := 10
 # Qué suena con cada efecto: este señal llega a todos los PCs, así cada uno oye lo que ve.
 const SONIDOS := {"enganche": "enganchar", "agarrado": "enganchar", "aterrizaje": "salpicar", "choque": "salpicar",
 	"reaparecer": "salpicar", "fuego": "salpicar", "cortado": "soltar", "rotura": "soltar", "corte": "soltar",
-	"meta": "meta", "poder": "poder"}
+	"meta": "meta", "poder": "poder", "sierra": "sierra", "control": "control"}
 
 @onready var jugador: Jugador = get_parent()
 @onready var estela: Line2D = $Estela
@@ -19,7 +19,7 @@ func _ready() -> void:
 	top_level = true  # los efectos se quedan en el mundo aunque el jugador se mueva
 	jugador.efecto_red.connect(_al_efecto)
 	# jugador.gd tiene class_name y no puede nombrar autoloads en los sims: el sonido se pide desde aquí
-	jugador.papel_lanzado.connect(func(): Sonidos.tocar("lanzar", jugador.global_position))  # solo anfitrión
+	jugador.papel_lanzado.connect(func(): Sonidos.tocar("lanzar", jugador.global_position))  # el del anfitrión; el de un cliente suena en su PC al pulsar
 	humo.name = "Humo"
 	humo.emitting = false
 	humo.one_shot = true

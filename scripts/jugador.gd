@@ -127,6 +127,8 @@ func _enviar_input() -> void:
 	for accion in EVENTOS:
 		if e.get(accion, false):
 			_mis_contadores[accion] = _mis_contadores.get(accion, 0) + 1
+	if e.lanzar:
+		papel_lanzado.emit()  # el anfitrión no sonoriza el clic de otros: suena aquí, en el PC de su dueño
 	recibir_input.rpc_id(1, e, _mis_contadores)
 
 

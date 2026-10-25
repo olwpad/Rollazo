@@ -48,7 +48,7 @@ func _process(delta: float) -> bool:
 			t_salida = espera
 			if x_cliente_max < x_cliente_inicial + 100.0:
 				fallos.append("el anfitrión no movió el moco del cliente con su entrada")
-		if current_scene.hud.tabla.get_child_count() == 1:
+		if current_scene.hud.get_node("Marcador").filas.size() == 1:
 			_fin("")  # el cliente se fue, su moco desapareció y la ronda terminó con 1 fila
 		elif espera - t_salida > 2.0:
 			_fin("la ronda no termina cuando se va el único que faltaba")
