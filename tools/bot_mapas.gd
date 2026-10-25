@@ -305,7 +305,9 @@ func _bot(b: Dictionary) -> void:
 		if b.t_prog > 10.0:
 			b.stuck.append([snappedf(p.x, 1), snappedf(p.y, 1), b.estado, b.prog, _cerca(p, 300)])
 			b.t_prog = 0.0
-	if _vertical(b.prog) or _vertical(b.prog + 1) or _vertical(b.idx_hook):
+	# El primer saliente de una torre puede quedar lejos (se entra andando): hasta acercarse, como siempre
+	var entrada_cerca: bool = b.prog < camino.size() and p.distance_to(camino[b.prog]) < ALCANCE + 150.0
+	if _vertical(b.prog) or (_vertical(b.prog + 1) and entrada_cerca) or _vertical(b.idx_hook):
 		_trepar(b, j, p, dt)
 		return
 	var s := _suelo(p)
@@ -419,7 +421,8 @@ func _trepar(b: Dictionary, j: Jugador, p: Vector2, dt: float) -> void:
 			b.estado = "aire"
 		return
 	b.t_hook = 0.0
-	if cima and j.is_on_floor() and _plataforma_debajo(j):  # ya en el último descanso: fuera de la torre
+	# Ya en el último descanso, o en el suelo de un pozo tras entrar andando: fuera de la cima
+	if cima and j.is_on_floor():
 		b.idx_hook = -1
 		return
 	if not cima or (j.velocity.y > 150.0 and not _plataforma_debajo(j)):  # arriba, solo si va a caerse
