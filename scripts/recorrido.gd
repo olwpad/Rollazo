@@ -529,7 +529,7 @@ func llegada(id: int, puesto: int, t: float) -> void:
 	if not Red.es_online() and j != null:
 		j.congelado = true  # (solo hay un moco, el local) quieto mientras se ve el tiempo
 		var serial := _serial_mapa
-		await get_tree().create_timer(SEGUNDOS_MAPA_NUEVO).timeout
+		await get_tree().create_timer(SEGUNDOS_MAPA_NUEVO, false).timeout
 		_mapa_nuevo_si_vigente(serial)
 
 
