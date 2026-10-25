@@ -81,6 +81,16 @@ Una casa gigante: baño, cocina, salón. Los jugadores son muñequitos con físi
 - Si alguien se cae o se queda atascado, reaparece rápido en un punto de control.
 - Al terminar la ronda, se muestra una **repetición del fallo más ridículo**.
 
+## 5b. Estilo visual: "cómic-anime" (aprobado por el autor, 2026-10-24)
+
+Inspirado, sin copiar, en obras que le gustan al autor: Spider-Man/Spider-Verse, Black Clover, Ao Ashi, Steins;Gate y Rocket League.
+- **Cómic (Spider-Verse):** contornos negros gruesos, colores planos y vivos, puntitos de imprenta (halftone) y onomatopeyas en pantalla ("¡FWIP!" al lanzar, "¡RASSS!" al romperse, "¡PLOF!" al estamparse).
+- **Anime (Black Clover, Ao Ashi):** líneas de velocidad cuando vas rápido, pantallazo de impacto al chocar entre jugadores y un aura para el que va primero.
+- **Rocket League:** cuenta atrás épica, explosión al cruzar la meta, repetición y personalización (rollos con estampados).
+- **Para más adelante:** rollos especiales con poderes (idea de los grimorios) y un salto temporal de una vez por carrera o un fantasma de tu mejor intento (Steins;Gate).
+- **Recursos:** packs gratuitos con licencia que permita uso comercial (preferiblemente CC0, como Kenney), más efectos programados.
+- **Controles añadidos:** Espacio salta desde el suelo.
+
 ## 6. Fases
 
 1. **Prototipo para un jugador:** un muñeco, el papel que se engancha y se rasga, y un recorrido de prueba. Esta fase solo busca que **columpiarse sea divertido por sí solo**. No se avanza hasta conseguirlo, y **lo decide el autor jugándolo** (mi decisión: al final de la fase hay una prueba con él).

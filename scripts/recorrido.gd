@@ -15,7 +15,19 @@ func _ready() -> void:
 	$Meta.body_entered.connect(_al_llegar)
 	for control: Area2D in $Controles.get_children():
 		control.body_entered.connect(_al_pasar_control.bind(control))
+	for dibujo: Polygon2D in find_children("Dibujo", "Polygon2D"):
+		_poner_borde_comic(dibujo)
 	reiniciar()
+
+
+# Contorno negro grueso, como en los cómics.
+func _poner_borde_comic(dibujo: Polygon2D) -> void:
+	var borde := Line2D.new()
+	borde.points = dibujo.polygon
+	borde.closed = true
+	borde.width = 6.0
+	borde.default_color = Color.BLACK
+	dibujo.add_child(borde)
 
 
 func _physics_process(delta: float) -> void:

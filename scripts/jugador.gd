@@ -4,6 +4,10 @@ class_name Jugador
 extends CharacterBody2D
 
 signal papel_roto
+signal papel_lanzado
+signal aterrizaje_fuerte
+
+const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
 
 # Valores iniciales: se ajustan jugando desde el Inspector del editor.
 @export var gravedad := 1400.0
@@ -14,6 +18,7 @@ signal papel_roto
 @export var segundos_aguante := 3.0
 @export var tiempo_min_impulso := 0.2
 @export var fuerza_salto := 650.0
+@export_enum("hombre", "mujer", "aventurero", "aventurera", "zombi", "robot") var personaje := "hombre"
 
 var papel: PapelRope = null  # null = no está enganchado
 var _tiempo_enganchado := 0.0
@@ -53,7 +58,11 @@ func _physics_process(delta: float) -> void:
 	if papel != null:
 		papel.cambiar_largo(e.eje_largo * velocidad_encoger * delta)
 
+	var caida := velocity.y
+	var estaba_en_aire := not is_on_floor()
 	move_and_slide()
+	if estaba_en_aire and is_on_floor() and caida > VELOCIDAD_PLOF:
+		aterrizaje_fuerte.emit()
 
 	if papel != null:
 		var r := Pendulo.restringir(global_position, velocity, papel.ancla, papel.largo)
@@ -80,6 +89,16 @@ func _lanzar_papel(objetivo: Vector2) -> void:
 	if choque is Node and (choque as Node).is_in_group("enganchable"):
 		var punto := rayo.get_collision_point()
 		papel = PapelRope.new(punto, global_position.distance_to(punto), segundos_aguante)
+		papel_lanzado.emit()
+
+
+# Qué dibujo del personaje toca según lo que está haciendo.
+static func elegir_pose(en_suelo: bool, enganchado: bool, vel: Vector2) -> String:
+	if enganchado:
+		return "rope"
+	if en_suelo:
+		return "walk" if absf(vel.x) > 20.0 else "idle"
+	return "jump" if vel.y < 0.0 else "fall"
 
 
 # Que se vea blando: se inclina con la velocidad y se estira al ir rápido.
@@ -88,3 +107,11 @@ func _process(_delta: float) -> void:
 	visual.rotation = lerp_angle(visual.rotation, clampf(velocity.x / 1500.0, -0.5, 0.5), 0.2)
 	var estiron := clampf(velocity.length() / 2000.0, 0.0, 0.25)
 	visual.scale = visual.scale.lerp(Vector2(1.0 - estiron * 0.5, 1.0 + estiron), 0.3)
+
+	var pose := elegir_pose(is_on_floor(), papel != null, velocity)
+	if pose == "walk":
+		pose = "walk%d" % (Time.get_ticks_msec() / 80 % 8)  # 8 dibujos, uno cada 80 ms
+	var sprite: Sprite2D = $Visual/Pose
+	sprite.texture = load("res://assets/personajes/%s/%s.png" % [personaje, pose])  # load() cachea, no relee el disco
+	if absf(velocity.x) > 20.0:
+		sprite.flip_h = velocity.x < 0.0

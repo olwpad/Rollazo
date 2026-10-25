@@ -16,12 +16,14 @@ func _process(_delta: float) -> void:
 	clear_points()
 	var papel := jugador.papel
 	if papel == null:
+		$Contorno.clear_points()
 		return
 	var ancla := papel.ancla
 	if papel.aguante < 0.3:  # tiembla: aviso de que se va a romper
 		ancla += Vector2(randf_range(-2.0, 2.0), randf_range(-2.0, 2.0))
 	add_point(jugador.global_position)
 	add_point(ancla)
+	$Contorno.points = points
 	default_color = Color.WHITE.lerp(Color(0.9, 0.15, 0.15), 1.0 - papel.aguante)
 	_ultimo_tramo = [jugador.global_position, papel.ancla]
 
