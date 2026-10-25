@@ -38,6 +38,7 @@ var agarre_pos := Vector2.ZERO
 
 var agarrado_a: Jugador = null  # a quién me agarro (solo en el anfitrión)
 var carga := 0  # cuántos están agarrados a mí
+var congelado := false  # quieto: durante la postal de la ronda o ya de espectador (solo en el anfitrión)
 
 const EVENTOS := ["lanzar", "saltar", "cortar", "agarrar"]
 var _remoto := {"soltar": true, "apunta": Vector2.ZERO, "eje_x": 0.0, "eje_largo": 0.0}
@@ -124,6 +125,9 @@ func _physics_process(delta: float) -> void:
 			_enviar_input()
 		return  # solo el anfitrión simula; los demás reciben la posición por el Sync
 	var e := _leer_input()
+	if congelado:  # se lee la entrada igual, para que un clic durante la postal no salte después
+		velocity = Vector2.ZERO
+		return
 	if e.cortar:
 		_cortar_cercanos()
 	if e.agarrar:

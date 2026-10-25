@@ -37,31 +37,58 @@ func meta(t: float, mejor: float, puesto: int, con_repetir: bool) -> void:
 			"\nR para repetir" if con_repetir else ""]
 
 
-# filas: [[color del moco, puntos totales], ...] ya ordenadas de más a menos puntos.
-func resultados(filas: Array) -> void:
-	mensaje.text = ""
+# filas: [[color, nombre, victorias, segundos totales], ...] ya ordenadas, el primero arriba.
+# La misma tabla sirve para Tab durante la carrera y para el final de cada ronda.
+func marcador(filas: Array) -> void:
 	limpiar_tabla()
-	for i in filas.size():
+	for f: Array in filas:
 		var fila := HBoxContainer.new()
 		var mancha := Label.new()
 		mancha.text = "●"
-		mancha.add_theme_color_override("font_color", filas[i][0])
+		mancha.add_theme_color_override("font_color", f[0])
 		var texto := Label.new()
-		texto.text = str(filas[i][1])  # el orden ya dice el puesto; Bangers no tiene "º"
+		texto.text = "%s · %d %s · %s" % [f[1], f[2], "VICTORIA" if f[2] == 1 else "VICTORIAS", minutos(f[3])]
 		texto.add_theme_color_override("font_color", Acuarela.CIRUELA)
 		for l: Label in [mancha, texto]:
 			l.add_theme_font_override("font", mensaje.get_theme_font("font"))
-			l.add_theme_font_size_override("font_size", 56)
+			l.add_theme_font_size_override("font_size", 44)
 			fila.add_child(l)
 		tabla.add_child(fila)
+	$FondoTabla.visible = not filas.is_empty()
+
+
+static func minutos(t: float) -> String:
+	return "%d:%02d" % [int(t) / 60, int(t) % 60]
+
+
+# Texto grande arriba: modo espectador, ganador del torneo...
+func titular(texto: String) -> void:
+	$Titular.text = texto
+
+
+func postal(titulo_: String, semilla: int, filas: Array) -> void:
+	var p: Postal = $Postal
+	p.titulo = titulo_
+	p.semilla = semilla
+	p.filas = filas
+	p.visible = true
+	p.position.y = -p.size.y  # cae desde arriba y se asienta
+	create_tween().tween_property(p, "position:y", (get_viewport().get_visible_rect().size.y - p.size.y) / 2.0, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func ocultar_postal() -> void:
+	$Postal.visible = false
 
 
 func limpiar() -> void:
 	mensaje.text = ""
+	titular("")
 	limpiar_tabla()
 
 
 func limpiar_tabla() -> void:
 	for fila in tabla.get_children():
+		tabla.remove_child(fila)  # fuera ya: queue_free sola dejaría la fila contando hasta el frame siguiente
 		fila.queue_free()
+	$FondoTabla.visible = false
 

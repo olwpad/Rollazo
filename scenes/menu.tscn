@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/columpio_menu.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/sala.gd" id="6"]
 [ext_resource type="Script" path="res://scripts/boton_mancha.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/postal.gd" id="8"]
 
 [sub_resource type="ShaderMaterial" id="cielo"]
 shader = ExtResource("3")
@@ -90,10 +91,59 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 120
 text = "ROLLAZO"
 
+[node name="Partida" type="VBoxContainer" parent="Caja"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Titulo" type="Label" parent="Caja/Partida"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "LA PARTIDA"
+
+[node name="Rondas" type="HBoxContainer" parent="Caja/Partida"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Texto" type="Label" parent="Caja/Partida/Rondas"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "RONDAS"
+
+[node name="Menos" type="Button" parent="Caja/Partida/Rondas"]
+layout_mode = 2
+focus_mode = 0
+text = "‹"
+flat = true
+
+[node name="Valor" type="Label" parent="Caja/Partida/Rondas"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+horizontal_alignment = 1
+text = "5"
+
+[node name="Mas" type="Button" parent="Caja/Partida/Rondas"]
+layout_mode = 2
+focus_mode = 0
+text = "›"
+flat = true
+
+[node name="Mapa" type="Control" parent="Caja/Partida"]
+custom_minimum_size = Vector2(300, 170)
+layout_mode = 2
+script = ExtResource("8")
+
 [node name="Empezar" type="Button" parent="Caja"]
 visible = false
 layout_mode = 2
 text = "¡Empezar carrera!"
+script = ExtResource("7")
+principal = true
+
+[node name="Listo" type="Button" parent="Caja"]
+visible = false
+layout_mode = 2
+text = "Estoy listo"
 script = ExtResource("7")
 principal = true
 

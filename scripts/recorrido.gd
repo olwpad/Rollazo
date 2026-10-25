@@ -6,7 +6,17 @@ const ESCENA_JUGADOR := preload("res://scenes/jugador.tscn")
 const CAMARA := preload("res://scripts/camara.gd")
 const ESPERA_TRAS_PRIMERO := 20.0  # segundos que tienen los demás tras llegar el primero
 const SEGUNDOS_RESULTADOS := 5.0
+const SEGUNDOS_POSTAL := 2.5  # la postal de "RONDA N" con los mocos quietos
+const SEGUNDOS_FINAL := 8.0  # el ganador del torneo antes de volver a la sala
 
+var ronda := 1  # en todos los PCs
+var semilla_actual := 0
+var nombres := {}  # id -> "JUGADOR N", fijo desde que sale su moco
+var llegados: Array[int] = []  # quién ha cruzado la meta esta ronda, en todos los PCs
+var espectadores: Array[int] = []  # llegaron y se cayeron: miran hasta el final de la ronda
+var marcador_filas := []  # [[id, victorias, segundos totales], ...] ya ordenado; lo manda el anfitrión
+var camara_espectador: Camera2D = null
+var objetivo_espectador := 0  # a quién mira; uno más que los que juegan = el mapa entero
 var tiempo := 0.0
 var mejor := INF
 var corriendo := true
@@ -51,6 +61,7 @@ func construir(semilla: int) -> void:
 	for viejo in piezas.get_children() + $Controles.get_children():
 		viejo.get_parent().remove_child(viejo)
 		viejo.queue_free()
+	semilla_actual = semilla
 	var mapa := Generador.generar(semilla)
 	for i in mapa.piezas.size():
 		var p: Dictionary = mapa.piezas[i]
@@ -120,11 +131,53 @@ func _physics_process(delta: float) -> void:
 			_terminar_ronda()
 
 
+func _process(_delta: float) -> void:
+	if camara_espectador == null:
+		return
+	var jugando := _jugando()
+	objetivo_espectador = objetivo_espectador % (jugando.size() + 1)
+	if objetivo_espectador < jugando.size():
+		camara_espectador.global_position = jugando[objetivo_espectador].global_position
+		camara_espectador.zoom = Vector2(0.85, 0.85)
+	else:  # el mapa entero, de la salida a la meta
+		var ancho: float = $Meta.position.x + 600.0
+		camara_espectador.global_position = Vector2(ancho / 2.0 - 300.0, 400.0)
+		var z: float = get_viewport_rect().size.x / ancho
+		camara_espectador.zoom = Vector2(z, z)
+
+
 func _unhandled_input(evento: InputEvent) -> void:
 	if evento.is_action_pressed("volver_menu"):
 		volver_al_menu()
 	if evento.is_action_pressed("reiniciar") and not Red.es_online():  # online manda la ronda
 		reiniciar()
+	if Red.es_online() and not en_resultados:  # Tab: el marcador mientras se mantiene
+		if evento.is_action_pressed("marcador"):
+			hud.marcador(_filas_vista())
+		elif evento.is_action_released("marcador"):
+			hud.limpiar_tabla()
+	if camara_espectador != null and evento.is_action_pressed("lanzar"):
+		objetivo_espectador += 1  # clic: el siguiente que juega y, tras el último, el mapa
+
+
+# Mocos que siguen en carrera; si ya llegaron todos, los que quedan visibles.
+func _jugando() -> Array[Jugador]:
+	var visibles := jugadores().filter(func(j: Jugador) -> bool: return not j.id_dueno() in espectadores)
+	var sin_llegar := visibles.filter(func(j: Jugador) -> bool: return not j.id_dueno() in llegados)
+	var lista: Array[Jugador] = []
+	lista.assign(sin_llegar if not sin_llegar.is_empty() else visibles)
+	return lista
+
+
+func nombre(id: int) -> String:
+	return "TÚ" if id == multiplayer.get_unique_id() else nombres.get(id, "JUGADOR")
+
+
+# El marcador listo para pintar: [color, nombre, victorias, segundos].
+func _filas_vista() -> Array:
+	if marcador_filas.is_empty():  # primera ronda: todos a cero
+		return jugadores().map(func(j: Jugador) -> Array: return [colores[j.id_dueno()], nombre(j.id_dueno()), 0, 0.0])
+	return marcador_filas.map(func(f: Array) -> Array: return [colores.get(f[0], Acuarela.CIRUELA), nombre(f[0]), f[1], f[2]])
 
 
 # El MultiplayerSpawner llama a esto en todos los PCs con los mismos datos: [id, índice].
@@ -136,6 +189,7 @@ func crear_jugador(datos: Array) -> Node:
 	j.position = $Inicio.global_position + Vector2(indice * 90, 0)
 	j.pintar(Jugador.COLORES[indice % Jugador.COLORES.size()])
 	colores[id] = j.get_node("Visual/Moco").color
+	nombres[id] = "JUGADOR %d" % (indice + 1)  # el mismo que en la sala
 	if id == multiplayer.get_unique_id():  # cada PC sigue con la cámara solo a su moco
 		var camara := Camera2D.new()
 		camara.set_script(CAMARA)
@@ -169,11 +223,39 @@ func reiniciar() -> void:
 	en_resultados = false
 	cuenta = -1.0
 	ultimos_controles.clear()
+	llegados.clear()
+	espectadores.clear()
 	hud.limpiar()
+	_dejar_de_mirar()
+	for j in jugadores():
+		j.visible = true
 	if multiplayer.is_server():
 		var lista := jugadores()
 		for i in lista.size():
 			lista[i].reaparecer($Inicio.global_position + Vector2(i * 90, 0))  # en fila, no apilados
+	if Red.es_online():
+		_postal()
+
+
+# "RONDA N DE M" con los mocos quietos y el reloj parado; luego, a correr.
+func _postal() -> void:
+	corriendo = false
+	_congelar(true)
+	var victorias := _filas_vista().map(func(f: Array) -> Array: return [f[0], f[2]])
+	hud.postal("RONDA %d DE %d · %s" % [ronda, Red.config.rondas, Generador.NOMBRE], semilla_actual, victorias)
+	var esta_ronda := ronda
+	await get_tree().create_timer(SEGUNDOS_POSTAL).timeout
+	if not is_inside_tree() or ronda != esta_ronda:
+		return
+	hud.ocultar_postal()
+	_congelar(false)
+	corriendo = true
+
+
+func _congelar(si: bool) -> void:
+	if multiplayer.is_server():
+		for j in jugadores():
+			j.congelado = si
 
 
 func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
@@ -182,9 +264,44 @@ func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
 
 
 func _al_caer(cuerpo: Node2D) -> void:
-	if cuerpo is Jugador and multiplayer.is_server():
-		var punto: Vector2 = ultimos_controles.get(cuerpo.name, $Inicio.global_position)
-		cuerpo.reaparecer.call_deferred(punto, true)  # no mover cuerpos dentro de una señal de física
+	if not (cuerpo is Jugador and multiplayer.is_server()):
+		return
+	if Red.es_online() and cuerpo.id_dueno() in clasificacion.llegadas:  # ya llegó: a mirar
+		(cuerpo as Jugador).congelado = true
+		cuerpo.reaparecer.call_deferred(Vector2($Meta.position.x, -4000.0))  # fuera de en medio
+		espectador.rpc(cuerpo.id_dueno())
+		return
+	var punto: Vector2 = ultimos_controles.get(cuerpo.name, $Inicio.global_position)
+	cuerpo.reaparecer.call_deferred(punto, true)  # no mover cuerpos dentro de una señal de física
+
+
+@rpc("authority", "call_local", "reliable")
+func espectador(id: int) -> void:
+	espectadores.append(id)
+	var j := $Jugadores.get_node_or_null(str(id)) as Jugador
+	if j != null:
+		j.visible = false
+	if id == multiplayer.get_unique_id():
+		hud.mensaje.text = ""
+		hud.titular("¡LLEGASTE A LA META! · MODO ESPECTADOR\nCLIC: CAMBIAR DE CÁMARA")
+		camara_espectador = Camera2D.new()
+		camara_espectador.position_smoothing_enabled = true
+		add_child(camara_espectador)
+		camara_espectador.make_current()
+		objetivo_espectador = 0
+
+
+# Vuelve a la cámara de mi moco (al empezar ronda).
+func _dejar_de_mirar() -> void:
+	if camara_espectador == null:
+		return
+	camara_espectador.queue_free()
+	camara_espectador = null
+	var mio := jugador_local()
+	if mio != null:
+		for c in mio.get_children():
+			if c is Camera2D:
+				c.make_current()
 
 
 # El anfitrión apunta el puesto y avisa a todos; cada PC para su cronómetro si es su moco.
@@ -193,14 +310,24 @@ func _al_llegar(cuerpo: Node2D) -> void:
 		return
 	var id: int = cuerpo.id_dueno()
 	var nuevo := not id in clasificacion.llegadas
-	var puesto := clasificacion.registrar_llegada(id)
+	var t := _reloj()
+	var puesto := clasificacion.registrar_llegada(id, t)
 	if nuevo:
 		desde_primero = maxf(desde_primero, 0.0)
-		llegada.rpc(id, puesto, tiempo)
+		llegada.rpc(id, puesto, t)
+
+
+# Segundos de ronda en el anfitrión. Su propio cronómetro se para cuando llega él,
+# así que después se cuenta desde la llegada del primero.
+func _reloj() -> float:
+	if desde_primero < 0.0 or clasificacion.llegadas.is_empty():
+		return tiempo
+	return clasificacion.tiempos[clasificacion.llegadas[0]] + desde_primero
 
 
 @rpc("authority", "call_local", "reliable")
 func llegada(id: int, puesto: int, t: float) -> void:
+	llegados.append(id)
 	var j := $Jugadores.get_node_or_null(str(id)) as Jugador
 	if j != null:
 		j.efecto_red.emit("meta", j.global_position)  # ya llega a todos los PCs: este rpc es call_local
@@ -219,23 +346,41 @@ func _terminar_ronda() -> void:
 		desde_primero = -1.0
 		return
 	en_resultados = true
-	var filas := []
-	for id in Red.ids:
-		filas.append([id, clasificacion.puntos_totales.get(id, 0)])
-	filas.sort_custom(func(a: Array, b: Array) -> bool: return a[1] > b[1])
+	clasificacion.cerrar_ronda(Red.ids, _reloj())
+	var filas := clasificacion.orden(Red.ids).map(func(id: int) -> Array:
+		return [id, clasificacion.victorias.get(id, 0), clasificacion.tiempo_total.get(id, 0.0)])
+	if ronda >= Red.config.rondas:
+		fin_torneo.rpc(filas, clasificacion.gana_por_tiempo(Red.ids))
+		await get_tree().create_timer(SEGUNDOS_FINAL).timeout
+		if is_inside_tree():  # si el anfitrión salió al menú mientras tanto, ya no hay torneo
+			Red.volver_a_sala.rpc()
+		return
 	mostrar_resultados.rpc(filas)
 	await get_tree().create_timer(SEGUNDOS_RESULTADOS).timeout
-	clasificacion.nueva_ronda()
-	nueva_ronda.rpc(randi())  # cada ronda, mapa nuevo
+	if is_inside_tree():
+		nueva_ronda.rpc(randi(), ronda + 1)  # cada ronda, mapa nuevo
 
 
 @rpc("authority", "call_local", "reliable")
 func mostrar_resultados(filas: Array) -> void:
-	hud.resultados(filas.map(func(f: Array) -> Array: return [colores.get(f[0], Acuarela.CIRUELA), f[1]]))
+	marcador_filas = filas
+	en_resultados = true
+	hud.mensaje.text = ""
+	hud.marcador(_filas_vista())
+
+
+# Último resultado del torneo. (El podio con flores llega en otro bloque.)
+@rpc("authority", "call_local", "reliable")
+func fin_torneo(filas: Array, por_tiempo: bool) -> void:
+	mostrar_resultados(filas)
+	var ganador := nombre(filas[0][0])
+	hud.titular(("¡HAS GANADO EL TORNEO!" if ganador == "TÚ" else "GANA " + ganador)
+			+ ("\nEMPATE EN VICTORIAS · GANA POR TIEMPO" if por_tiempo else ""))
 
 
 @rpc("authority", "call_local", "reliable")
-func nueva_ronda(semilla: int) -> void:
+func nueva_ronda(semilla: int, numero: int) -> void:
+	ronda = numero
 	construir(semilla)
 	reiniciar()
 

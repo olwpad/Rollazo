@@ -36,7 +36,7 @@ func _ready() -> void:
 
 
 # ids en el orden de la partida (el mismo que da los colores en la carrera).
-func mostrar(ids: Array[int], mi_id: int) -> void:
+func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 	for i in huecos.size():
 		var h := huecos[i]
 		var ocupado := i < ids.size()
@@ -50,6 +50,8 @@ func mostrar(ids: Array[int], mi_id: int) -> void:
 			h.nombre.text = "TÚ"
 		else:
 			h.nombre.text = "JUGADOR %d" % (i + 1)
+		if ocupado and listos.get(ids[i], false):
+			h.nombre.text += " ✓"
 		h.nombre.modulate.a = 1.0 if ocupado else 0.6
 	queue_redraw()
 

@@ -27,6 +27,25 @@ func test_cuenta_atras_visible() -> void:
 	hud.free()
 
 
+func test_marcador_con_victorias_y_tiempo() -> void:
+	var hud := _hud()
+	hud.marcador([[Color.RED, "TÚ", 2, 102.0], [Color.BLUE, "JUGADOR 2", 0, 150.0]])
+	var tabla: VBoxContainer = hud.get_node("Tabla")
+	comprobar(tabla.get_child_count() == 2, "una fila por moco")
+	var texto: String = tabla.get_child(0).get_child(1).text
+	comprobar("TÚ" in texto and "2 VICTORIAS" in texto and "1:42" in texto, "nombre, victorias y tiempo (%s)" % texto)
+	hud.free()
+
+
+func test_postal_de_ronda() -> void:
+	var hud := _hud()
+	hud.postal("RONDA 2 DE 5 · LA AZOTEA", 123, [[Color.RED, 1]])
+	comprobar(hud.get_node("Postal").visible and hud.get_node("Postal").titulo.begins_with("RONDA 2"), "sale la postal")
+	hud.ocultar_postal()
+	comprobar(not hud.get_node("Postal").visible, "y se va")
+	hud.free()
+
+
 func test_sin_mejor_en_online() -> void:
 	var hud := _hud()
 	hud.mostrar(5.0, INF, false)

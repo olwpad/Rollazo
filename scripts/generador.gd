@@ -8,6 +8,7 @@
 class_name Generador
 extends RefCounted
 
+const NOMBRE := "LA AZOTEA"  # el nombre que sale en las postales
 const LARGO := 7600.0  # a partir de aquí se pone la meta
 const SUELO_Y := 690.0  # centro de los descansos (la parte de arriba queda en y=670)
 const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 px)

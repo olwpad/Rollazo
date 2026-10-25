@@ -18,15 +18,18 @@ func _process(delta: float) -> bool:
 	if t_carrera < 0.0 and jugadores != null:
 		t_carrera = espera
 	var mio: Node2D = jugadores.get_node_or_null(str(root.get_node("Red").multiplayer.get_unique_id())) if jugadores else null
-	# Mantiene D (derecha; a la izquierda está el moco del anfitrión) 0.6 s: el anfitrión debe mover este moco y el Sync traer la posición.
-	if mio != null and t_carrera >= 0.0 and x_inicial == INF and espera - t_carrera > 0.5:
+	# Tras la postal (2,5 s quietos), mantiene D (derecha; a la izquierda está el moco del anfitrión)
+	# 0.6 s: el anfitrión debe mover este moco y el Sync traer la posición.
+	if mio != null and t_carrera >= 0.0 and x_inicial == INF and espera - t_carrera > 3.0:
 		x_inicial = mio.global_position.x
 		Input.action_press("derecha")
 	if x_inicial != INF and mio != null:
 		x_max = maxf(x_max, mio.global_position.x)
-	if x_inicial != INF and espera - t_carrera > 0.9:
+	if x_inicial != INF and espera - t_carrera > 3.6:
 		Input.action_release("derecha")
-	if t_carrera >= 0.0 and espera - t_carrera > 2.0:
+	if t_carrera >= 0.0 and espera - t_carrera > 4.5:
+		if not "RONDA 1 DE 5" in current_scene.hud.get_node("Postal").titulo:
+			fallos.append("el cliente no vio la postal de la ronda 1")
 		if x_max < x_inicial + 80.0:
 			fallos.append("mi moco no se movió a la derecha (x %.0f, máximo %.0f)" % [x_inicial, x_max])
 		if jugadores == null or jugadores.get_child_count() != 2:
