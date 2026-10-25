@@ -28,7 +28,7 @@ func _ready() -> void:
 	$Config/Papel/Caja/Pegatinas/Poderes.pressed.connect(func(): Red.poner_poderes(not Red.config.poderes))
 	$Config/Papel/Caja/Pegatinas/Rondas.pressed.connect(func():  # 3 → 5 → 7 → 10 → 3
 		Red.poner_rondas(Red.RONDAS[(Red.RONDAS.find(Red.config.rondas) + 1) % Red.RONDAS.size()]))
-	$Config/Papel/Caja/Pegatinas/Aros.pressed.connect(func(): Red.poner_aros(not Red.config.aros))
+	$Config/Papel/Caja/Pegatinas/Aros.visible = false  # aros quitados de momento (ver red.gd)
 	for t in Temas.LISTA:  # una postal por mapa; tocarla lo quita o lo pone
 		var mapa := Postal.new()
 		mapa.name = t
@@ -157,12 +157,11 @@ func _actualizar() -> void:
 	$SalaUI/Ip.visible = anfitrion  # los amigos ya la escribieron para entrar
 	$SalaUI/Ip/Fila/Valor.text = Red.ip_propia()
 	var mapas: Array = Red.config.mapas
-	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s\n%s · %s" % [Red.config.rondas,
+	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s\n%s" % [Red.config.rondas,
 			Temas.DATOS[mapas[0]].nombre if mapas.size() == 1 else "%d MAPAS" % mapas.size(),
-			"CON PODERES" if Red.config.poderes else "SIN PODERES", "CON AROS" if Red.config.aros else "SIN AROS"]
+			"CON PODERES" if Red.config.poderes else "SIN PODERES"]
 	$Config/Papel/Caja/Pegatinas/Rondas.text = str(Red.config.rondas)
 	$Config/Papel/Caja/Pegatinas/Poderes.text = "SÍ" if Red.config.poderes else "NO"
-	$Config/Papel/Caja/Pegatinas/Aros.text = "SÍ" if Red.config.aros else "NO"
 	for mapa in $Config/Papel/Caja/Mapas.get_children():
 		if mapa is Postal:
 			mapa.apagada = not mapa.name in mapas

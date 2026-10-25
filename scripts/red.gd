@@ -17,7 +17,7 @@ var ids: Array[int] = []  # ids conectados, incluido el anfitrión (1). Solo fia
 
 var semilla := 0  # del mapa de la carrera; la elige el anfitrión
 var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
-const CONFIG_INICIAL := {"rondas": 5, "poderes": true, "mapas": Temas.LISTA, "aros": true}
+const CONFIG_INICIAL := {"rondas": 5, "poderes": true, "mapas": Temas.LISTA, "aros": false}  # aros de fuego quitados de momento: no convencieron
 var config := CONFIG_INICIAL.duplicate(true)  # la elige el anfitrión y la ven todos
 var listos := {}  # id -> true; el anfitrión no hace falta, es quien pulsa empezar
 

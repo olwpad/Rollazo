@@ -21,7 +21,7 @@ func test_cada_ronda_otro_mapa() -> void:
 func test_config_de_mapas_y_aros() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.crear_partida(7794)
-	comprobar(red.config.mapas == Temas.LISTA and red.config.aros, "por defecto todos los mapas y con aros")
+	comprobar(red.config.mapas == Temas.LISTA and not red.config.aros, "por defecto todos los mapas y, de momento, sin aros")
 	red.poner_mapas(["cueva", "mar"])
 	comprobar(red.config.mapas == ["cueva", "mar"], "el anfitrión elige mapas")
 	red.poner_mapas([])
@@ -49,6 +49,7 @@ func test_aros_en_el_hueco_entre_techos() -> void:
 func test_recorrido_con_tema() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.config.mapas = ["cueva"]
+	red.config.aros = true  # quitados por defecto, pero el código sigue
 	red.semilla = 3
 	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(nivel)

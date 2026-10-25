@@ -13,6 +13,7 @@ func _process(_d: float) -> bool:
 	if f == 1:
 		var red: Node = root.get_node("Red")
 		red.config.mapas = ["cueva"]
+		red.config.aros = true  # por defecto van quitados
 		red.semilla = 3
 		nivel = load("res://scenes/recorrido_prueba.tscn").instantiate()
 		root.add_child(nivel)
