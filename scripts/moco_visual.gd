@@ -71,6 +71,14 @@ static func forma(n: int, t: float, vel: Vector2) -> PackedVector2Array:
 	return puntos
 
 
+# El mismo estirón de forma() como transformación: forma(n, t, vel) == estiron(vel) * forma(n, t, ZERO).
+static func estiron(vel: Vector2) -> Transform2D:
+	var e := clampf(vel.length() / 1500.0, 0.0, 0.6)
+	var d := vel.normalized() if vel.length() > 1.0 else Vector2.RIGHT
+	var l := Vector2(-d.y, d.x)
+	return Transform2D(d * d.x * (1.0 + e) + l * l.x * (1.0 - e * 0.4), d * d.y * (1.0 + e) + l * l.y * (1.0 - e * 0.4), Vector2.ZERO)
+
+
 func _process(_delta: float) -> void:
 	queue_redraw()
 
@@ -85,7 +93,9 @@ func aplastar(escala: Vector2) -> void:
 func _draw() -> void:
 	var foto := Tinta.fotograma()
 	var t := foto / float(Tinta.FPS)  # el temblor avanza a 12 fps, como dibujado a mano
-	var cuerpo := Tinta.temblar(forma(28, t, velocidad), 77, foto, 0.8)
+	# Todo (cuerpo, pelo, cara, ropa) se pinta quieto y se estira junto: nada flota ni se sale al moverse.
+	draw_set_transform_matrix(estiron(velocidad))
+	var cuerpo := Tinta.temblar(forma(28, t, Vector2.ZERO), 77, foto, 0.8)
 	_detras(foto)
 	# Sin contorno: una capa base y otra más pequeña y clara encima dan volumen de acuarela.
 	draw_colored_polygon(cuerpo, color.darkened(0.12))
@@ -96,7 +106,7 @@ func _draw() -> void:
 	if pelo == "tupe_rubio":  # el magnate, con su moreno naranja
 		draw_colored_polygon(interior, Color("f5a060", 0.35))
 	draw_circle(Vector2(-9, -12), 5.0, Color(1, 1, 1, 0.55))  # brillo viscoso
-	_ropa(cuerpo, Tinta.temblar(forma(28, t, Vector2.ZERO), 77, foto, 0.8), foto)
+	_ropa(cuerpo, foto)
 	if cara == "barba":  # la barba va por debajo de la boca: la sonrisa se ve encima
 		_cosa(COSAS.barba[0][0], COSAS.barba[0][1], foto)
 	var mira := velocidad.normalized() * 3.0 if velocidad.length() > 30.0 else Vector2.ZERO
@@ -211,16 +221,16 @@ func vestir(aspecto: Dictionary) -> void:
 
 
 # Camisetas y uniformes: la parte de abajo del moco (por debajo de la boca) pintada encima del cuerpo.
-func _ropa(cuerpo: PackedVector2Array, quieto: PackedVector2Array, foto: int) -> void:
+func _ropa(cuerpo: PackedVector2Array, foto: int) -> void:
 	if ropa == "corbata":
-		_cosa(COSAS.corbata[0][0], COSAS.corbata[0][1], foto)
+		_dentro(Tinta.temblar(_puntos(COSAS.corbata[0][0]), 31, foto, 0.6), ROJO, cuerpo)
 		return
 	if ropa == "nada":
 		return
 	var abajo := PackedVector2Array()
-	for q in quieto:  # sobre el cuerpo sin estirar: la ropa sigue a la cara, no se va hacia la cola
+	for q in cuerpo:
 		abajo.append(Vector2(q.x, maxf(q.y, 15.0 - 0.45 * absf(q.x))))  # cuello curvo: sube por los lados y pasa por debajo de la boca
-	var telas := Geometry2D.intersect_polygons(Tinta.temblar(abajo, 41, foto, 0.6), cuerpo)  # y sin salirse del cuerpo estirado
+	var telas := Geometry2D.intersect_polygons(Tinta.temblar(abajo, 41, foto, 0.6), cuerpo)  # el temblor no saca la tela del cuerpo
 	var franjas := []  # [rectángulo, color]
 	match ropa:
 		"militar":
@@ -238,32 +248,52 @@ func _ropa(cuerpo: PackedVector2Array, quieto: PackedVector2Array, foto: int) ->
 		"reloj":
 			franjas = [[Rect2(-30, 0, 60, 40), CREMA], [Rect2(-2.5, 0, 5, 40), C]]
 	for f: Array in franjas:
-		var r: Rect2 = f[0]
-		var caja := PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
 		for tela in telas:
-			for trozo in Geometry2D.intersect_polygons(tela, caja):
+			for trozo in Geometry2D.intersect_polygons(tela, _caja(f[0])):
 				draw_colored_polygon(trozo, f[1])
+	# Los detalles van recortados contra el cuerpo: en el borde no asoma ni un pico.
 	match ropa:
 		"reloj":  # reloj verde de héroe en un lado
-			draw_circle(Vector2(-11, 17.5), 3.5, Color("7cc48a"))
-			draw_circle(Vector2(-11, 17.5), 1.5, Color("2e2a3a"))
+			_dentro(_circulo(Vector2(-11, 17.5), 3.5), Color("7cc48a"), cuerpo)
+			_dentro(_circulo(Vector2(-11, 17.5), 1.5), Color("2e2a3a"), cuerpo)
 		"militar":  # botones dorados, bolsillos de pecho y charreteras
 			for y in [16.5, 20.0]:
-				draw_circle(Vector2(0, y), 1.3, Color("f5d38a"))
+				_dentro(_circulo(Vector2(0, y), 1.3), Color("f5d38a"), cuerpo)
 			for x in [-11.0, 6.0]:
-				draw_rect(Rect2(x, 15.5, 6, 3.5), Color("566238"))
-				draw_line(Vector2(x, 15.5), Vector2(x + 6, 15.5), Color("4a5530"), 1.2)
+				_dentro(_caja(Rect2(x, 15.5, 6, 3.5)), Color("566238"), cuerpo)
+				_dentro(_caja(Rect2(x, 15.5, 6, 1.2)), Color("4a5530"), cuerpo)
 			for lado in [-1.0, 1.0]:
-				draw_rect(Rect2(lado * 17 - 3.5, 8.5, 7, 2.5), Color("f5d38a"))
+				_dentro(_caja(Rect2(lado * 17 - 3.5, 8.5, 7, 2.5)), Color("f5d38a"), cuerpo)
 		"traje":
-			draw_colored_polygon(PackedVector2Array([Vector2(-1, 14), Vector2(2, 14), Vector2(2, 20), Vector2(0.5, 22), Vector2(-1, 20)]), ROJO)
+			_dentro(PackedVector2Array([Vector2(-1, 14), Vector2(2, 14), Vector2(2, 20), Vector2(0.5, 22), Vector2(-1, 20)]), ROJO, cuerpo)
+
+
+func _dentro(p: PackedVector2Array, c: Color, cuerpo: PackedVector2Array) -> void:
+	for trozo in Geometry2D.intersect_polygons(p, cuerpo):
+		draw_colored_polygon(trozo, c)
+
+
+func _caja(r: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
+
+
+func _circulo(centro: Vector2, radio: float) -> PackedVector2Array:
+	var p := PackedVector2Array()
+	for i in 12:
+		p.append(centro + Vector2.from_angle(TAU * i / 12.0) * radio)
+	return p
+
+
+func _puntos(xys: Array) -> PackedVector2Array:
+	var p := PackedVector2Array()
+	for xy: Array in xys:
+		p.append(Vector2(xy[0], xy[1]))
+	return p
 
 
 # Sin contorno, como el cuerpo: base más oscura y encima otra capa más clara, temblando a 12 fps.
 func _cosa(puntos: Array, c: Color, foto: int) -> void:
-	var p := PackedVector2Array()
-	for xy: Array in puntos:
-		p.append(Vector2(xy[0], xy[1]))
+	var p := _puntos(puntos)
 	draw_colored_polygon(Tinta.temblar(p, 31, foto, 0.6), c.darkened(0.1))
 	for dentro in Geometry2D.offset_polygon(p, -1.5):  # vacío en piezas finas: bigotes, cintas
 		if Geometry2D.is_polygon_clockwise(dentro) == Geometry2D.is_polygon_clockwise(p):

@@ -25,6 +25,14 @@ func test_moco_quieto_es_casi_redondo() -> void:
 	comprobar(absf(ancho - alto) < 6.0, "casi redondo en reposo")
 
 
+func test_pelo_y_ropa_se_estiran_igual_que_el_cuerpo() -> void:
+	var vel := Vector2(700, -250)
+	var estirado := MocoVisual.forma(16, 0.3, vel)
+	var quieto := MocoVisual.estiron(vel) * MocoVisual.forma(16, 0.3, Vector2.ZERO)
+	for i in 16:
+		comprobar(estirado[i].distance_to(quieto[i]) < 0.01, "punto %d igual" % i)
+
+
 func test_escenas_con_estilo() -> void:
 	var j: Node = load("res://scenes/jugador.tscn").instantiate()
 	comprobar(j.get_node_or_null("Visual/Moco") is MocoVisual, "jugador con Visual/Moco")
