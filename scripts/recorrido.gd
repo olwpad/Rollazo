@@ -285,11 +285,11 @@ func nombre(id: int) -> String:
 	return "TÚ" if id == multiplayer.get_unique_id() else nombres.get(id, "JUGADOR")
 
 
-# El marcador listo para pintar: [color, nombre, victorias, segundos].
+# El marcador listo para pintar: [color, nombre, victorias, segundos, aspecto].
 func _filas_vista() -> Array:
 	if marcador_filas.is_empty():  # primera ronda: todos a cero
-		return jugadores().map(func(j: Jugador) -> Array: return [colores[j.id_dueno()], nombre(j.id_dueno()), 0, 0.0])
-	return marcador_filas.map(func(f: Array) -> Array: return [colores.get(f[0], Acuarela.CIRUELA), nombre(f[0]), f[1], f[2]])
+		return jugadores().map(func(j: Jugador) -> Array: return [colores[j.id_dueno()], nombre(j.id_dueno()), 0, 0.0, Red.aspecto_de(j.id_dueno())])
+	return marcador_filas.map(func(f: Array) -> Array: return [colores.get(f[0], Acuarela.CIRUELA), nombre(f[0]), f[1], f[2], Red.aspecto_de(f[0])])
 
 
 # El MultiplayerSpawner llama a esto en todos los PCs con los mismos datos: [id, índice].
@@ -560,13 +560,16 @@ func mostrar_resultados(filas: Array) -> void:
 	marcador_filas = filas
 	en_resultados = true
 	hud.mensaje.text = ""
-	hud.marcador(_filas_vista())
+	hud.marcador(_filas_vista(), true)
 
 
-# Último resultado del torneo. (El podio con flores llega en otro bloque.)
+# Último resultado del torneo: el podio con las mismas filas ya ordenadas en todos los PCs.
 @rpc("authority", "call_local", "reliable")
 func fin_torneo(filas: Array, por_tiempo: bool) -> void:
-	mostrar_resultados(filas)
+	marcador_filas = filas
+	en_resultados = true
+	hud.mensaje.text = ""
+	hud.podio(_filas_vista())
 	var ganador := nombre(filas[0][0])
 	var nuevo: Array = Perfil.anotar_torneo(ganador == "TÚ")  # cada PC cuenta lo suyo
 	hud.titular(("¡HAS GANADO EL TORNEO!" if ganador == "TÚ" else "GANA " + ganador)

@@ -3,7 +3,6 @@ extends CanvasLayer
 
 @onready var tiempo: Label = $Tiempo
 @onready var mensaje: Label = $Mensaje
-@onready var tabla: VBoxContainer = $Tabla
 
 
 static func formatear(t: float) -> String:
@@ -37,28 +36,18 @@ func meta(t: float, mejor: float, puesto: int, con_repetir: bool) -> void:
 			"\nR para repetir" if con_repetir else ""]
 
 
-# filas: [[color, nombre, victorias, segundos totales], ...] ya ordenadas, el primero arriba.
-# La misma tabla sirve para Tab durante la carrera y para el final de cada ronda.
-func marcador(filas: Array) -> void:
-	limpiar_tabla()
-	for f: Array in filas:
-		var fila := HBoxContainer.new()
-		var mancha := Label.new()
-		mancha.text = "●"
-		mancha.add_theme_color_override("font_color", f[0])
-		var texto := Label.new()
-		texto.text = "%s · %d %s · %s" % [f[1], f[2], "VICTORIA" if f[2] == 1 else "VICTORIAS", minutos(f[3])]
-		texto.add_theme_color_override("font_color", Acuarela.CIRUELA)
-		for l: Label in [mancha, texto]:
-			l.add_theme_font_override("font", mensaje.get_theme_font("font"))
-			l.add_theme_font_size_override("font_size", 44)
-			fila.add_child(l)
-		tabla.add_child(fila)
-	$FondoTabla.visible = not filas.is_empty()
+# filas: [[color, nombre, victorias, segundos totales, aspecto], ...] ya ordenadas, el primero arriba.
+# La misma tabla sirve para Tab durante la carrera (sin animar) y para el final de cada ronda.
+func marcador(filas: Array, animar := false) -> void:
+	$Podio.ocultar()
+	$Marcador.mostrar(filas, animar)
 
 
-static func minutos(t: float) -> String:
-	return "%d:%02d" % [int(t) / 60, int(t) % 60]
+# Final del torneo: el podio con las filas ya ordenadas.
+func podio(filas: Array) -> void:
+	$Ayuda.visible = false  # tapa los nombres del podio
+	$Marcador.ocultar()
+	$Podio.mostrar(filas)
 
 
 # El poder que llevas y cuánto le queda. tipo "" = ninguno.
@@ -106,8 +95,6 @@ func limpiar() -> void:
 
 
 func limpiar_tabla() -> void:
-	for fila in tabla.get_children():
-		tabla.remove_child(fila)  # fuera ya: queue_free sola dejaría la fila contando hasta el frame siguiente
-		fila.queue_free()
-	$FondoTabla.visible = false
+	$Marcador.ocultar()
+	$Podio.ocultar()
 
