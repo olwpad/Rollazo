@@ -4,6 +4,6 @@
 resource_name = "Distortion"
 
 [resource]
-bus/0/volume_db = -57.736706
+bus/0/volume_db = -2.9190547
 bus/0/effect/0/effect = SubResource("AudioEffectDistortion_j3pel")
 bus/0/effect/0/enabled = true

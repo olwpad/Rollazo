@@ -19,3 +19,8 @@ func test_tocar_pone_la_cancion_en_bucle() -> void:
 
 func test_tecla_silenciar() -> void:
 	comprobar(InputMap.has_action("silenciar"), "acción silenciar (M)")
+
+
+func test_bus_maestro_se_oye_y_sin_efectos() -> void:
+	comprobar(AudioServer.get_bus_volume_db(0) > -6.0, "volumen maestro audible (%.1f dB)" % AudioServer.get_bus_volume_db(0))
+	comprobar(AudioServer.get_bus_effect_count(0) == 0, "sin efectos raros (distorsión) en el maestro")
