@@ -13,6 +13,7 @@ signal papel_roto
 @export var velocidad_encoger := 300.0
 @export var segundos_aguante := 3.0
 @export var tiempo_min_impulso := 0.2
+@export var fuerza_salto := 650.0
 
 var papel: PapelRope = null  # null = no está enganchado
 var _tiempo_enganchado := 0.0
@@ -28,6 +29,7 @@ func _leer_input() -> Dictionary:
 		"apunta": get_global_mouse_position(),
 		"eje_x": Input.get_axis("izquierda", "derecha"),
 		"eje_largo": Input.get_axis("encoger", "alargar"),
+		"saltar": Input.is_action_just_pressed("saltar"),
 	}
 
 
@@ -42,6 +44,8 @@ func _physics_process(delta: float) -> void:
 		papel = null
 
 	velocity.y += gravedad * delta
+	if e.saltar and is_on_floor():
+		velocity.y = -fuerza_salto
 	if is_on_floor():
 		velocity.x = move_toward(velocity.x, e.eje_x * velocidad_suelo, 3000.0 * delta)
 	else:
