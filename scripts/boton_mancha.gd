@@ -44,7 +44,7 @@ func _pintar_mancha() -> void:
 
 
 func _mostrar(encima: bool) -> void:
-	mancha.visible = encima or principal
+	mancha.visible = (encima and not disabled) or principal
 	if encima:  # pequeño "pop" al aparecer
 		mancha.scale = Vector2(0.9, 0.8)
 		create_tween().tween_property(mancha, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

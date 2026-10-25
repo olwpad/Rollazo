@@ -120,6 +120,7 @@ placeholder_text = "IP del anfitrión (100.x.x.x)"
 
 [node name="Unirse" type="Button" parent="Caja/Fila"]
 layout_mode = 2
+theme_override_colors/font_disabled_color = Color(0.227, 0.208, 0.314, 0.35)
 text = "Unirse"
 script = ExtResource("7")
 
@@ -358,4 +359,4 @@ offset_right = 700.0
 offset_bottom = 700.0
 theme_override_font_sizes/font_size = 22
 modulate = Color(1, 1, 1, 0.6)
-text = "ESC VOLVER · M MÚSICA"
+text = "M MÚSICA"

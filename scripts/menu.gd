@@ -15,6 +15,8 @@ func _ready() -> void:
 	var cfg := ConfigFile.new()
 	cfg.load(AJUSTES)
 	ip.text = cfg.get_value("red", "ultima_ip", "")
+	ip.text_changed.connect(_al_escribir_ip)
+	_al_escribir_ip(ip.text)
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
@@ -64,6 +66,11 @@ func _crear() -> void:
 	var err := Red.crear_partida()
 	estado.text = "No se pudo crear (¿puerto ocupado?)" if err != OK else ""
 	_actualizar()
+
+
+# Sin IP no hay a quién unirse: el botón se apaga en vez de decir "IP no válida".
+func _al_escribir_ip(texto: String) -> void:
+	$Caja/Fila/Unirse.disabled = texto.strip_edges() == ""
 
 
 func _unirse() -> void:
