@@ -11,6 +11,9 @@ signal efecto_red(tipo: String, pos: Vector2)  # llega a todos los PCs
 const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
 const VELOCIDAD_CHOQUE := 300.0  # por debajo, dos mocos solo se tocan
 const RADIO_CORTE := 50.0  # a esta distancia del papel de otro, puedes cortarlo
+const DIST_AGARRE := 60.0
+const LARGO_AGARRE := 45.0  # largo del hilo de moco con el que te cuelgas de otro
+const PESO_POR_CARGA := 0.5  # cada moco colgado de ti suma media gravedad
 const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a")]  # menta, rosa, lavanda, melocotón
 
 # Valores iniciales: se ajustan jugando desde el Inspector del editor.
@@ -30,8 +33,13 @@ var _tiempo_enganchado := 0.0
 var papel_activo := false
 var papel_ancla := Vector2.ZERO
 var papel_aguante := 1.0
+var agarre_activo := false
+var agarre_pos := Vector2.ZERO
 
-const EVENTOS := ["lanzar", "saltar", "cortar"]
+var agarrado_a: Jugador = null  # a quién me agarro (solo en el anfitrión)
+var carga := 0  # cuántos están agarrados a mí
+
+const EVENTOS := ["lanzar", "saltar", "cortar", "agarrar"]
 var _remoto := {"soltar": true, "apunta": Vector2.ZERO, "eje_x": 0.0, "eje_largo": 0.0}
 var _remoto_contadores := {}  # en el anfitrión: lo último que mandó el dueño
 var _contadores_vistos := {}  # en el anfitrión: lo ya procesado
@@ -65,6 +73,7 @@ func _leer_teclado() -> Dictionary:
 		"eje_largo": Input.get_axis("encoger", "alargar"),
 		"saltar": Input.is_action_just_pressed("saltar"),
 		"cortar": Input.is_action_just_pressed("cortar"),
+		"agarrar": Input.is_action_just_pressed("agarrar"),
 	}
 
 
@@ -101,6 +110,13 @@ func _physics_process(delta: float) -> void:
 	var e := _leer_input()
 	if e.cortar:
 		_cortar_cercanos()
+	if e.agarrar:
+		if agarrado_a == null:
+			_agarrar_cercano()
+		else:
+			soltar_agarre()
+	if e.saltar:
+		soltar_agarre()
 	if e.lanzar:
 		_lanzar_papel(e.apunta)
 		_tiempo_enganchado = 0.0
@@ -109,7 +125,7 @@ func _physics_process(delta: float) -> void:
 			velocity *= impulso_soltar
 		papel = null
 
-	velocity.y += gravedad * delta
+	velocity.y += gravedad * (1.0 + PESO_POR_CARGA * carga) * delta
 	if e.saltar and is_on_floor():
 		velocity.y = -fuerza_salto
 	if is_on_floor():
@@ -138,6 +154,12 @@ func _physics_process(delta: float) -> void:
 			papel = null
 			papel_roto.emit()
 			efecto.rpc("rotura", (global_position + papel_ancla) / 2.0)
+	if agarrado_a != null and not is_instance_valid(agarrado_a):
+		agarrado_a = null  # se desconectó
+	if agarrado_a != null:
+		var r := Pendulo.restringir(global_position, velocity, agarrado_a.global_position, LARGO_AGARRE)
+		move_and_collide(r[0] - global_position)
+		velocity = r[1]
 	_publicar_papel()
 
 
@@ -162,6 +184,27 @@ func _cortar_cercanos() -> void:
 			otro.cortar_papel()
 
 
+func _agarrar_cercano() -> void:
+	var mejor: Jugador = null
+	for otro in get_parent().get_children():
+		if otro is Jugador and otro != self and otro.agarrado_a != self 				and global_position.distance_to(otro.global_position) < DIST_AGARRE 				and (mejor == null or global_position.distance_to(otro.global_position) < global_position.distance_to(mejor.global_position)):
+			mejor = otro
+	if mejor != null:
+		agarrado_a = mejor
+		mejor.carga += 1
+		efecto.rpc("enganche", mejor.global_position)
+
+
+func soltar_agarre() -> void:
+	if agarrado_a != null and is_instance_valid(agarrado_a):
+		agarrado_a.carga -= 1
+	agarrado_a = null
+
+
+func _exit_tree() -> void:
+	soltar_agarre()  # si me desconecto, dejo de pesarle al otro
+
+
 func cortar_papel() -> void:
 	efecto.rpc("rotura", (global_position + papel.ancla) / 2.0)
 	papel = null
@@ -176,6 +219,9 @@ func efecto(tipo: String, pos: Vector2) -> void:
 
 
 func _publicar_papel() -> void:
+	agarre_activo = agarrado_a != null
+	if agarre_activo:
+		agarre_pos = agarrado_a.global_position
 	papel_activo = papel != null
 	if papel_activo:
 		papel_ancla = papel.ancla
@@ -186,6 +232,11 @@ func reaparecer(pos: Vector2) -> void:
 	global_position = pos
 	velocity = Vector2.ZERO
 	papel = null
+	soltar_agarre()
+	for otro in get_parent().get_children():
+		if otro is Jugador and otro.agarrado_a == self:
+			otro.soltar_agarre()
+			otro._publicar_papel()
 	_publicar_papel()
 
 

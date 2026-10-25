@@ -4,13 +4,21 @@
 extends Line2D
 
 @onready var jugador: Jugador = get_parent()
+var hilo := Line2D.new()  # hilo de moco corto cuando se agarra a otro
 
 
 func _ready() -> void:
 	top_level = true  # los puntos van en coordenadas del mundo, no del jugador
+	hilo.width = 5.0
+	add_child(hilo)
 
 
 func _process(_delta: float) -> void:
+	hilo.clear_points()
+	if jugador.agarre_activo:
+		hilo.default_color = jugador.get_node("Visual/Moco").color.darkened(0.15)
+		hilo.add_point(jugador.global_position)
+		hilo.add_point(jugador.agarre_pos)
 	clear_points()
 	if not jugador.papel_activo:
 		return
