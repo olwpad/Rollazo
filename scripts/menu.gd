@@ -20,6 +20,8 @@ func _ready() -> void:
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
+	$Caja/TuMoco.pressed.connect(_vestir.bind(true))
+	$Vestidor.cerrado.connect(_vestir.bind(false))
 	$Salir.pressed.connect(_salir)
 	principal.pressed.connect(_pulsar_principal)
 	$SalaUI/Ip/Fila/Copiar.pressed.connect(_copiar_ip)
@@ -182,3 +184,13 @@ func _actualizar() -> void:
 		principal.text = "¡LISTO! (QUITAR)" if yo_listo else "ESTOY LISTO"
 		principal.progreso = -1.0
 		$SalaUI/Estado.text = "ESPERANDO AL ANFITRIÓN" if yo_listo else "PULSA CUANDO QUIERAS EMPEZAR"
+
+
+# El vestidor ocupa la pantalla: fuera el menú, la azotea de adorno y el columpio mientras tanto.
+func _vestir(si: bool) -> void:
+	for nodo in [$Caja, $Sala, $Columpio, $Pie]:
+		nodo.visible = not si
+	if si:
+		$Vestidor.abrir()
+	else:
+		_actualizar()  # el moco «TÚ» de la azotea sale ya vestido

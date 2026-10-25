@@ -258,7 +258,8 @@ func crear_jugador(datos: Array) -> Node:
 	var j: Jugador = ESCENA_JUGADOR.instantiate()
 	j.name = str(id)
 	j.position = $Inicio.global_position + Vector2(indice * 90, 0)
-	j.pintar(Jugador.COLORES[indice % Jugador.COLORES.size()])
+	j.pintar(Red.color_de(id))
+	j.vestir(Red.aspecto_de(id))
 	colores[id] = j.get_node("Visual/Moco").color
 	nombres[id] = "JUGADOR %d" % (indice + 1)  # el mismo que en la sala
 	if id == multiplayer.get_unique_id():  # cada PC sigue con la cámara solo a su moco
@@ -473,8 +474,10 @@ func mostrar_resultados(filas: Array) -> void:
 func fin_torneo(filas: Array, por_tiempo: bool) -> void:
 	mostrar_resultados(filas)
 	var ganador := nombre(filas[0][0])
+	var nuevo: Array = Perfil.anotar_torneo(ganador == "TÚ")  # cada PC cuenta lo suyo
 	hud.titular(("¡HAS GANADO EL TORNEO!" if ganador == "TÚ" else "GANA " + ganador)
-			+ ("\nEMPATE EN VICTORIAS · GANA POR TIEMPO" if por_tiempo else ""))
+			+ ("\nEMPATE EN VICTORIAS · GANA POR TIEMPO" if por_tiempo else "")
+			+ ("\n¡NUEVO PARA TU MOCO: %s!" % ", ".join(nuevo.map(func(c: String) -> String: return Perfil.NOMBRES[c])) if nuevo else ""))
 
 
 @rpc("authority", "call_local", "reliable")

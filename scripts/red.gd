@@ -19,6 +19,7 @@ var semilla := 0  # del mapa de la carrera; la elige el anfitrión
 var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
 const CONFIG_INICIAL := {"rondas": 5, "poderes": true, "mapas": Temas.LISTA, "aros": false}  # aros de fuego quitados de momento: no convencieron
 var config := CONFIG_INICIAL.duplicate(true)  # la elige el anfitrión y la ven todos
+var aspectos := {}  # id -> {color, pelo, sombrero}: cómo va vestido cada moco
 var listos := {}  # id -> true; el anfitrión no hace falta, es quien pulsa empezar
 
 
@@ -26,6 +27,7 @@ func _ready() -> void:
 	multiplayer.peer_connected.connect(_al_conectar)
 	multiplayer.peer_disconnected.connect(_al_desconectar)
 	multiplayer.server_disconnected.connect(_al_caer_anfitrion)
+	multiplayer.connected_to_server.connect(func(): _mi_aspecto.rpc_id(1, Perfil.aspecto))
 	multiplayer.connection_failed.connect(func(): _al_caer_anfitrion("No se pudo conectar"))
 
 
@@ -36,6 +38,7 @@ func crear_partida(puerto: int = PUERTO) -> Error:
 		return err
 	multiplayer.multiplayer_peer = peer
 	ids = [1]
+	aspectos = {1: Perfil.aspecto.duplicate()}
 	jugadores_cambiaron.emit()
 	return OK
 
@@ -54,6 +57,7 @@ func salir() -> void:
 	multiplayer.refuse_new_connections = false
 	ids.clear()
 	listos.clear()
+	aspectos.clear()
 	config = CONFIG_INICIAL.duplicate(true)
 	jugadores_cambiaron.emit()
 
@@ -153,6 +157,7 @@ func _al_conectar(id: int) -> void:
 
 func _al_desconectar(id: int) -> void:
 	ids.erase(id)
+	aspectos.erase(id)
 	listos.erase(id)
 	jugadores_cambiaron.emit()
 	if multiplayer.is_server():
@@ -171,3 +176,47 @@ func _al_caer_anfitrion(motivo: String = "El anfitrión se ha ido") -> void:
 	ultimo_motivo = motivo  # la escena del menú aún no existe: se lo dejamos guardado
 	desconectado.emit(motivo)
 	get_tree().change_scene_to_file("res://scenes/menu.tscn")
+
+
+# Cada cliente, al entrar, dice cómo va vestido; el anfitrión se lo cuenta a todos.
+@rpc("any_peer", "call_remote", "reliable")
+func _mi_aspecto(a: Variant) -> void:
+	var quien := multiplayer.get_remote_sender_id()
+	if not multiplayer.is_server() or not quien in ids or not Perfil.valido(a):
+		return
+	aspectos[quien] = a
+	_aspectos.rpc(aspectos)
+	jugadores_cambiaron.emit()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _aspectos(nuevos: Dictionary) -> void:
+	aspectos = nuevos
+	jugadores_cambiaron.emit()
+
+
+func aspecto_de(id: int) -> Dictionary:
+	if aspectos.has(id):
+		return aspectos[id]
+	return Perfil.aspecto if id == multiplayer.get_unique_id() else Perfil.POR_DEFECTO
+
+
+# El color que se ve en la partida: si dos eligieron el mismo, el que entró después coge otro libre.
+func color_de(id: int) -> Color:
+	var lista: Array = ids if id in ids else [id]
+	var pedidos := {}
+	for i in lista:
+		pedidos[i] = aspecto_de(i).color
+	return Perfil.COLORES[sin_repetir(lista, pedidos)[id]]
+
+
+static func sin_repetir(lista: Array, pedidos: Dictionary) -> Dictionary:
+	var usados := {}
+	var r := {}
+	for id in lista:
+		var c: int = pedidos[id]
+		while usados.has(c):
+			c = (c + 1) % Perfil.COLORES.size()
+		usados[c] = true
+		r[id] = c
+	return r

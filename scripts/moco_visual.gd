@@ -5,6 +5,18 @@ extends Node2D
 const RADIO := 22.0
 var color := Acuarela.MENTA
 var velocidad := Vector2.ZERO  # la pone el Jugador cada frame
+var pelo := "calvo"  # ver Perfil.PELOS
+var sombrero := "nada"  # ver Perfil.SOMBREROS
+
+# Peinados y sombreros, en coordenadas del moco (la coronilla está en y = -22). Cada pieza: [puntos, color].
+const COSAS := {
+	"cresta": [[[-4, -20], [-7, -33], [-2, -24], [0, -37], [2, -24], [7, -34], [5, -20]], Color("ef8fae")],
+	"skrillex": [[[-15, -12], [-9, -27], [5, -27], [16, -21], [5, -21], [-3, -15], [-9, -4], [-14, -2]], Acuarela.CIRUELA],
+	"gorra": [[[-14, -15], [-12, -27], [0, -31], [12, -28], [14, -17], [26, -17], [24, -13], [-14, -12]], Color("ef8fae")],
+	"lana": [[[-15, -14], [-13, -29], [0, -35], [13, -29], [15, -14]], Color("6cc3b0")],
+	"chistera": [[[-16, -19], [-9, -21], [-9, -44], [9, -44], [9, -21], [16, -19], [16, -16], [-16, -16]], Acuarela.CIRUELA],
+	"corona": [[[-11, -18], [-12, -32], [-6, -25], [0, -35], [6, -25], [12, -32], [11, -18]], Color("f5d38a")],
+}
 
 
 # Puntos del contorno. Estática y pura para poder testearla sin abrir el juego.
@@ -48,6 +60,31 @@ func _draw() -> void:
 	_ojo(Vector2(-6, -4), 9.0, mira)
 	_ojo(Vector2(9, -7), 5.5, mira)
 	draw_arc(Vector2(2, 8), 6.0, 0.3, PI - 0.3, 8, Acuarela.CIRUELA, 3.0)
+	for cosa: String in [pelo, sombrero]:
+		if COSAS.has(cosa):
+			_cosa(COSAS[cosa][0], COSAS[cosa][1], foto)
+	match sombrero:  # detalles que no son un solo polígono
+		"lana":
+			draw_circle(Vector2(0, -37), 4.5, Color("fffaf4"))
+		"chistera":
+			draw_rect(Rect2(-9, -25, 18, 4), Color(Acuarela.ROSA, 0.9))
+		"corona":
+			draw_circle(Vector2(0, -27), 2.0, Acuarela.ROSA)
+
+
+# Sin contorno, como el cuerpo: base más oscura y encima otra capa más clara, temblando a 12 fps.
+func _cosa(puntos: Array, c: Color, foto: int) -> void:
+	var p := PackedVector2Array()
+	for xy: Array in puntos:
+		p.append(Vector2(xy[0], xy[1]))
+	draw_colored_polygon(Tinta.temblar(p, 31, foto, 0.6), c.darkened(0.1))
+	var centro := Vector2.ZERO
+	for q in p:
+		centro += q / p.size()
+	var dentro := PackedVector2Array()
+	for q in p:
+		dentro.append(centro + (q - centro) * 0.75 + Vector2(-0.5, -0.5))
+	draw_colored_polygon(dentro, Color(c.lightened(0.15), 0.8))
 
 
 func _ojo(centro: Vector2, radio: float, mira: Vector2) -> void:
