@@ -31,5 +31,6 @@ func test_practicar_solo_oculto_en_partida_online() -> void:
 	var menu: Node = load("res://scenes/menu.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(menu)
 	comprobar(not menu.get_node("Caja/Solo").visible, "sin 'Practicar solo' mientras hay partida")
+	comprobar(not menu.get_node("Caja/Crear").visible and not menu.get_node("Caja/Fila").visible, "ni crear otra ni unirse a otra")
 	menu.free()
 	red.salir()

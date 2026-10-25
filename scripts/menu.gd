@@ -39,7 +39,9 @@ func _unirse() -> void:
 func _actualizar() -> void:
 	var anfitrion := Red.es_online() and multiplayer.is_server()
 	empezar.visible = anfitrion
-	$Caja/Solo.visible = not Red.es_online()  # practicar con la partida abierta dejaría a los demás colgados
+	# Ya dentro de una partida: ni practicar, ni crear otra, ni unirse a otra (dejaría a los demás colgados).
+	for opcion in [$Caja/Solo, $Caja/Crear, $Caja/Fila]:
+		opcion.visible = not Red.es_online()
 	var solo_yo: Array[int] = [1]
 	$Sala.mostrar(Red.ids if Red.es_online() else solo_yo, multiplayer.get_unique_id())
 	var mocos := "%d/%d MOCOS · " % [Red.ids.size(), Red.MAX_JUGADORES] if Red.es_online() else ""
