@@ -71,7 +71,29 @@ static func generar(semilla: int) -> Dictionary:
 	m.meta = suelo_meta + Vector2(150.0, -120.0)
 	m.caida_x = m.meta.x / 2.0  # de x=-2000 a 2000 más allá de la meta
 	m.caida_ancho = m.meta.x + 4000.0
+	m.aros = _aros(semilla, m)
 	return m
+
+
+# Aros de fuego en el hueco entre dos techos, por donde pasa el vuelo. Van con su propio
+# azar: así poner o quitar aros no cambia el resto del mapa. Solo los usan algunos temas.
+static func _aros(semilla: int, m: Dictionary) -> Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector2i(semilla, 7))
+	var huecos := []
+	var camino: Array = m.camino
+	for i in range(1, camino.size()):
+		var a: Vector2 = camino[i - 1]
+		var b: Vector2 = camino[i]
+		var pos := Vector2((a.x + b.x) / 2.0, maxf(a.y, b.y) + 200.0)
+		var libre: bool = m.piezas.all(func(p: Dictionary) -> bool: return pos.distance_to(p.pos) > 160.0) 				and m.burbujas.all(func(q: Dictionary) -> bool: return pos.distance_to(q.pos) > 130.0)
+		if libre and pos.x > INICIO_FIN + 400.0 and pos.x < m.meta.x - 300.0:
+			huecos.append(pos)
+	var aros := []
+	for k in mini(3, huecos.size()):
+		var pos: Vector2 = huecos.pop_at(rng.randi_range(0, huecos.size() - 1))
+		aros.append({"pos": pos, "mov": "quieto" if rng.randf() < 0.5 else "sube"})
+	return aros
 
 
 # Un techo del camino con una forma al azar. Recién salido de un descanso, sin formas

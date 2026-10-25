@@ -21,9 +21,16 @@ func _ready() -> void:
 	$Config/Papel/Caja/Poderes.pressed.connect(func(): Red.poner_poderes(not Red.config.poderes))
 	for n in Red.RONDAS:
 		get_node("Config/Papel/Caja/Rondas/R%d" % n).pressed.connect(Red.poner_rondas.bind(n))
-	var mapa: Postal = $Config/Papel/Caja/Mapas/Azotea
-	mapa.titulo = Generador.NOMBRE
-	mapa.semilla = 2026  # de muestra; cada ronda sale un mapa distinto
+	$Config/Papel/Caja/Aros.pressed.connect(func(): Red.poner_aros(not Red.config.aros))
+	for t in Temas.LISTA:  # una postal por mapa; tocarla lo quita o lo pone
+		var mapa := Postal.new()
+		mapa.name = t
+		mapa.custom_minimum_size = Vector2(130, 100)
+		mapa.titulo = Temas.DATOS[t].nombre
+		mapa.tema = t
+		mapa.semilla = 2026  # de muestra; cada ronda sale un trazado distinto
+		mapa.gui_input.connect(_tocar_mapa.bind(t))
+		$Config/Papel/Caja/Mapas.add_child(mapa)
 	Red.jugadores_cambiaron.connect(_actualizar)
 	Red.config_cambiada.connect(_actualizar)
 	Red.desconectado.connect(func(motivo): estado.text = motivo)
@@ -36,6 +43,16 @@ func _ready() -> void:
 func _practicar() -> void:
 	Red.semilla = randi()  # cada práctica, un mapa distinto
 	get_tree().change_scene_to_file(Red.RECORRIDO)
+
+
+func _tocar_mapa(evento: InputEvent, t: String) -> void:
+	if evento is InputEventMouseButton and evento.pressed and evento.button_index == MOUSE_BUTTON_LEFT:
+		var lista: Array = Red.config.mapas.duplicate()
+		if t in lista:
+			lista.erase(t)
+		else:
+			lista.append(t)
+		Red.poner_mapas(lista)  # quitar el último no hace nada: siempre queda uno
 
 
 func _crear() -> void:
@@ -96,9 +113,14 @@ func _actualizar() -> void:
 		return
 	$SalaUI/Ip.visible = anfitrion  # los amigos ya la escribieron para entrar
 	$SalaUI/Ip/Fila/Valor.text = Red.ip_propia()
-	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s\n%s" % [Red.config.rondas, Generador.NOMBRE,
-			"CON PODERES" if Red.config.poderes else "SIN PODERES"]
+	var mapas: Array = Red.config.mapas
+	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s\n%s · %s" % [Red.config.rondas,
+			Temas.DATOS[mapas[0]].nombre if mapas.size() == 1 else "%d MAPAS" % mapas.size(),
+			"CON PODERES" if Red.config.poderes else "SIN PODERES", "CON AROS" if Red.config.aros else "SIN AROS"]
 	$Config/Papel/Caja/Poderes.text = "PODERES: " + ("SÍ" if Red.config.poderes else "NO")
+	$Config/Papel/Caja/Aros.text = "AROS DE FUEGO: " + ("SÍ" if Red.config.aros else "NO")
+	for mapa: Postal in $Config/Papel/Caja/Mapas.get_children():
+		mapa.apagada = not mapa.name in mapas
 	$SalaUI/Notita/Caja/Cambiar.visible = anfitrion
 	for n in Red.RONDAS:
 		var b = get_node("Config/Papel/Caja/Rondas/R%d" % n)

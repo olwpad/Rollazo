@@ -17,8 +17,8 @@ var ids: Array[int] = []  # ids conectados, incluido el anfitrión (1). Solo fia
 
 var semilla := 0  # del mapa de la carrera; la elige el anfitrión
 var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
-const CONFIG_INICIAL := {"rondas": 5, "poderes": true}
-var config := CONFIG_INICIAL.duplicate()  # la elige el anfitrión y la ven todos
+const CONFIG_INICIAL := {"rondas": 5, "poderes": true, "mapas": Temas.LISTA, "aros": true}
+var config := CONFIG_INICIAL.duplicate(true)  # la elige el anfitrión y la ven todos
 var listos := {}  # id -> true; el anfitrión no hace falta, es quien pulsa empezar
 
 
@@ -54,7 +54,7 @@ func salir() -> void:
 	multiplayer.refuse_new_connections = false
 	ids.clear()
 	listos.clear()
-	config = CONFIG_INICIAL.duplicate()
+	config = CONFIG_INICIAL.duplicate(true)
 	jugadores_cambiaron.emit()
 
 
@@ -105,6 +105,16 @@ func poner_rondas(n: int) -> void:
 
 func poner_poderes(si: bool) -> void:
 	_cambiar("poderes", si)
+
+
+func poner_aros(si: bool) -> void:
+	_cambiar("aros", si)
+
+
+# Qué mapas salen; al menos uno y solo de los que existen.
+func poner_mapas(lista: Array) -> void:
+	if not lista.is_empty() and lista.all(func(t: Variant) -> bool: return t in Temas.LISTA):
+		_cambiar("mapas", lista.duplicate())
 
 
 func _cambiar(clave: String, valor: Variant) -> void:

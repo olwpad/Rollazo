@@ -56,6 +56,10 @@ func _al_efecto(tipo: String, pos: Vector2) -> void:
 		"poder":  # cogiste una burbuja
 			_salpicar(pos)
 			_moco().aplastar(Vector2(1.3, 0.75))
+		"fuego":  # un aro te quemó el papel
+			_trozos(pos)
+			_moco().aplastar(Vector2(1.3, 0.7))
+			_temblar(0.5)
 		"congelado":  # te congelaron: se encoge de golpe
 			_moco().aplastar(Vector2(0.75, 0.75))
 			_temblar(0.25)

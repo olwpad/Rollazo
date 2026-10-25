@@ -6,12 +6,15 @@ extends Control
 
 const FUENTE := preload("res://assets/fuentes/Bangers-Regular.ttf")
 const PAPEL := Color("fffaf4")
-const CIELO := Color("ddd6f2")
 
 var titulo := "":
 	set(v): titulo = v; queue_redraw()
 var semilla := 0:
 	set(v): semilla = v; _mapa = Generador.generar(v); queue_redraw()
+var tema := "azotea":  # sus colores: cielo, siluetas y suelo
+	set(v): tema = v; queue_redraw()
+var apagada := false:  # en la configuración: mapa que no saldrá
+	set(v): apagada = v; queue_redraw()
 var filas := []:  # [[color, victorias], ...]
 	set(v): filas = v; queue_redraw()
 var _mapa := {}
@@ -25,8 +28,11 @@ func _draw() -> void:
 	var margen := ancho * 0.05
 	var alto_titulo := size.y * 0.2
 	var foto := Rect2(papel.position + Vector2(margen, margen), Vector2(ancho - 2 * margen, size.y - 2 * margen - alto_titulo))
-	draw_rect(foto, CIELO)
-	_miniatura(foto)
+	var d: Dictionary = Temas.DATOS[tema]
+	draw_rect(foto, d.cielo[1].lerp(d.cielo[0], 0.4))
+	_miniatura(foto, d)
+	if apagada:  # el papel tapa la foto: se ve que ese mapa no va
+		draw_rect(papel, Color(PAPEL, 0.7))
 	var letra := int(alto_titulo * 0.8)
 	draw_string(FUENTE, Vector2(papel.position.x, papel.end.y - alto_titulo * 0.3), titulo, HORIZONTAL_ALIGNMENT_CENTER, ancho, letra, Acuarela.CIRUELA)
 	draw_set_transform(Vector2.ZERO)
@@ -38,7 +44,7 @@ func _draw() -> void:
 
 # El primer tramo del recorrido dentro de la foto, con los colores del juego. Entero sería
 # una tira de rayitas: el mapa es 10 veces más largo que alto.
-func _miniatura(foto: Rect2) -> void:
+func _miniatura(foto: Rect2, d: Dictionary) -> void:
 	if _mapa.is_empty():
 		return
 	var mundo := Rect2(300.0, 0.0, 1100.0 * foto.size.x / foto.size.y, 1100.0)
@@ -50,11 +56,11 @@ func _miniatura(foto: Rect2) -> void:
 		var alto := foto.size.y * (0.25 + 0.15 * ((k * 37 + semilla) % 5) / 4.0)
 		ciudad.append_array([Vector2(x, foto.end.y - alto), Vector2(x + foto.size.x / 7.0 - 3.0, foto.end.y - alto)])
 	ciudad.append_array([foto.end, Vector2(foto.position.x, foto.end.y)])
-	Acuarela.pintar(self, ciudad, Acuarela.AZUL_LEJOS, semilla)
+	Acuarela.pintar(self, ciudad, d.lejos, semilla)
 	for p: Dictionary in _mapa.piezas:
 		if p.pos.x > mundo.end.x + 200.0:
 			continue
-		var color := Acuarela.ROSA if p.enganchable else Acuarela.AZOTEA
+		var color: Color = Acuarela.ROSA if p.enganchable else d.suelo
 		var poly := PackedVector2Array()
 		for v: Vector2 in p.poly:
 			poly.append(origen + (p.pos + v) * escala)

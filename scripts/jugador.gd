@@ -244,6 +244,16 @@ func golpear_cercanos() -> void:
 		efecto.rpc("choque", (global_position + otro.global_position) / 2.0)
 
 
+# Aro de fuego: se quema el papel y sale despedido hacia arriba y hacia donde iba. Hacia atrás
+# no: el bot probador se quemaba una y otra vez con el mismo aro sin poder pasar.
+func quemarse(centro: Vector2) -> void:
+	var lado := signf(velocity.x) if absf(velocity.x) > 50.0 else signf(global_position.x - centro.x)
+	velocity = Vector2((lado if lado != 0.0 else 1.0) * 550.0, -450.0)
+	papel = null
+	_publicar_papel()
+	efecto.rpc("fuego", global_position)
+
+
 # Como move_and_collide, pero si choca con una pared resbala por ella en vez de quedarse
 # pegado (el bot probador se quedaba clavado en esquinas hasta romper el papel).
 func _mover_deslizando(movimiento: Vector2) -> void:

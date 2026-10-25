@@ -78,14 +78,21 @@ func titular(texto: String) -> void:
 	$Titular.text = texto
 
 
-func postal(titulo_: String, semilla: int, filas: Array) -> void:
+func postal(titulo_: String, semilla: int, filas: Array, tema := "azotea") -> void:
 	var p: Postal = $Postal
 	p.titulo = titulo_
+	p.tema = tema
 	p.semilla = semilla
 	p.filas = filas
 	p.visible = true
 	p.position.y = -p.size.y  # cae desde arriba y se asienta
 	create_tween().tween_property(p, "position:y", (get_viewport().get_visible_rect().size.y - p.size.y) / 2.0, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+# En mapas de cielo oscuro (noche, cueva) los textos van en crema para que se lean.
+func oscuro(si: bool) -> void:
+	for nodo in [$Tiempo, $Poder/Texto, $Mensaje, $Titular, $Ayuda, $Menu]:
+		nodo.add_theme_color_override("font_color", Color("fffaf4") if si else Acuarela.CIRUELA)
 
 
 func ocultar_postal() -> void:

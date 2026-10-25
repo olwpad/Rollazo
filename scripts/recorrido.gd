@@ -5,6 +5,8 @@ extends Node2D
 const ESCENA_JUGADOR := preload("res://scenes/jugador.tscn")
 const CAMARA := preload("res://scripts/camara.gd")
 const BURBUJA := preload("res://scripts/burbuja.gd")
+const ARO := preload("res://scripts/aro.gd")
+const FONDO := preload("res://scripts/fondo.gd")
 const ESPERA_TRAS_PRIMERO := 20.0  # segundos que tienen los demás tras llegar el primero
 const SEGUNDOS_RESULTADOS := 5.0
 const SEGUNDOS_POSTAL := 2.5  # la postal de "RONDA N" con los mocos quietos
@@ -12,6 +14,7 @@ const SEGUNDOS_FINAL := 8.0  # el ganador del torneo antes de volver a la sala
 
 var ronda := 1  # en todos los PCs
 var semilla_actual := 0
+var tema := "azotea"  # el mapa de esta ronda (Temas): paleta, fondo y si hay aros
 var nombres := {}  # id -> "JUGADOR N", fijo desde que sale su moco
 var llegados: Array[int] = []  # quién ha cruzado la meta esta ronda, en todos los PCs
 var espectadores: Array[int] = []  # llegaron y se cayeron: miran hasta el final de la ronda
@@ -44,10 +47,6 @@ func _ready() -> void:
 		Red.jugadores_cambiaron.connect(_quitar_desconectados)
 	$Caida.body_entered.connect(_al_caer)
 	$Meta.body_entered.connect(_al_llegar)
-	var i := 0
-	for dibujo: Polygon2D in find_children("Dibujo", "Polygon2D"):  # el suelo de salida
-		_estilo_acuarela(dibujo, i)
-		i += 1
 	_estilo_acuarela($Meta/Bandera, 99, Acuarela.CIRUELA)  # ningún moco es ciruela: se lee como meta
 	piezas.name = "Piezas"
 	add_child(piezas)
@@ -67,6 +66,7 @@ func construir(semilla: int) -> void:
 		viejo.get_parent().remove_child(viejo)
 		viejo.queue_free()
 	semilla_actual = semilla
+	tema = Temas.de_ronda(Red.config.mapas, Red.semilla, ronda)
 	var mapa := Generador.generar(semilla)
 	for i in mapa.piezas.size():
 		var p: Dictionary = mapa.piezas[i]
@@ -103,9 +103,64 @@ func construir(semilla: int) -> void:
 			b.set("tipo", mapa.burbujas[i].tipo)  # set(): Area2D no sabe que el script tiene `tipo`
 			b.body_entered.connect(_al_tocar_burbuja.bind(b))
 			piezas.add_child(b)  # con las piezas: se borran solas al cambiar de mapa
+	if Red.config.aros and Temas.DATOS[tema].aros:
+		for i in mapa.aros.size():
+			var a := Area2D.new()
+			a.set_script(ARO)
+			a.name = "Aro%d" % i
+			a.position = mapa.aros[i].pos
+			a.set("mov", mapa.aros[i].mov)
+			a.body_entered.connect(_al_tocar_aro.bind(a))
+			piezas.add_child(a)
 	$Meta.position = mapa.meta
 	$Caida.position.x = mapa.caida_x
 	$Caida/Forma.shape.size.x = mapa.caida_ancho
+	_pintar_tema(mapa.meta.x)
+
+
+# Cielo, siluetas del fondo, lo que se mueve y el suelo de salida con los colores del tema.
+func _pintar_tema(fin_x: float) -> void:
+	var d: Dictionary = Temas.DATOS[tema]
+	var cielo: ShaderMaterial = $Ciudad/Cielo/Pintura.material
+	for k in 3:
+		var c: Color = d.cielo[k]
+		cielo.set_shader_parameter(["arriba", "medio", "abajo"][k], Vector3(c.r, c.g, c.b))
+	cielo.set_shader_parameter("luna", 1.0 if d.luna else 0.0)
+	hud.oscuro(d.cielo[1].get_luminance() < 0.5)
+	for capa in ["Lejos", "Cerca"]:
+		var edificios := get_node("Ciudad/%s/Edificios" % capa)
+		edificios.visible = d.fondo == "ciudad"
+		edificios.set("color_edificio", d[capa.to_lower()])
+		edificios.set("color_ventana", d.ventanas)
+		edificios.set("guirnaldas", tema == "noche" and capa == "Cerca")
+		edificios.queue_redraw()
+		_poner_fondo(get_node("Ciudad/" + capa), capa.to_lower(), fin_x)
+	if d.superficie != "":
+		_poner_fondo(self, "superficie", fin_x).z_index = 5  # delante de los mocos: el que cae se hunde
+	else:
+		_poner_fondo(self, "", fin_x)  # solo quita la del mapa anterior
+	var suelo: Polygon2D = $SueloInicio/Dibujo
+	for viejo in suelo.get_children():
+		viejo.free()
+	_estilo_acuarela(suelo, 0)
+
+
+func _poner_fondo(padre: Node, capa: String, fin_x: float) -> Node2D:
+	var nombre := "Superficie" if padre == self else "Fondo"
+	var viejo := padre.get_node_or_null(nombre)
+	if viejo != null:
+		padre.remove_child(viejo)
+		viejo.queue_free()
+	if capa == "":
+		return null
+	var fondo := Node2D.new()
+	fondo.set_script(FONDO)
+	fondo.name = nombre
+	fondo.set("tema", tema)
+	fondo.set("capa", capa)
+	fondo.set("hasta_x", fin_x + 2000.0)
+	padre.add_child(fondo)
+	return fondo
 
 
 # Cada forma se pinta como mancha de acuarela, sin contorno: techos enganchables en rosa
@@ -115,7 +170,7 @@ func _estilo_acuarela(dibujo: Polygon2D, i: int, forzado := Color.TRANSPARENT) -
 	if dibujo.get_parent().is_in_group("enganchable"):
 		color = Acuarela.ROSA if i % 2 == 0 else Acuarela.LAVANDA
 	elif dibujo.get_parent() is StaticBody2D:
-		color = Acuarela.AZOTEA
+		color = Temas.DATOS[tema].suelo
 	# Base opaca: lo que se puede tocar no deja ver el fondo, así se lee como sólido.
 	var base := Polygon2D.new()
 	base.polygon = Tinta.irregular(dibujo.polygon, i, 2.0, 30.0)
@@ -259,7 +314,7 @@ func _postal() -> void:
 	corriendo = false
 	_congelar(true)
 	var victorias := _filas_vista().map(func(f: Array) -> Array: return [f[0], f[2]])
-	hud.postal("RONDA %d DE %d · %s" % [ronda, Red.config.rondas, Generador.NOMBRE], semilla_actual, victorias)
+	hud.postal("RONDA %d DE %d · %s" % [ronda, Red.config.rondas, Temas.DATOS[tema].nombre], semilla_actual, victorias, tema)
 	var esta_ronda := ronda
 	await get_tree().create_timer(SEGUNDOS_POSTAL).timeout
 	if not is_inside_tree() or ronda != esta_ronda:
@@ -282,6 +337,12 @@ func _al_tocar_burbuja(cuerpo: Node2D, burbuja: Area2D) -> void:
 	(cuerpo as Jugador).dar_poder(burbuja.get("tipo"))
 	cuerpo.efecto.rpc("poder", burbuja.global_position)
 	burbuja_cogida.rpc(burbuja.name)
+
+
+# Aro de fuego: lo decide el anfitrión, como todo lo que toca a los mocos.
+func _al_tocar_aro(cuerpo: Node2D, aro: Area2D) -> void:
+	if cuerpo is Jugador and multiplayer.is_server() and not cuerpo.congelado:
+		(cuerpo as Jugador).quemarse(aro.global_position)
 
 
 @rpc("authority", "call_local", "reliable")

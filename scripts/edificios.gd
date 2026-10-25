@@ -9,6 +9,8 @@ extends Node2D
 @export var alto_max := 700.0
 @export var color_edificio := Acuarela.AZUL_EDIFICIO
 @export var con_ventanas := true
+@export var color_ventana := Color(1, 1, 1, 0.6)
+@export var guirnaldas := false  # luces de verbena de un tejado al siguiente
 
 
 func _draw() -> void:
@@ -16,6 +18,7 @@ func _draw() -> void:
 	rng.seed = semilla
 	var x := 0.0
 	var n := 0
+	var tejados := []  # las dos esquinas de cada tejado, para las guirnaldas
 	while x < ancho_total:
 		var ancho := rng.randf_range(90.0, 200.0)
 		var alto := rng.randf_range(alto_min, alto_max)
@@ -29,8 +32,13 @@ func _draw() -> void:
 		_tejado(rng, x, der, minf(techo_i, techo_d))
 		if con_ventanas:
 			_ventanas(rng, x, der, maxf(techo_i, techo_d))
+		tejados.append([Vector2(x, techo_i), Vector2(der, techo_d)])
 		x += ancho
 		n += 1
+	if guirnaldas:
+		for i in range(0, tejados.size() - 1, 2):
+			if absf(tejados[i][1].y - tejados[i + 1][0].y) < 90.0:  # solo entre tejados parecidos: si no, cuelga en diagonal
+				_guirnalda((tejados[i][0] + tejados[i][1]) / 2.0, (tejados[i + 1][0] + tejados[i + 1][1]) / 2.0)
 
 
 func _tejado(rng: RandomNumberGenerator, izq: float, der: float, techo: float) -> void:
@@ -58,6 +66,18 @@ func _ventanas(rng: RandomNumberGenerator, izq: float, der: float, techo: float)
 				var h := rng.randf_range(12.0, 18.0)
 				draw_colored_polygon(Tinta.irregular(PackedVector2Array([
 					Vector2(vx, y), Vector2(vx + w, y), Vector2(vx + w, y + h), Vector2(vx, y + h)
-				]), int(vx * 7 + y), 1.2, 20.0), Color(1, 1, 1, 0.6))
+				]), int(vx * 7 + y), 1.2, 20.0), color_ventana)
 			vx += rng.randf_range(22.0, 30.0)
 		y += rng.randf_range(30.0, 40.0)
+
+
+# Cable que cuelga entre dos tejados con bombillas que brillan.
+func _guirnalda(a: Vector2, b: Vector2) -> void:
+	var puntos := PackedVector2Array()
+	for k in 11:
+		var f := k / 10.0
+		puntos.append(a.lerp(b, f) + Vector2(0, sin(f * PI) * 40.0))
+	draw_polyline(puntos, Acuarela.CIRUELA, 2.0)
+	for k in range(1, 10, 2):
+		draw_circle(puntos[k], 12.0, Color("f5d38a", 0.2))
+		draw_circle(puntos[k], 5.0, Color("f5d38a"))
