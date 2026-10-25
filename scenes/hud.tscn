@@ -88,5 +88,5 @@ offset_bottom = -20.0
 theme_override_colors/font_color = Color(0.227, 0.208, 0.314, 1)
 theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 26
-text = "MANTÉN CLIC: LANZAR PAPEL  ·  SUELTA: IMPULSO  ·  W / S: RECOGER / SOLTAR  ·  CLIC DCHO: CORTAR  ·  E: AGARRAR"
+text = "MANTÉN CLIC: LANZAR PAPEL  ·  SUELTA: IMPULSO  ·  W / S: RECOGER / SOLTAR  ·  CLIC DCHO: CORTAR  ·  E: AGARRAR  ·  T: MIRA"
 horizontal_alignment = 1

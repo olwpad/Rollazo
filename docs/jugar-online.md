@@ -42,6 +42,7 @@ entre nuestros PCs por internet (gratis, sin abrir puertos del router).
 | Agarrarse a otro / soltarse | E |
 | Volver al menú | Esc |
 | Silenciar la música | M |
+| Quitar / poner la mira de puntos | T |
 
 Máximo 4 jugadores. Cada ronda: puntos 10, 6, 3 y 1 por orden de llegada; cuando llega el
 primero, los demás tienen 20 segundos.

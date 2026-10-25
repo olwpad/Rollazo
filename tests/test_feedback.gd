@@ -39,3 +39,15 @@ func test_ayuda_de_controles() -> void:
 	var ayuda: Label = hud.get_node_or_null("Ayuda")
 	comprobar(ayuda != null and "CLIC" in ayuda.text and "E" in ayuda.text, "controles explicados en pantalla")
 	hud.free()
+
+
+func test_mira_se_puede_quitar_y_se_recuerda() -> void:
+	comprobar(InputMap.has_action("mira"), "tecla para la mira (T)")
+	var Mira: GDScript = load("res://scripts/mira.gd")
+	var antes: bool = Mira.activa()
+	Mira.alternar()
+	comprobar(Mira.activa() != antes, "T la quita o la pone")
+	var cfg := ConfigFile.new()
+	cfg.load(Mira.AJUSTES)
+	comprobar(cfg.get_value("juego", "mira", true) == Mira.activa(), "se guarda para la próxima vez")
+	Mira.alternar()  # dejarla como estaba

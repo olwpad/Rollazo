@@ -3,7 +3,33 @@
 # Solo dibuja: el lanzamiento real lo sigue decidiendo el anfitrión.
 extends Node2D
 
+const AJUSTES := "user://ajustes.cfg"  # en Windows: %APPDATA%/Godot/app_userdata/Rollazo
+
+static var _activa: Variant = null  # null = aún sin leer del disco
+
 @onready var jugador: Jugador = get_parent()
+
+
+# Static: compartida por todas las miras, como un campo static de Java.
+static func activa() -> bool:
+	if _activa == null:
+		var cfg := ConfigFile.new()
+		cfg.load(AJUSTES)
+		_activa = cfg.get_value("juego", "mira", true)
+	return _activa
+
+
+static func alternar() -> void:
+	_activa = not activa()
+	var cfg := ConfigFile.new()
+	cfg.load(AJUSTES)
+	cfg.set_value("juego", "mira", _activa)
+	cfg.save(AJUSTES)
+
+
+func _unhandled_input(evento: InputEvent) -> void:
+	if evento.is_action_pressed("mira"):
+		alternar()
 
 
 func _ready() -> void:
@@ -26,7 +52,7 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	if jugador.papel_activo:
+	if jugador.papel_activo or not activa():
 		return
 	var r := calcular(get_global_mouse_position())
 	var desde := jugador.global_position
