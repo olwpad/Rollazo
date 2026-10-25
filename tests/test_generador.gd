@@ -70,3 +70,11 @@ func test_sin_bloques_encima_de_descansos_ni_atajos_tras_el_ultimo_techo() -> vo
 				comprobar(not encima, "semilla %d: bloque en %s encima del descanso" % [semilla, b.pos])
 		for a in _piezas(m, "Atajo"):
 			comprobar(a.pos.x < m.camino.back().x, "semilla %d: atajo tras el último techo lanza más allá de la meta" % semilla)
+
+
+func test_suelo_de_meta_cerca_del_ultimo_techo() -> void:
+	for semilla in 60:
+		var m := Generador.generar(semilla)
+		var suelo: Dictionary = _piezas(m, "SueloMeta")[0]
+		var borde: float = suelo.pos.x - 350.0
+		comprobar(borde - m.camino.back().x <= 150.0, "semilla %d: hueco hasta el suelo de meta %.0f px" % [semilla, borde - m.camino.back().x])

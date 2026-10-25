@@ -59,7 +59,7 @@ static func generar(semilla: int) -> Dictionary:
 		desde_descanso += 1
 		recien_descanso = false
 	_quitar_estorbos(m)
-	var suelo_meta := Vector2(x + 600.0, 720.0)
+	var suelo_meta := Vector2(x + 450.0, 720.0)  # el borde queda a 100 px del último techo
 	_pieza(m, "SueloMeta", suelo_meta, _caja(700.0, 80.0), false)
 	m.meta = suelo_meta + Vector2(150.0, -120.0)
 	m.caida_x = m.meta.x / 2.0  # de x=-2000 a 2000 más allá de la meta
