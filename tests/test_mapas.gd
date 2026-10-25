@@ -36,13 +36,21 @@ func test_config_de_mapas_y_aros() -> void:
 
 func test_aros_en_el_hueco_entre_techos() -> void:
 	for semilla in 20:
-		var m := Generador.generar(semilla)
+		var m := Generador.generar(semilla, "horizontal")
 		comprobar(m.aros.size() >= 2, "semilla %d: aros %d" % [semilla, m.aros.size()])
 		for a: Dictionary in m.aros:
 			comprobar(a.pos.x > Generador.INICIO_FIN + 400.0 and a.pos.x < m.meta.x - 300.0, "semilla %d: aro lejos de salida y meta" % semilla)
 			comprobar(a.mov in ["quieto", "sube"], "movimiento conocido")
 			for p: Dictionary in m.piezas:
 				comprobar(a.pos.distance_to(p.pos) > 190.0, "semilla %d: aro %s pegado a %s" % [semilla, a.pos, p.nombre])
+	# En las otras formas puede no haber hueco para aros, pero nunca dentro de una pieza ni fuera del mapa
+	for forma in Generador.FORMAS:
+		for semilla in 20:
+			var m := Generador.generar(semilla, forma)
+			for a: Dictionary in m.aros:
+				comprobar(m.limites.has_point(a.pos), "%s %d: aro dentro de los límites" % [forma, semilla])
+				for p: Dictionary in m.piezas:
+					comprobar(a.pos.distance_to(p.pos) > 190.0 and not Geometry2D.is_point_in_polygon(a.pos - p.pos, p.poly), "%s %d: aro %s en %s" % [forma, semilla, a.pos, p.nombre])
 	comprobar(Generador.generar(4).piezas == Generador.generar(4).piezas, "los aros no cambian el resto del mapa")
 
 
@@ -50,7 +58,7 @@ func test_recorrido_con_tema() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.config.mapas = ["cueva"]
 	red.config.aros = true  # quitados por defecto, pero el código sigue
-	red.semilla = 3
+	red.semilla = 2  # sale horizontal, con huecos para aros (la 3 es una montaña, sin ellos)
 	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(nivel)
 	comprobar(nivel.tema == "cueva", "monta la cueva")

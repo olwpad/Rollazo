@@ -27,6 +27,8 @@ const ESCALON_X := Vector2(500.0, 600.0)  # de un techo al siguiente (mín, máx
 const ESCALON_Y := Vector2(110.0, 160.0)  # lo que baja cada techo; poco, para no estamparse
 const SUELO_BAJO_TECHO := Vector2(300.0, 340.0)  # de la parte de arriba de un suelo al techo a tiro (como en horizontal)
 const SIERRA_BAJO_TECHO := 260.0  # el hueco va en la parte baja del arco, como los aros
+const MONTANA_ALTO := 1200.0  # lo que sube la torre de la montaña y luego baja la bajada
+const EMPALME_ANCHO := 250.0  # el descanso entre dos tramos
 
 
 # Devuelve un Dictionary con:
@@ -36,40 +38,106 @@ const SIERRA_BAJO_TECHO := 260.0  # el hueco va en la parte baja del arco, como 
 static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
+	if forma == "":  # con su propio azar: añadir o quitar formas no cambia el interior de cada mapa
+		var elige := RandomNumberGenerator.new()
+		elige.seed = hash(Vector2i(semilla, 3))
+		forma = FORMAS[elige.randi_range(0, FORMAS.size() - 1)]
 	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": []}
-	m.forma = forma if forma in ["torre", "bajada"] else "horizontal"  # shortcut: montaña e híbrido aún caen en horizontal
+	m.forma = forma if forma in FORMAS else "horizontal"
 	m.huecos_sierra = []
-	var arriba := BAJADA_ALTO if m.forma == "bajada" else 0.0
+	var tramos := _tramos(m.forma, rng)
+	var arriba: float = tramos[0][1] if tramos[0][0] == "bajada" else 0.0
 	m.inicio = Vector2(200, 640 - arriba)
 	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0 - arriba))
-	var fin: Vector2
-	if m.forma == "torre":
-		fin = _tramo_torre(m, rng, Vector2(INICIO_FIN, SUELO_Y), TORRE_ALTO)
-	elif m.forma == "bajada":
+	if arriba > 0.0:
 		_pieza(m, "SueloSalida", m.inicio + Vector2(100, 80), _caja(700.0, 80.0), false)  # como el SueloInicio de la escena
-		fin = _tramo_bajada(m, rng, Vector2(INICIO_FIN, SUELO_Y - arriba), BAJADA_ALTO)
-	else:
-		fin = _tramo_horizontal(m, rng, Vector2(INICIO_FIN, SUELO_Y), LARGO - INICIO_FIN)
-	_quitar_estorbos(m)
+	var desde := Vector2(INICIO_FIN, SUELO_Y - arriba)
+	var fin: Vector2
+	for i in tramos.size():
+		var tipo: String = tramos[i][0]
+		var antes: int = m.camino.size()
+		if tipo == "torre":
+			fin = _tramo_torre(m, rng, desde, tramos[i][1])
+		elif tipo == "bajada":
+			fin = _tramo_bajada(m, rng, desde, tramos[i][1])
+		else:
+			fin = _tramo_horizontal(m, rng, desde, tramos[i][1])
+		if tipo != "horizontal":  # el horizontal ya las pone
+			_burbujas_vuelo(m, rng, antes)
+		if i < tramos.size() - 1:
+			desde = _empalme(m, tipo, fin)
+		_quitar_estorbos(m)  # en cada tramo: un atajo tras su último techo se metería en el siguiente
+	var ultimo: String = tramos.back()[0]
 	# En horizontal el borde queda a 100 px del último techo; en la torre se sale andando del último descanso
-	var suelo_meta := fin + Vector2(350.0 if m.forma == "torre" else 450.0, 30.0)
+	var suelo_meta := fin + Vector2(350.0 if ultimo == "torre" else 450.0, 30.0)
 	_pieza(m, "SueloMeta", suelo_meta, _caja(700.0, 80.0), false)
 	m.meta = suelo_meta + Vector2(150.0, -120.0)
-	# En la bajada también vale la caja alta: lo único a esa x es el suelo de meta, tras el último techo
-	m.meta_tam = Vector2(400, 300) if m.forma == "torre" else Vector2(220, 1600)
+	# Tras un techo también vale la caja alta: lo único a esa x es el suelo de meta
+	m.meta_tam = Vector2(400, 300) if ultimo == "torre" else Vector2(220, 1600)
 	m.caida_x = m.meta.x / 2.0  # de x=-2000 a 2000 más allá de la meta
 	m.caida_ancho = m.meta.x + 4000.0
 	m.limites = _limites(m)
 	m.caida_y = maxf(1300.0, m.limites.end.y)
-	if m.forma == "bajada":  # caida_y es el centro de una franja de 200 px: que su borde de arriba quede bajo todo
+	if not m.forma in ["horizontal", "torre"]:  # caida_y es el centro de una franja de 200 px: que su borde de arriba quede bajo todo
 		m.caida_y = maxf(m.caida_y, m.limites.end.y + 150.0)
 	m.aros = _aros(semilla, m)
 	return m
 
 
+# Los tramos de cada forma, con su medida (largo en x para el horizontal, altura para torre y bajada).
+static func _tramos(forma: String, rng: RandomNumberGenerator) -> Array:
+	match forma:
+		"torre":
+			return [["torre", TORRE_ALTO]]
+		"bajada":
+			return [["bajada", BAJADA_ALTO]]
+		"montaña":  # se sube por un lado del muro y se baja por el otro
+			return [["torre", MONTANA_ALTO], ["bajada", MONTANA_ALTO]]
+		"hibrido":
+			var n := rng.randi_range(2, 3)
+			var tipos := []
+			for i in n:
+				tipos.append(["horizontal", "torre", "bajada"][rng.randi_range(0, 2)])
+			if tipos.count("horizontal") == n:
+				tipos[rng.randi_range(0, n - 1)] = ["torre", "bajada"][rng.randi_range(0, 1)]
+			# Cada tramo 1/n de lo normal: el total queda como un mapa de una forma, no n veces más largo
+			var medida := {"horizontal": (LARGO - INICIO_FIN) / n, "torre": TORRE_ALTO / n, "bajada": BAJADA_ALTO / n}
+			return tipos.map(func(t: String) -> Array: return [t, medida[t]])
+	return [["horizontal", LARGO - INICIO_FIN]]
+
+
+# Une un tramo con el siguiente y devuelve el borde desde el que empieza. La torre ya acaba
+# en un descanso: se empieza desde dentro de su pared derecha, así el primer techo queda a
+# <= 680 px del último saliente. Tras un techo va un descanso con control donde iría el suelo de meta.
+static func _empalme(m: Dictionary, tipo: String, fin: Vector2) -> Vector2:
+	if tipo == "torre":
+		return fin - Vector2(PARED_ANCHO, 0.0)
+	var centro := Vector2(fin.x + 100.0 + EMPALME_ANCHO / 2.0, fin.y)
+	_pieza(m, "Descanso", centro, _caja(EMPALME_ANCHO, 40.0), false)
+	m.controles.append(centro + Vector2(0, -80.0))
+	m.salidas_descanso.append(Vector2(centro.x + EMPALME_ANCHO / 2.0, fin.y - 20.0))
+	return Vector2(centro.x + EMPALME_ANCHO / 2.0, fin.y)
+
+
+# Burbujas de poder en el vuelo entre dos techos seguidos, desde el techo `desde_i` del camino,
+# para los tramos que no las ponen solos. Por encima del hueco de la sierra, nunca dentro de una pieza.
+static func _burbujas_vuelo(m: Dictionary, rng: RandomNumberGenerator, desde_i: int) -> void:
+	for i in range(maxi(desde_i, 1), m.camino.size()):
+		var a: Vector2 = m.camino[i - 1]
+		var b: Vector2 = m.camino[i]
+		var pos := Vector2((a.x + b.x) / 2.0, maxf(a.y, b.y) + 100.0)
+		var libre: bool = m.piezas.all(func(p: Dictionary) -> bool: return _distancia(pos, p) > 60.0) \
+				and m.huecos_sierra.all(func(h: Vector2) -> bool: return pos.distance_to(h) > 150.0) \
+				and m.burbujas.all(func(q: Dictionary) -> bool: return pos.distance_to(q.pos) > 300.0)
+		if rng.randf() < 0.7 and libre:
+			m.burbujas.append({"pos": pos, "tipo": Poderes.TIPOS[rng.randi_range(0, Poderes.TIPOS.size() - 1)]})
+
+
 # El bucle de techos y descansos, desde el borde `desde` del suelo anterior y a lo largo de
-# `largo` px en x. Devuelve el borde donde acaba.
+# `largo` px en x. Las alturas van respecto a ese suelo (en un mapa horizontal, SUELO_Y).
+# Devuelve el borde donde acaba.
 static func _tramo_horizontal(m: Dictionary, rng: RandomNumberGenerator, desde: Vector2, largo: float) -> Vector2:
+	var dy := desde.y - SUELO_Y
 	var x := desde.x
 	var hasta := desde.x + largo
 	var desde_descanso := 0
@@ -79,27 +147,27 @@ static func _tramo_horizontal(m: Dictionary, rng: RandomNumberGenerator, desde: 
 		if desde_descanso >= 3 and x < hasta - 1200.0 and (desde_descanso >= 4 or rng.randf() < 0.5):  # al final, tras un descanso no quedaría techo
 			var ancho := rng.randf_range(220.0, 300.0)
 			var centro := x + rng.randf_range(220.0, 280.0)
-			_pieza(m, "Descanso", Vector2(centro, SUELO_Y), _caja(ancho, 40.0), false)
-			m.controles.append(Vector2(centro, SUELO_Y - 80.0))
-			m.salidas_descanso.append(Vector2(centro + ancho / 2.0, SUELO_Y - 20.0))
+			_pieza(m, "Descanso", Vector2(centro, desde.y), _caja(ancho, 40.0), false)
+			m.controles.append(Vector2(centro, desde.y - 80.0))
+			m.salidas_descanso.append(Vector2(centro + ancho / 2.0, desde.y - 20.0))
 			x = centro + ancho / 2.0
 			desde_descanso = 0
 			recien_descanso = true
 			continue
 		var pos: Vector2
 		if recien_descanso:  # a tiro desde el suelo: poco lejos y no muy alto
-			pos = Vector2(x + rng.randf_range(100.0, 200.0), rng.randf_range(330.0, 370.0))
+			pos = Vector2(x + rng.randf_range(100.0, 200.0), dy + rng.randf_range(330.0, 370.0))
 		else:
-			pos = Vector2(x + rng.randf_range(520.0, 640.0), rng.randf_range(250.0, 380.0))
+			pos = Vector2(x + rng.randf_range(520.0, 640.0), dy + rng.randf_range(250.0, 380.0))
 		# Embudos: nunca antes del primer control (el bot se estrellaba ahí sin haber guardado nada)
 		var embudo: bool = not recien_descanso and desde_descanso >= 1 and m.controles.size() > 0 and rng.randf() < 0.12
 		if embudo:
-			pos.y = rng.randf_range(390.0, 410.0)
+			pos.y = dy + rng.randf_range(390.0, 410.0)
 		_techo(m, rng, pos, recien_descanso, embudo)
 		m.camino.append(pos)
 		if embudo:  # pilar desde abajo: deja un hueco estrecho bajo el techo
 			var arriba := pos.y + rng.randf_range(230.0, 260.0)  # pasa un columpio normal; más cerrado se estrellaba
-			_pieza(m, "Pilar", Vector2(pos.x, (arriba + 1200.0) / 2.0), _irregular_caja(rng, 140.0, 1200.0 - arriba), false)
+			_pieza(m, "Pilar", Vector2(pos.x, (arriba + 1200.0 + dy) / 2.0), _irregular_caja(rng, 140.0, 1200.0 + dy - arriba), false)
 		elif rng.randf() < 0.25:  # bloque flotante para chocarse a mitad de vuelo
 			var r := rng.randf_range(35.0, 50.0)
 			_pieza(m, "Bloque", pos + Vector2(rng.randf_range(260.0, 320.0), rng.randf_range(130.0, 200.0)), _poligono(rng, r, rng.randi_range(5, 7)), false)
@@ -109,7 +177,7 @@ static func _tramo_horizontal(m: Dictionary, rng: RandomNumberGenerator, desde: 
 			m.burbujas.append({"pos": pos + Vector2(rng.randf_range(-120.0, 120.0), rng.randf_range(170.0, 220.0)),
 					"tipo": Poderes.TIPOS[rng.randi_range(0, Poderes.TIPOS.size() - 1)]})
 		if rng.randf() < 0.15:  # atajo alto: más difícil de alcanzar, pero ahorra un columpio
-			_pieza(m, "Atajo", Vector2(pos.x + rng.randf_range(250.0, 330.0), rng.randf_range(60.0, 110.0)), _caja(rng.randf_range(120.0, 170.0), 40.0), true)
+			_pieza(m, "Atajo", Vector2(pos.x + rng.randf_range(250.0, 330.0), dy + rng.randf_range(60.0, 110.0)), _caja(rng.randf_range(120.0, 170.0), 40.0), true)
 		x = pos.x
 		desde_descanso += 1
 		recien_descanso = false
@@ -177,6 +245,7 @@ static func _tramo_torre(m: Dictionary, rng: RandomNumberGenerator, desde: Vecto
 	# El último tapa la pared derecha para salir andando hacia la meta
 	var centro_y := y + DESCANSO_BAJO_SALIENTE
 	_descanso_torre(m, izq, der + PARED_ANCHO, 1, centro_y, DESCANSO_TORRE_ANCHO + PARED_ANCHO)
+	m.salidas_descanso[-1] = Vector2(der + PARED_ANCHO, centro_y - 20.0)  # de este se sale andando por la derecha
 	_pieza(m, "Pared", Vector2(desde.x + PARED_ANCHO / 2.0, (tope - 400.0 + desde.y - 260.0) / 2.0), _caja(PARED_ANCHO, desde.y - 260.0 - tope + 400.0), false)  # abajo deja la entrada
 	_pieza(m, "Pared", Vector2(der + PARED_ANCHO / 2.0, (centro_y + 20.0 + desde.y) / 2.0), _caja(PARED_ANCHO, desde.y - centro_y - 20.0), false)
 	return Vector2(der + PARED_ANCHO, centro_y)
@@ -214,14 +283,28 @@ static func _aros(semilla: int, m: Dictionary) -> Array:
 		var a: Vector2 = camino[i - 1]
 		var b: Vector2 = camino[i]
 		var pos := Vector2((a.x + b.x) / 2.0, maxf(a.y, b.y) + 260.0)  # en la bajada del arco: o lo cruzas por el centro o vas por encima
-		var libre: bool = m.piezas.all(func(p: Dictionary) -> bool: return pos.distance_to(p.pos) > 200.0) 				and m.burbujas.all(func(q: Dictionary) -> bool: return pos.distance_to(q.pos) > 130.0)
-		if libre and pos.x > INICIO_FIN + 400.0 and pos.x < m.meta.x - 300.0:
+		var libre: bool = m.piezas.all(func(p: Dictionary) -> bool: return pos.distance_to(p.pos) > 200.0 and _distancia(pos, p) > 60.0) \
+				and m.burbujas.all(func(q: Dictionary) -> bool: return pos.distance_to(q.pos) > 130.0) \
+				and m.huecos_sierra.all(func(h: Vector2) -> bool: return pos.distance_to(h) > 200.0)
+		# Lejos de salida y meta en cualquier forma (en horizontal, x > INICIO_FIN + 400 y x < meta - 300)
+		if libre and m.limites.has_point(pos) and pos.distance_to(m.inicio) > INICIO_FIN + 250.0 and pos.distance_to(m.meta) > 350.0:
 			huecos.append(pos)
 	var aros := []
 	for k in mini(2, huecos.size()):
 		var pos: Vector2 = huecos.pop_at(rng.randi_range(0, huecos.size() - 1))
 		aros.append({"pos": pos, "mov": "quieto" if rng.randf() < 0.5 else "sube"})
 	return aros
+
+
+# Distancia de `pos` al borde de la pieza `p`; 0 si está dentro (una pared es larga: su centro no basta).
+static func _distancia(pos: Vector2, p: Dictionary) -> float:
+	var local: Vector2 = pos - p.pos
+	if Geometry2D.is_point_in_polygon(local, p.poly):
+		return 0.0
+	var d := INF
+	for i in p.poly.size():
+		d = minf(d, local.distance_to(Geometry2D.get_closest_point_to_segment(local, p.poly[i], p.poly[(i + 1) % p.poly.size()])))
+	return d
 
 
 # Un techo del camino con una forma al azar. Recién salido de un descanso, sin formas

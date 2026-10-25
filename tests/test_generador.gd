@@ -157,3 +157,65 @@ func _bajo(p: Dictionary) -> float:
 	for v: Vector2 in p.poly:
 		abajo = maxf(abajo, v.y)
 	return p.pos.y + abajo
+
+
+func test_salen_todas_las_formas_y_son_deterministas() -> void:
+	var vistas := {}
+	for semilla in 100:
+		var m := Generador.generar(semilla)
+		vistas[m.forma] = true
+		comprobar(var_to_str(m) == var_to_str(Generador.generar(semilla)), "semilla %d igual en todos los PCs" % semilla)
+	for f in Generador.FORMAS:
+		comprobar(vistas.has(f), "sale alguna vez " + f)
+	var m3 := Generador.generar(3)
+	comprobar(var_to_str(m3) == var_to_str(Generador.generar(3, m3.forma)), "la forma elegida no cambia el interior del mapa")
+
+
+# Montaña e híbridos encadenan tramos: también en las juntas cada techo queda a tiro del
+# anterior, y desde cada descanso se alcanza un techo más adelante.
+func test_montana_e_hibridos_se_pueden_recorrer() -> void:
+	for forma in ["montaña", "hibrido"]:
+		for semilla in 40:
+			var m := Generador.generar(semilla, forma)
+			comprobar(m.forma == forma, "forma")
+			var camino: Array = m.camino
+			var recorrido := 0.0
+			for i in range(1, camino.size()):
+				var d: Vector2 = camino[i] - camino[i - 1]
+				recorrido += d.length()
+				comprobar(d.length() <= 680.0, "%s %d: paso %d de %s a %s" % [forma, semilla, i, camino[i - 1], camino[i]])
+			var salidas: Array = m.salidas_descanso
+			for k in salidas.size() - 1:  # el último descanso puede ser el de arriba de una torre final
+				var borde: Vector2 = salidas[k]
+				var alcanza: bool = camino.any(func(c: Vector2) -> bool: return c.y < borde.y and c.distance_to(borde) <= PapelRope.LARGO_MAX - 20.0)
+				comprobar(alcanza, "%s %d: desde el descanso en %s no se alcanza ningún techo" % [forma, semilla, borde])
+			comprobar(m.caida_y > m.limites.end.y, "%s %d: la franja que mata está bajo todo" % [forma, semilla])
+			comprobar(m.controles.size() >= 2, "%s %d: controles" % [forma, semilla])
+			comprobar(recorrido > 4000.0 and recorrido < 11000.0, "%s %d: largo como un mapa horizontal (%.0f)" % [forma, semilla, recorrido])
+			for p in m.piezas:
+				comprobar(m.limites.has_point(p.pos), "%s %d: pieza %s dentro de los límites" % [forma, semilla, p.nombre])
+			comprobar(m.limites.has_point(m.meta) and m.limites.has_point(m.inicio), "meta y salida dentro")
+			if forma == "montaña":
+				comprobar(m.huecos_sierra.size() >= 1, "montaña %d: sierras en la bajada" % semilla)
+				comprobar(m.meta.x > camino.back().x, "se baja por el otro lado")
+
+
+func test_hibridos_variados() -> void:
+	var tramos := {}
+	for semilla in 40:
+		var m := Generador.generar(semilla, "hibrido")
+		var ys: Array = m.camino.map(func(c: Vector2) -> float: return c.y)
+		comprobar(ys.max() - ys.min() > 300.0, "hibrido %d: algún tramo sube o baja (en horizontal los techos varían <= 160 px)" % semilla)
+		tramos[_piezas(m, "Pared").size() > 0] = true
+		tramos[m.huecos_sierra.size() > 0] = true
+	comprobar(tramos.size() == 2, "unos con torre o bajada y otros sin")
+
+
+func test_todas_las_formas_traen_burbujas() -> void:
+	for forma in Generador.FORMAS:
+		for semilla in 10:
+			var m := Generador.generar(semilla, forma)
+			comprobar(m.burbujas.size() >= 3, "%s %d: burbujas %d" % [forma, semilla, m.burbujas.size()])
+			for b: Dictionary in m.burbujas:
+				for p in m.piezas:
+					comprobar(not Geometry2D.is_point_in_polygon(b.pos - p.pos, p.poly), "%s %d: burbuja dentro de %s" % [forma, semilla, p.nombre])

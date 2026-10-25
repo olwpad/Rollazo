@@ -14,7 +14,7 @@ func _process(_d: float) -> bool:
 		var red: Node = root.get_node("Red")
 		red.config.mapas = ["cueva"]
 		red.config.aros = true  # por defecto van quitados
-		red.semilla = 3
+		red.semilla = 2  # sale horizontal, con aros (la 3 es una montaña, sin huecos para ellos)
 		nivel = load("res://scenes/recorrido_prueba.tscn").instantiate()
 		root.add_child(nivel)
 	elif f == 10:
