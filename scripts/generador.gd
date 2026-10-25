@@ -41,13 +41,14 @@ static func generar(semilla: int) -> Dictionary:
 			pos = Vector2(x + rng.randf_range(100.0, 200.0), rng.randf_range(330.0, 370.0))
 		else:
 			pos = Vector2(x + rng.randf_range(520.0, 640.0), rng.randf_range(250.0, 380.0))
-		var embudo := not recien_descanso and desde_descanso >= 1 and rng.randf() < 0.2
+		# Embudos: nunca antes del primer control (el bot se estrellaba ahí sin haber guardado nada)
+		var embudo: bool = not recien_descanso and desde_descanso >= 1 and m.controles.size() > 0 and rng.randf() < 0.12
 		if embudo:
 			pos.y = rng.randf_range(390.0, 410.0)
-		_techo(m, rng, pos, recien_descanso)
+		_techo(m, rng, pos, recien_descanso, embudo)
 		m.camino.append(pos)
 		if embudo:  # pilar desde abajo: deja un hueco estrecho bajo el techo
-			var arriba := pos.y + rng.randf_range(150.0, 180.0)
+			var arriba := pos.y + rng.randf_range(230.0, 260.0)  # pasa un columpio normal; más cerrado se estrellaba
 			_pieza(m, "Pilar", Vector2(pos.x, (arriba + 1200.0) / 2.0), _irregular_caja(rng, 140.0, 1200.0 - arriba), false)
 		elif rng.randf() < 0.25:  # bloque flotante para chocarse a mitad de vuelo
 			var r := rng.randf_range(35.0, 50.0)
@@ -57,6 +58,7 @@ static func generar(semilla: int) -> Dictionary:
 		x = pos.x
 		desde_descanso += 1
 		recien_descanso = false
+	_quitar_estorbos(m)
 	var suelo_meta := Vector2(x + 600.0, 720.0)
 	_pieza(m, "SueloMeta", suelo_meta, _caja(700.0, 80.0), false)
 	m.meta = suelo_meta + Vector2(150.0, -120.0)
@@ -67,9 +69,11 @@ static func generar(semilla: int) -> Dictionary:
 
 # Un techo del camino con una forma al azar. Recién salido de un descanso, sin formas
 # raras de las que sea difícil engancharse desde el suelo.
-static func _techo(m: Dictionary, rng: RandomNumberGenerator, pos: Vector2, sencillo: bool) -> void:
+static func _techo(m: Dictionary, rng: RandomNumberGenerator, pos: Vector2, sencillo: bool, sobre_pilar := false) -> void:
 	var ancho := rng.randf_range(200.0, 320.0)
 	var tipo := 0 if sencillo else rng.randi_range(0, 4)
+	if sobre_pilar:  # sobre un embudo, ni triángulo ni roto: dejarían el hueco justo encima del pilar
+		tipo = [0, 2][rng.randi_range(0, 1)]
 	match tipo:
 		0:
 			_pieza(m, "Techo", pos, _caja(ancho, 40.0), true)
@@ -86,6 +90,19 @@ static func _techo(m: Dictionary, rng: RandomNumberGenerator, pos: Vector2, senc
 			var lado := (medio + hueco) / 2.0
 			_pieza(m, "Techo", pos - Vector2(lado, 0), _girar(_caja(medio, 40.0), rng.randf_range(0.1, 0.25)), true)
 			_pieza(m, "Techo", pos + Vector2(lado, rng.randf_range(-15.0, 15.0)), _girar(_caja(medio, 40.0), -rng.randf_range(0.1, 0.25)), true)
+
+
+# Quita lo que el bot probador encontró injusto: bloques justo encima de un descanso (te
+# encajan) y atajos en el último techo (te lanzan más allá de la meta).
+static func _quitar_estorbos(m: Dictionary) -> void:
+	var descansos: Array = m.piezas.filter(func(p: Dictionary) -> bool: return p.nombre.begins_with("Descanso"))
+	var ultimo: float = m.camino.back().x
+	m.piezas = m.piezas.filter(func(p: Dictionary) -> bool:
+		if p.nombre.begins_with("Atajo"):
+			return p.pos.x < ultimo
+		if p.nombre.begins_with("Bloque"):
+			return not descansos.any(func(d: Dictionary) -> bool: return absf(p.pos.x - d.pos.x) < 220.0 and d.pos.y - p.pos.y < 250.0)
+		return true)
 
 
 static func _pieza(m: Dictionary, tipo: String, pos: Vector2, poly: PackedVector2Array, enganchable: bool) -> void:

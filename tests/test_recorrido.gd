@@ -32,3 +32,9 @@ func test_caben_cuatro_mocos_en_la_salida() -> void:
 	var ultimo: float = nivel.get_node("Inicio").position.x + 3 * 90.0
 	comprobar(ultimo + 25.0 < borde, "el 4.º moco (x=%.0f) sale encima del suelo (borde %.0f)" % [ultimo, borde])
 	nivel.free()
+
+
+func test_meta_alta_para_no_sobrevolarla() -> void:
+	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
+	comprobar(nivel.get_node("Meta/Forma").shape.size.y >= 1200.0, "la meta cubre de arriba abajo")
+	nivel.free()

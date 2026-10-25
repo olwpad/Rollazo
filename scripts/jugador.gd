@@ -162,7 +162,7 @@ func _physics_process(delta: float) -> void:
 
 	if papel != null:
 		var r := Pendulo.restringir(global_position, velocity, papel.ancla, papel.largo)
-		move_and_collide(r[0] - global_position)  # con colisión, para no atravesar paredes
+		_mover_deslizando(r[0] - global_position)  # con colisión, para no atravesar paredes
 		velocity = r[1]
 		_tiempo_enganchado += delta
 		papel.gastar(delta, Pendulo.tension(r[2]))
@@ -174,9 +174,17 @@ func _physics_process(delta: float) -> void:
 		agarrado_a = null  # se desconectó
 	if agarrado_a != null:
 		var r := Pendulo.restringir(global_position, velocity, agarrado_a.global_position, LARGO_AGARRE)
-		move_and_collide(r[0] - global_position)
+		_mover_deslizando(r[0] - global_position)
 		velocity = r[1]
 	_publicar_papel()
+
+
+# Como move_and_collide, pero si choca con una pared resbala por ella en vez de quedarse
+# pegado (el bot probador se quedaba clavado en esquinas hasta romper el papel).
+func _mover_deslizando(movimiento: Vector2) -> void:
+	var c := move_and_collide(movimiento)
+	if c != null:
+		move_and_collide(c.get_remainder().slide(c.get_normal()))
 
 
 # Si este moco ha chocado fuerte con otro, ambos rebotan (solo en el anfitrión).

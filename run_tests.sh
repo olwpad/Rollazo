@@ -3,7 +3,11 @@
 G="${GODOT:-$LOCALAPPDATA/Microsoft/WinGet/Packages/GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe/Godot_v4.7.2-stable_win64_console.exe}"
 cd "$(dirname "$0")"
 "$G" --headless --path . --import >/dev/null 2>&1
-"$G" --headless --path . --script res://tests/run_tests.gd || exit 1
+SALIDA=$("$G" --headless --path . --script res://tests/run_tests.gd 2>&1); RC=$?
+echo "$SALIDA"
+[ $RC -eq 0 ] || exit 1
+# Un test que revienta con error de script no marca fallo por sí solo: lo cazamos aquí.
+if echo "$SALIDA" | grep -q "SCRIPT ERROR"; then echo "FALLO: hubo errores de script en los tests"; exit 1; fi
 "$G" --headless --path . --script res://tests/sim_columpio.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_recorrido.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_clics.gd || exit 1
