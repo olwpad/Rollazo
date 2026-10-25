@@ -515,8 +515,16 @@ func _mapa_nuevo_si_vigente(serial: int) -> void:
 func _mapa_nuevo_solo() -> void:
 	ronda += 1  # también rota el tema
 	mejor = INF
-	construir(randi())
+	construir(semilla_nueva())
 	reiniciar()
+
+
+# Una semilla al azar cuyo mapa no repite la forma del que se acaba de jugar.
+func semilla_nueva() -> int:
+	var s := randi()
+	while Generador.forma_de(s) == Generador.forma_de(semilla_actual):
+		s = randi()
+	return s
 
 
 # Sin red no hay rondas: se repite con R, como en la fase 1.
@@ -537,7 +545,7 @@ func _terminar_ronda() -> void:
 	mostrar_resultados.rpc(filas)
 	await get_tree().create_timer(SEGUNDOS_RESULTADOS).timeout
 	if is_inside_tree():
-		nueva_ronda.rpc(randi(), ronda + 1)  # cada ronda, mapa nuevo
+		nueva_ronda.rpc(semilla_nueva(), ronda + 1)  # cada ronda, mapa nuevo
 
 
 @rpc("authority", "call_local", "reliable")

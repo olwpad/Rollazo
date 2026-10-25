@@ -125,3 +125,12 @@ func test_solo_aviso_viejo_no_pisa_el_mapa_repetido() -> void:
 	nivel._mapa_nuevo_si_vigente(nivel._serial_mapa)
 	comprobar(nivel.semilla_actual != antes and nivel.ronda == 2, "el aviso vigente sí")
 	nivel.free()
+
+
+func test_mapa_nuevo_nunca_repite_forma() -> void:
+	var nivel := _nivel_solo()
+	for i in 8:
+		var antes := Generador.forma_de(nivel.semilla_actual)
+		nivel._mapa_nuevo_solo()
+		comprobar(Generador.forma_de(nivel.semilla_actual) != antes, "vuelta %d: otra vez %s" % [i, antes])
+	nivel.free()
