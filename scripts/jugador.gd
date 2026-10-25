@@ -10,6 +10,7 @@ signal efecto_red(tipo: String, pos: Vector2)  # llega a todos los PCs
 
 const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
 const VELOCIDAD_CHOQUE := 300.0  # por debajo, dos mocos solo se tocan
+const RADIO_CORTE := 50.0  # a esta distancia del papel de otro, puedes cortarlo
 const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a")]  # menta, rosa, lavanda, melocotón
 
 # Valores iniciales: se ajustan jugando desde el Inspector del editor.
@@ -30,7 +31,7 @@ var papel_activo := false
 var papel_ancla := Vector2.ZERO
 var papel_aguante := 1.0
 
-const EVENTOS := ["lanzar", "saltar"]
+const EVENTOS := ["lanzar", "saltar", "cortar"]
 var _remoto := {"soltar": true, "apunta": Vector2.ZERO, "eje_x": 0.0, "eje_largo": 0.0}
 var _remoto_contadores := {}  # en el anfitrión: lo último que mandó el dueño
 var _contadores_vistos := {}  # en el anfitrión: lo ya procesado
@@ -63,6 +64,7 @@ func _leer_teclado() -> Dictionary:
 		"eje_x": Input.get_axis("izquierda", "derecha"),
 		"eje_largo": Input.get_axis("encoger", "alargar"),
 		"saltar": Input.is_action_just_pressed("saltar"),
+		"cortar": Input.is_action_just_pressed("cortar"),
 	}
 
 
@@ -97,6 +99,8 @@ func _physics_process(delta: float) -> void:
 			_enviar_input()
 		return  # solo el anfitrión simula; los demás reciben la posición por el Sync
 	var e := _leer_input()
+	if e.cortar:
+		_cortar_cercanos()
 	if e.lanzar:
 		_lanzar_papel(e.apunta)
 		_tiempo_enganchado = 0.0
@@ -149,6 +153,20 @@ func _chocar(antes: Vector2) -> void:
 		otro.velocity = r[1]
 		efecto.rpc("choque", c.get_position())
 		return
+
+
+# Corta el papel de todo moco cuyo papel pase cerca de mí. No hace falta estar colgado.
+func _cortar_cercanos() -> void:
+	for otro in get_parent().get_children():
+		if otro is Jugador and otro != self and otro.papel != null 				and Geometria.distancia_a_segmento(global_position, otro.global_position, otro.papel.ancla) < RADIO_CORTE:
+			otro.cortar_papel()
+
+
+func cortar_papel() -> void:
+	efecto.rpc("rotura", (global_position + papel.ancla) / 2.0)
+	papel = null
+	papel_roto.emit()
+	_publicar_papel()
 
 
 # El anfitrión avisa de un efecto visual a todos los PCs (también a sí mismo: call_local).

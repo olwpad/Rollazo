@@ -9,6 +9,7 @@ cd "$(dirname "$0")"
 "$G" --headless --path . --script res://tests/sim_clics.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_salto.gd || exit 1
 "$G" --headless --path . --script res://tests/sim_choque.gd || exit 1
+"$G" --headless --path . --script res://tests/sim_cortar.gd || exit 1
 # Prueba de red con dos procesos: anfitrión en segundo plano y cliente.
 LOG="$(mktemp)"
 "$G" --headless --path . --script res://tests/sim_red_anfitrion.gd > "$LOG" 2>&1 &
