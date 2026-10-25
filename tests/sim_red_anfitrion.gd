@@ -10,6 +10,7 @@ var id_cliente := 0
 var vistos_dos := false
 var x_cliente_inicial := INF
 var x_cliente_min := INF
+var t_salida := -1.0
 var fallos: Array[String] = []
 
 
@@ -33,15 +34,22 @@ func _process(delta: float) -> bool:
 		vistos_dos = true
 		if jugadores == null or jugadores.get_node_or_null("1") == null or jugadores.get_node_or_null(str(id_cliente)) == null:
 			fallos.append("el anfitrión no ve los 2 mocos")
+		else:  # el anfitrión llega a la meta; falta el cliente
+			jugadores.get_node("1").global_position = current_scene.get_node("Meta").global_position
 	var cliente: Node2D = jugadores.get_node_or_null(str(id_cliente)) if jugadores else null
 	if cliente != null:
 		if x_cliente_inicial == INF:
 			x_cliente_inicial = cliente.global_position.x
 		x_cliente_min = minf(x_cliente_min, cliente.global_position.x)
 	if vistos_dos and jugadores != null and cliente == null:
-		if x_cliente_min > x_cliente_inicial - 100.0:
-			fallos.append("el anfitrión no movió el moco del cliente con su entrada")
-		_fin("")  # el cliente se fue y su moco desapareció
+		if t_salida < 0.0:
+			t_salida = espera
+			if x_cliente_min > x_cliente_inicial - 100.0:
+				fallos.append("el anfitrión no movió el moco del cliente con su entrada")
+		if current_scene.hud.tabla.get_child_count() == 1:
+			_fin("")  # el cliente se fue, su moco desapareció y la ronda terminó con 1 fila
+		elif espera - t_salida > 2.0:
+			_fin("la ronda no termina cuando se va el único que faltaba")
 	elif espera - t_carrera > 8.0:
 		_fin("el moco del cliente no desaparece al irse")
 	return false

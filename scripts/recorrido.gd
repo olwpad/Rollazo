@@ -4,11 +4,17 @@ extends Node2D
 
 const ESCENA_JUGADOR := preload("res://scenes/jugador.tscn")
 const CAMARA := preload("res://scripts/camara.gd")
+const ESPERA_TRAS_PRIMERO := 20.0  # segundos que tienen los demás tras llegar el primero
+const SEGUNDOS_RESULTADOS := 5.0
 
 var tiempo := 0.0
 var mejor := INF
 var corriendo := true
 var ultimos_controles := {}  # id de jugador -> último punto de control
+var clasificacion := Clasificacion.new()  # solo la usa el anfitrión
+var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
+var en_resultados := false
+var colores := {}  # id -> color de su moco, en todos los PCs
 
 @onready var hud := $HUD
 
@@ -59,10 +65,14 @@ func _physics_process(delta: float) -> void:
 	if corriendo:
 		tiempo += delta
 	hud.mostrar(tiempo, mejor)
+	if desde_primero >= 0.0 and not en_resultados and multiplayer.is_server():
+		desde_primero += delta
+		if clasificacion.todos_llegaron(Red.ids) or desde_primero >= ESPERA_TRAS_PRIMERO:
+			_terminar_ronda()
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if evento.is_action_pressed("reiniciar"):
+	if evento.is_action_pressed("reiniciar") and not Red.es_online():  # online manda la ronda
 		reiniciar()
 
 
@@ -74,6 +84,7 @@ func crear_jugador(datos: Array) -> Node:
 	j.name = str(id)
 	j.position = $Inicio.global_position + Vector2(indice * 50, 0)
 	j.get_node("Visual/Moco").color = Jugador.COLORES[indice % Jugador.COLORES.size()]
+	colores[id] = j.get_node("Visual/Moco").color
 	if id == multiplayer.get_unique_id():  # cada PC sigue con la cámara solo a su moco
 		var camara := Camera2D.new()
 		camara.set_script(CAMARA)
@@ -103,6 +114,8 @@ func _quitar_desconectados() -> void:
 func reiniciar() -> void:
 	tiempo = 0.0
 	corriendo = true
+	desde_primero = -1.0
+	en_resultados = false
 	ultimos_controles.clear()
 	hud.limpiar()
 	if multiplayer.is_server():
@@ -121,8 +134,47 @@ func _al_caer(cuerpo: Node2D) -> void:
 		cuerpo.reaparecer.call_deferred(punto)  # no mover cuerpos dentro de una señal de física
 
 
+# El anfitrión apunta el puesto y avisa a todos; cada PC para su cronómetro si es su moco.
 func _al_llegar(cuerpo: Node2D) -> void:
-	if cuerpo == jugador_local() and corriendo:
+	if not (cuerpo is Jugador and multiplayer.is_server()) or en_resultados:
+		return
+	var id: int = cuerpo.id_dueno()
+	var nuevo := not id in clasificacion.llegadas
+	var puesto := clasificacion.registrar_llegada(id)
+	if nuevo:
+		desde_primero = maxf(desde_primero, 0.0)
+		llegada.rpc(id, puesto)
+
+
+@rpc("authority", "call_local", "reliable")
+func llegada(id: int, puesto: int) -> void:
+	if id == multiplayer.get_unique_id() and corriendo:
 		corriendo = false
-		hud.meta(tiempo, mejor)
+		hud.meta(tiempo, mejor, puesto, not Red.es_online())
 		mejor = minf(mejor, tiempo)
+
+
+# Sin red no hay rondas: se repite con R, como en la fase 1.
+func _terminar_ronda() -> void:
+	if not Red.es_online():
+		desde_primero = -1.0
+		return
+	en_resultados = true
+	var filas := []
+	for id in Red.ids:
+		filas.append([id, clasificacion.puntos_totales.get(id, 0)])
+	filas.sort_custom(func(a: Array, b: Array) -> bool: return a[1] > b[1])
+	mostrar_resultados.rpc(filas)
+	await get_tree().create_timer(SEGUNDOS_RESULTADOS).timeout
+	clasificacion.nueva_ronda()
+	nueva_ronda.rpc()
+
+
+@rpc("authority", "call_local", "reliable")
+func mostrar_resultados(filas: Array) -> void:
+	hud.resultados(filas.map(func(f: Array) -> Array: return [colores.get(f[0], Acuarela.CIRUELA), f[1]]))
+
+
+@rpc("authority", "call_local", "reliable")
+func nueva_ronda() -> void:
+	reiniciar()

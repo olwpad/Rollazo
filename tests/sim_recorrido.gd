@@ -30,6 +30,7 @@ func _physics_process(_delta: float) -> bool:
 	elif frame == 40:
 		_comprobar(not nivel.corriendo, "la meta para el tiempo")
 		_comprobar(nivel.mejor < INF, "guarda el mejor tiempo")
+		_comprobar("PUESTO 1" in nivel.hud.mensaje.text, "el HUD muestra el puesto")
 		nivel.reiniciar()
 	elif frame == 42:
 		_comprobar(nivel.corriendo and nivel.tiempo < 0.1, "R reinicia el tiempo")

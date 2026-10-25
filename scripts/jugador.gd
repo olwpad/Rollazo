@@ -180,15 +180,22 @@ func _chocar(antes: Vector2) -> void:
 # Corta el papel de todo moco cuyo papel pase cerca de mí. No hace falta estar colgado.
 func _cortar_cercanos() -> void:
 	for otro in get_parent().get_children():
-		if otro is Jugador and otro != self and otro.papel != null 				and Geometria.distancia_a_segmento(global_position, otro.global_position, otro.papel.ancla) < RADIO_CORTE:
+		if not (otro is Jugador and otro != self and otro.papel != null):
+			continue
+		if Geometria.distancia_a_segmento(global_position, otro.global_position, otro.papel.ancla) < RADIO_CORTE:
 			otro.cortar_papel()
 
 
 func _agarrar_cercano() -> void:
 	var mejor: Jugador = null
+	var dist_mejor := DIST_AGARRE
 	for otro in get_parent().get_children():
-		if otro is Jugador and otro != self and otro.agarrado_a != self 				and global_position.distance_to(otro.global_position) < DIST_AGARRE 				and (mejor == null or global_position.distance_to(otro.global_position) < global_position.distance_to(mejor.global_position)):
+		if not (otro is Jugador and otro != self and otro.agarrado_a != self):
+			continue  # no a uno mismo, ni a quien ya está agarrado a mí (haría un bucle)
+		var d := global_position.distance_to(otro.global_position)
+		if d < dist_mejor:
 			mejor = otro
+			dist_mejor = d
 	if mejor != null:
 		agarrado_a = mejor
 		mejor.carga += 1
