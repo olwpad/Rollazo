@@ -12,9 +12,15 @@ const ESTELA_PUNTOS := 10
 
 func _ready() -> void:
 	top_level = true  # los efectos se quedan en el mundo aunque el jugador se mueva
-	jugador.aterrizaje_fuerte.connect(func(): _salpicar(jugador.global_position + Vector2(0, 18)); _temblar(10.0))
-	jugador.papel_lanzado.connect(func(): _salpicar(jugador.papel.ancla))
-	jugador.papel_roto.connect(func(): _temblar(6.0))
+	# Intensidad según la importancia del evento: enganchar es pequeño, caer y romperse, medio.
+	jugador.papel_lanzado.connect(func():
+		_salpicar(jugador.papel.ancla)
+		_moco().aplastar(Vector2(0.8, 1.25)))
+	jugador.aterrizaje_fuerte.connect(func():
+		_salpicar(jugador.global_position + Vector2(0, 18))
+		_moco().aplastar(Vector2(1.35, 0.65))
+		_temblar(0.35))
+	jugador.papel_roto.connect(func(): _temblar(0.45))
 
 
 func _process(_delta: float) -> void:
@@ -33,11 +39,11 @@ func _salpicar(pos: Vector2) -> void:
 	salpicadura.restart()
 
 
-func _temblar(fuerza: float) -> void:
+func _temblar(trauma: float) -> void:
 	var camara := get_viewport().get_camera_2d()
-	if camara == null:
-		return
-	var t := create_tween()
-	for i in 6:
-		t.tween_property(camara, "offset", Vector2(randf_range(-fuerza, fuerza), randf_range(-fuerza, fuerza)), 0.03)
-	t.tween_property(camara, "offset", Vector2.ZERO, 0.05)
+	if camara != null and camara.has_method("add_trauma"):
+		camara.add_trauma(trauma)
+
+
+func _moco() -> MocoVisual:
+	return jugador.get_node("Visual/Moco")

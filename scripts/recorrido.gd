@@ -29,6 +29,8 @@ func _estilo_neon(dibujo: Polygon2D, i: int) -> void:
 		dibujo.color = Color(1.0, 0.25, 0.6) if i % 2 == 0 else Color(1.0, 0.88, 0.3)
 	elif dibujo.get_parent() is StaticBody2D:
 		dibujo.color = Color(0.36, 0.14, 0.55)
+	# Solo cambia el dibujo; la colisión sigue siendo el rectángulo exacto.
+	dibujo.polygon = Tinta.irregular(dibujo.polygon, i, 3.0, 40.0)
 	var fantasma := Polygon2D.new()
 	fantasma.polygon = dibujo.polygon
 	fantasma.color = Color(0.0, 0.9, 1.0, 0.6)
@@ -36,8 +38,11 @@ func _estilo_neon(dibujo: Polygon2D, i: int) -> void:
 	fantasma.show_behind_parent = true
 	dibujo.add_child(fantasma)
 	var borde := Line2D.new()
-	borde.points = dibujo.polygon
+	borde.set_script(preload("res://scripts/borde_tinta.gd"))
+	borde.base = dibujo.polygon
+	borde.semilla = i
 	borde.closed = true
+	borde.joint_mode = Line2D.LINE_JOINT_ROUND
 	borde.width = 6.0
 	borde.default_color = Color.BLACK
 	dibujo.add_child(borde)

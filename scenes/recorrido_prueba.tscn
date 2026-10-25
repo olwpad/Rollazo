@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="3"]
 [ext_resource type="Shader" path="res://shaders/cielo_neon.gdshader" id="4"]
 [ext_resource type="Script" path="res://scripts/edificios.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/camara.gd" id="6"]
 
 [sub_resource type="ShaderMaterial" id="mat_cielo"]
 shader = ExtResource("4")
@@ -212,6 +213,7 @@ polygon = PackedVector2Array(-6, -120, 6, -120, 6, 120, -6, 120)
 position = Vector2(200, 640)
 
 [node name="Camara" type="Camera2D" parent="Jugador" unique_id=1734401383]
+script = ExtResource("6")
 zoom = Vector2(0.85, 0.85)
 position_smoothing_enabled = true
 

@@ -27,9 +27,17 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 
 
+# Se aplasta o se estira de golpe y vuelve con un rebote elástico.
+func aplastar(escala: Vector2) -> void:
+	scale = escala
+	create_tween().tween_property(self, "scale", Vector2.ONE, 0.22) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
 func _draw() -> void:
-	var t := Time.get_ticks_msec() / 1000.0
-	var contorno := forma(28, t, velocidad)
+	var foto := Tinta.fotograma()
+	var t := foto / float(Tinta.FPS)  # el temblor avanza a 12 fps, como dibujado a mano
+	var contorno := Tinta.temblar(forma(28, t, velocidad), 77, foto, 0.8)
 	draw_colored_polygon(contorno, COLOR_MOCO)
 	var cerrado := contorno.duplicate()
 	cerrado.append(contorno[0])
