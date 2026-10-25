@@ -107,8 +107,7 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 		h.ocupado = ocupado
 		var aspecto: Dictionary = Red.aspecto_de(ids[i]) if ocupado else Perfil.POR_DEFECTO
 		h.moco.color = Red.color_de(ids[i]) if ocupado else Jugador.COLORES[i]
-		h.moco.pelo = aspecto.pelo
-		h.moco.sombrero = aspecto.sombrero
+		h.moco.vestir(aspecto)
 		if not ocupado:
 			h.moco.position = Vector2.ZERO
 			h.nombre.text = "HUECO LIBRE" if tarjetas else ""

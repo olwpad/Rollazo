@@ -64,10 +64,9 @@ func _ready() -> void:
 
 
 # Color del moco y de todo lo que suelta (gotas, salpicadura, estela).
-# Peinado y sombrero del perfil (el color va aparte: en la partida puede cambiar si se repite).
+# Pelo, sombrero, cara y ropa del perfil (el color va aparte: en la partida puede cambiar si se repite).
 func vestir(aspecto: Dictionary) -> void:
-	$Visual/Moco.pelo = aspecto.pelo
-	$Visual/Moco.sombrero = aspecto.sombrero
+	$Visual/Moco.vestir(aspecto)
 
 
 func pintar(color: Color) -> void:
