@@ -3,6 +3,10 @@ extends Node2D
 
 const VELOCIDAD_ESTELA := 800.0
 const ESTELA_PUNTOS := 10
+# Qué suena con cada efecto: este señal llega a todos los PCs, así cada uno oye lo que ve.
+const SONIDOS := {"enganche": "enganchar", "agarrado": "enganchar", "aterrizaje": "salpicar", "choque": "salpicar",
+	"reaparecer": "salpicar", "fuego": "salpicar", "cortado": "soltar", "rotura": "soltar", "corte": "soltar",
+	"meta": "meta", "poder": "poder"}
 
 @onready var jugador: Jugador = get_parent()
 @onready var estela: Line2D = $Estela
@@ -14,6 +18,8 @@ var humo := CPUParticles2D.new()  # al quemarse en un aro
 func _ready() -> void:
 	top_level = true  # los efectos se quedan en el mundo aunque el jugador se mueva
 	jugador.efecto_red.connect(_al_efecto)
+	# jugador.gd tiene class_name y no puede nombrar autoloads en los sims: el sonido se pide desde aquí
+	jugador.papel_lanzado.connect(func(): Sonidos.tocar("lanzar", jugador.global_position))  # solo anfitrión
 	humo.name = "Humo"
 	humo.emitting = false
 	humo.one_shot = true
@@ -34,6 +40,9 @@ func _ready() -> void:
 # Intensidad según la importancia del evento: enganchar es pequeño, caer y romperse, medio.
 # El temblor solo lo nota el dueño del moco; lo demás lo ven todos.
 func _al_efecto(tipo: String, pos: Vector2) -> void:
+	var sonido: String = SONIDOS.get(tipo, "")
+	if sonido != "":
+		Sonidos.tocar(sonido, pos)
 	match tipo:
 		"enganche":
 			_salpicar(pos)
