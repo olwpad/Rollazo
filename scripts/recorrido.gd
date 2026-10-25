@@ -132,6 +132,7 @@ func construir(semilla: int) -> void:
 		s.nivel = self
 		s.body_entered.connect(_al_tocar_sierra.bind(s))
 		piezas.add_child(s)
+	_poner_vivos(mapa, semilla)
 	limites = mapa.limites
 	$Inicio.position = mapa.inicio
 	$SueloInicio.position = mapa.inicio + Vector2(100, 80)
@@ -140,6 +141,28 @@ func construir(semilla: int) -> void:
 	$Caida.position = Vector2(mapa.caida_x, mapa.caida_y)
 	$Caida/Forma.shape.size.x = mapa.caida_ancho
 	_pintar_tema(mapa)
+
+
+# Peligros propios de cada tema (marea, estalactitas, palomas, guirnaldas y techos que se apagan).
+func _poner_vivos(mapa: Dictionary, semilla: int) -> void:
+	match tema:
+		"mar":
+			var marea := Marea.nueva(semilla, mapa, self)
+			marea.body_entered.connect(_al_caer)  # tocar el agua es como caer
+			piezas.add_child(marea)
+		"cueva":
+			for e: Estalactita in Estalactita.nuevas(semilla, mapa, self):
+				e.body_entered.connect(_al_tocar_estalactita)
+				piezas.add_child(e)
+		"azotea":
+			for p: Paloma in Paloma.nuevas(semilla, mapa, self):
+				p.body_entered.connect(_al_tocar_paloma.bind(p))
+				piezas.add_child(p)
+		"noche":
+			for g in Guirnalda.nuevas(semilla, mapa, self):
+				piezas.add_child(g)
+			for a in Apagon.nuevos(semilla, mapa, self, piezas):
+				piezas.add_child(a)
 
 
 # Cielo, siluetas del fondo, lo que se mueve y el suelo de salida con los colores del tema.
@@ -403,6 +426,22 @@ func _al_tocar_sierra(cuerpo: Node2D, _sierra: Sierra) -> void:
 	if not (cuerpo is Jugador and multiplayer.is_server()) or cuerpo.congelado:
 		return
 	cuerpo.efecto.rpc("sierra", cuerpo.global_position)  # el "zing" extra, además de la "rotura"
+	_golpe_y_vuelta(cuerpo)
+
+
+# Estalactita cayendo: igual que la sierra pero sin el "zing". Solo la ve caer el área (monitoring).
+func _al_tocar_estalactita(cuerpo: Node2D) -> void:
+	if cuerpo is Jugador and multiplayer.is_server() and not cuerpo.congelado:
+		_golpe_y_vuelta(cuerpo)
+
+
+# Paloma: solo empuja, no te devuelve al control. Lo decide el anfitrión.
+func _al_tocar_paloma(cuerpo: Node2D, paloma: Paloma) -> void:
+	if cuerpo is Jugador and multiplayer.is_server() and not cuerpo.congelado and paloma.empujar(cuerpo):
+		cuerpo.efecto.rpc("choque", cuerpo.global_position)
+
+
+func _golpe_y_vuelta(cuerpo: Node2D) -> void:
 	cuerpo.efecto.rpc("rotura", cuerpo.global_position)
 	if Red.es_online() and cuerpo.id_dueno() in clasificacion.llegadas:
 		_mandar_a_mirar(cuerpo as Jugador)
