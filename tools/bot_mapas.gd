@@ -456,8 +456,8 @@ func _pozo(b: Dictionary, j: Jugador, p: Vector2, r: Rect2, dt: float) -> void:
 	var eje := 0.0
 	for s: Dictionary in m.sierras:  # apartarse de una sierra que queda justo debajo
 		var q: Vector2 = Geometry2D.get_closest_point_to_segment(p, s.pos, s.pos + s.riel)
-		if q.y > p.y and q.y - p.y < 450.0 and absf(q.x - p.x) < 130.0:
-			eje = signf(p.x - q.x) if absf(p.x - q.x) > 5.0 else signf(centro - p.x)
+		if q.y > p.y and q.y - p.y < 600.0 and absf(q.x - p.x) < 170.0:
+			eje = signf(centro - q.x) if absf(q.x - centro) > 20.0 else signf(p.x - q.x)  # al lado libre: el opuesto al de la sierra
 	j.sostenido = {"eje_x": eje}
 	if j.velocity.y > (600.0 if p.y > r.end.y - 900.0 else 850.0):
 		var o := _freno(j)

@@ -344,11 +344,11 @@ static func _tramo_pozo(m: Dictionary, rng: RandomNumberGenerator, desde: Vector
 			desde_descanso += 1
 		lado = 1 - lado
 		y += rng.randf_range(baja - 25.0, baja + 25.0)
-	# Huecos de sierra a mitad del pozo, algo a un lado para que quepa un riel; ni los dos primeros ni los dos últimos
+	# Huecos de sierra a mitad del pozo, pegados a un lado para dejar el otro libre; ni los dos primeros ni los dos últimos
 	for i in range(primero + 2, m.camino.size() - 1, 2):  # de dos en dos: queda sitio para burbujas
 		var a: Vector2 = m.camino[i]
 		var lado_sierra := 1.0 if rng.randf() < 0.5 else -1.0
-		m.huecos_sierra.append(Vector2((izq + der) / 2.0 + lado_sierra * rng.randf_range(50.0, 100.0), (a.y + m.camino[i + 1].y) / 2.0))
+		m.huecos_sierra.append(Vector2((izq + der) / 2.0 + lado_sierra * rng.randf_range(100.0, 150.0), (a.y + m.camino[i + 1].y) / 2.0))
 	_pieza(m, "FondoPozo", Vector2((izq + der + PARED_ANCHO) / 2.0, fondo), _caja(pozo + PARED_ANCHO, 40.0), false)
 	var arriba := desde.y - 300.0  # sobresale del suelo de salida: no se escapa por encima
 	_pieza(m, "Pared", Vector2(izq - PARED_ANCHO / 2.0, (desde.y + 10.0 + fondo + 20.0) / 2.0), _caja(PARED_ANCHO, fondo - desde.y + 10.0), false)
@@ -417,7 +417,7 @@ static func _sierras(semilla: int, m: Dictionary) -> Array:
 		if b.x - a.x > 300.0 and b.y - a.y > -140.0 and libre.call(pos) and m.huecos_sierra.all(func(h: Vector2) -> bool: return pos.distance_to(h) > 200.0) 				and m.pozos.all(func(r: Rect2) -> bool: return not r.has_point(pos)):
 			llano.append(pos)
 	var sitios := []
-	var cuantas := 0 if m.forma == "horizontal" else rng.randi_range(2, 4)  # más en lo que baja que en lo llano
+	var cuantas := 0 if m.forma == "horizontal" else rng.randi_range(1, 3) if m.forma == "pozo" else rng.randi_range(2, 4)  # más en lo que baja que en lo llano
 	for k in mini(cuantas, bajada.size()):
 		sitios.append(bajada.pop_at(rng.randi_range(0, bajada.size() - 1)))
 	if not llano.is_empty() and rng.randf() < 0.65:
