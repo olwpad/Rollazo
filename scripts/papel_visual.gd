@@ -1,4 +1,5 @@
-# Dibuja el papel del jugador: blanco cuando es nuevo, rojo cuando va a romperse.
+# Dibuja el papel del jugador: lavanda cuando es nuevo, rosa intenso cuando va a romperse.
+# (No blanco: sobre el cielo pastel no se vería.)
 extends Line2D
 
 var _ultimo_tramo := [Vector2.ZERO, Vector2.ZERO]
@@ -16,15 +17,13 @@ func _process(_delta: float) -> void:
 	clear_points()
 	var papel := jugador.papel
 	if papel == null:
-		$Contorno.clear_points()
 		return
 	var ancla := papel.ancla
 	if papel.aguante < 0.3:  # tiembla: aviso de que se va a romper
 		ancla += Vector2(randf_range(-2.0, 2.0), randf_range(-2.0, 2.0))
 	add_point(jugador.global_position)
 	add_point(ancla)
-	$Contorno.points = points
-	default_color = Color.WHITE.lerp(Color(0.9, 0.15, 0.15), 1.0 - papel.aguante)
+	default_color = Acuarela.LAVANDA.darkened(0.25).lerp(Acuarela.ROSA.darkened(0.2), 1.0 - papel.aguante)
 	_ultimo_tramo = [jugador.global_position, papel.ancla]
 
 

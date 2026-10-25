@@ -85,6 +85,7 @@ Una casa gigante: baño, cocina, salón. Los jugadores son muñequitos con físi
 
 - **Personaje:** un **moco gotero**. Es viscoso, gotea al moverse y tiene los ojos desiguales. No tiene forma humana. Se rechazaron los personajes humanos de Kenney.
 - **Mapas:** **ciudad nocturna de neón al estilo Spider-Verse**: azoteas, carteles y un cielo rosa y morado con colores desplazados y puntitos de cómic. Os columpiáis con papel higiénico entre edificios. **Sustituye a la casa gigante** como tema del primer mapa.
+- **Colores (elegido en bocetos, 2026-10-24):** **acuarela pastel** (rosa suave, lavanda, verde menta y papel claro) con manchas de acuarela superpuestas y grano de papel. **Sin contorno** de ningún tipo: las formas se separan solo por el color. Se rechazaron el neón rosa y amarillo y el contorno negro porque parecían de IA. Colores de los jugadores: menta, rosa, lavanda y melocotón.
 - **Efectos:** **solo efectos físicos**: salpicadura de moco, confeti de papel y temblor de pantalla. **Sin onomatopeyas ni texto.** Se rechazó la pared de azulejos y las onomatopeyas.
 
 ## 5b. Estilo visual: "cómic-anime" (aprobado por el autor, 2026-10-24)

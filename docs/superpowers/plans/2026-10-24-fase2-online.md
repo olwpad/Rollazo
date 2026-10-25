@@ -14,7 +14,7 @@
 
 - 4 jugadores es el caso normal y el máximo (`Red.MAX_JUGADORES = 4`).
 - El anfitrión decide la física y los demás le envían sus controles. El código de red queda separado (`scripts/red.gd` y los RPC del Jugador) para poder añadir predicción en el cliente más adelante.
-- Estilo: moco gotero, ciudad de neón y **efectos sin texto**. Cada jugador es un moco de un color: cian, rosa, amarillo y verde.
+- Estilo: moco gotero, ciudad de neón y **efectos sin texto**. Cada jugador es un moco de un color pastel: menta, rosa, lavanda y melocotón.
 - Puerto `7777`. Conexión por IP; para internet, la IP de Tailscale.
 - Las simulaciones y tests actuales tienen que seguir en verde: el modo sin red se comporta igual que en la fase 1.
 - Explicar al autor cada tarea comparando con Java.
@@ -60,7 +60,7 @@
 
 **Interfaces:**
 - `Jugador`:
-  - `const COLORES := [Color(0.21,0.84,0.91), Color(1,0.3,0.65), Color(1,0.88,0.3), Color(0.45,0.95,0.35)]`
+  - `const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a")]` (menta, rosa, lavanda, melocotón)
   - `var id_dueno: int` (sale de `name.to_int()`; 1 si el nombre no es numérico)
   - Estado sincronizado, que es lo único que leen los visuales en los clientes: `papel_activo: bool`, `papel_ancla: Vector2`, `papel_aguante: float`. El anfitrión lo actualiza al final de `_physics_process`. El `MultiplayerSynchronizer` replica `position`, `velocity`, `papel_activo`, `papel_ancla` y `papel_aguante`.
 - `MocoVisual`: `var color: Color`, que lo fija el jugador según `COLORES[indice]`.

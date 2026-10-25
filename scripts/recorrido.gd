@@ -17,35 +17,31 @@ func _ready() -> void:
 		control.body_entered.connect(_al_pasar_control.bind(control))
 	var i := 0
 	for dibujo: Polygon2D in find_children("Dibujo", "Polygon2D"):
-		_estilo_neon(dibujo, i)
+		_estilo_acuarela(dibujo, i)
 		i += 1
+	_estilo_acuarela($Meta/Bandera, 99)
 	reiniciar()
 
 
-# Techos enganchables = carteles de neón; suelos = azoteas oscuras.
-# Copia cian desplazada detrás y contorno negro grueso, como en un cómic mal impreso.
-func _estilo_neon(dibujo: Polygon2D, i: int) -> void:
+# Cada forma se pinta como mancha de acuarela, sin contorno: techos enganchables en rosa
+# o lavanda, azoteas en lavanda oscuro. Solo cambia el dibujo; la colisión sigue siendo exacta.
+func _estilo_acuarela(dibujo: Polygon2D, i: int) -> void:
+	var color := Acuarela.MENTA
 	if dibujo.get_parent().is_in_group("enganchable"):
-		dibujo.color = Color(1.0, 0.25, 0.6) if i % 2 == 0 else Color(1.0, 0.88, 0.3)
+		color = Acuarela.ROSA if i % 2 == 0 else Acuarela.LAVANDA
 	elif dibujo.get_parent() is StaticBody2D:
-		dibujo.color = Color(0.36, 0.14, 0.55)
-	# Solo cambia el dibujo; la colisión sigue siendo el rectángulo exacto.
-	dibujo.polygon = Tinta.irregular(dibujo.polygon, i, 3.0, 40.0)
-	var fantasma := Polygon2D.new()
-	fantasma.polygon = dibujo.polygon
-	fantasma.color = Color(0.0, 0.9, 1.0, 0.6)
-	fantasma.position = Vector2(-6, 4)
-	fantasma.show_behind_parent = true
-	dibujo.add_child(fantasma)
-	var borde := Line2D.new()
-	borde.set_script(preload("res://scripts/borde_tinta.gd"))
-	borde.base = dibujo.polygon
-	borde.semilla = i
-	borde.closed = true
-	borde.joint_mode = Line2D.LINE_JOINT_ROUND
-	borde.width = 6.0
-	borde.default_color = Color.BLACK
-	dibujo.add_child(borde)
+		color = Acuarela.AZOTEA
+	# Base opaca: lo que se puede tocar no deja ver el fondo, así se lee como sólido.
+	var base := Polygon2D.new()
+	base.polygon = Tinta.irregular(dibujo.polygon, i, 2.0, 30.0)
+	base.color = color.lightened(0.35)
+	dibujo.add_child(base)
+	for capa in Acuarela.capas(dibujo.polygon, i):
+		var mancha := Polygon2D.new()
+		mancha.polygon = capa
+		mancha.color = Color(color, Acuarela.OPACIDAD_CAPA)
+		dibujo.add_child(mancha)
+	dibujo.color = Color.TRANSPARENT
 
 
 func _physics_process(delta: float) -> void:

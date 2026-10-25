@@ -28,11 +28,6 @@ target_position = Vector2(0, 0)
 width = 7.0
 script = ExtResource("2")
 
-[node name="Contorno" type="Line2D" parent="PapelVisual"]
-show_behind_parent = true
-width = 12.0
-default_color = Color(0, 0, 0, 1)
-
 [node name="Trozos" type="CPUParticles2D" parent="PapelVisual"]
 color = Color(1, 0.97, 0.9, 1)
 emitting = false
@@ -52,7 +47,7 @@ script = ExtResource("4")
 
 [node name="Estela" type="Line2D" parent="Efectos"]
 width = 26.0
-default_color = Color(0.21, 0.84, 0.91, 0.45)
+default_color = Color(0.424, 0.765, 0.69, 0.4)
 begin_cap_mode = 2
 end_cap_mode = 2
 
@@ -68,7 +63,7 @@ initial_velocity_min = 150.0
 initial_velocity_max = 380.0
 scale_amount_min = 4.0
 scale_amount_max = 9.0
-color = Color(0.21, 0.84, 0.91, 1)
+color = Color(0.424, 0.765, 0.69, 1)
 
 [node name="Goteo" type="CPUParticles2D" parent="Efectos"]
 emitting = false
@@ -80,4 +75,4 @@ initial_velocity_min = 20.0
 initial_velocity_max = 60.0
 scale_amount_min = 3.0
 scale_amount_max = 6.0
-color = Color(0.21, 0.84, 0.91, 1)
+color = Color(0.424, 0.765, 0.69, 1)

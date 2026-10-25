@@ -38,3 +38,10 @@ func test_escenas_con_estilo() -> void:
 
 func test_sin_onomatopeyas() -> void:
 	comprobar(not ResourceLoader.exists("res://scripts/onomatopeya.gd"), "onomatopeya.gd eliminado")
+
+
+func test_acuarela_tres_capas_distintas() -> void:
+	var cuadrado := PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 50), Vector2(0, 50)])
+	var capas := Acuarela.capas(cuadrado, 4)
+	comprobar(capas.size() == 3, "3 capas")
+	comprobar(capas[0] != capas[1] and capas[1] != capas[2], "cada capa con borde distinto")

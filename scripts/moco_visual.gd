@@ -3,8 +3,7 @@ class_name MocoVisual
 extends Node2D
 
 const RADIO := 22.0
-const COLOR_MOCO := Color(0.21, 0.84, 0.91)
-
+var color := Acuarela.MENTA
 var velocidad := Vector2.ZERO  # la pone el Jugador cada frame
 
 
@@ -37,19 +36,20 @@ func aplastar(escala: Vector2) -> void:
 func _draw() -> void:
 	var foto := Tinta.fotograma()
 	var t := foto / float(Tinta.FPS)  # el temblor avanza a 12 fps, como dibujado a mano
-	var contorno := Tinta.temblar(forma(28, t, velocidad), 77, foto, 0.8)
-	draw_colored_polygon(contorno, COLOR_MOCO)
-	var cerrado := contorno.duplicate()
-	cerrado.append(contorno[0])
-	draw_polyline(cerrado, Color.BLACK, 5.0, true)
+	var cuerpo := Tinta.temblar(forma(28, t, velocidad), 77, foto, 0.8)
+	# Sin contorno: una capa base y otra más pequeña y clara encima dan volumen de acuarela.
+	draw_colored_polygon(cuerpo, color.darkened(0.12))
+	var interior := PackedVector2Array()
+	for p in cuerpo:
+		interior.append(p * 0.82 + Vector2(-1, -2))
+	draw_colored_polygon(interior, color.lightened(0.12))
 	draw_circle(Vector2(-9, -12), 5.0, Color(1, 1, 1, 0.55))  # brillo viscoso
 	var mira := velocidad.normalized() * 3.0 if velocidad.length() > 30.0 else Vector2.ZERO
 	_ojo(Vector2(-6, -4), 9.0, mira)
 	_ojo(Vector2(9, -7), 5.5, mira)
-	draw_arc(Vector2(2, 8), 6.0, 0.3, PI - 0.3, 8, Color.BLACK, 3.0)
+	draw_arc(Vector2(2, 8), 6.0, 0.3, PI - 0.3, 8, Acuarela.CIRUELA, 3.0)
 
 
 func _ojo(centro: Vector2, radio: float, mira: Vector2) -> void:
 	draw_circle(centro, radio, Color.WHITE)
-	draw_arc(centro, radio, 0.0, TAU, 16, Color.BLACK, 2.5)
-	draw_circle(centro + mira, radio * 0.45, Color.BLACK)
+	draw_circle(centro + mira, radio * 0.45, Acuarela.CIRUELA)
