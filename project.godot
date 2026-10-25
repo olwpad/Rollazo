@@ -11,8 +11,12 @@ config_version=5
 [application]
 
 config/name="Rollazo"
-run/main_scene="res://scenes/recorrido_prueba.tscn"
+run/main_scene="res://scenes/menu.tscn"
 config/features=PackedStringArray("4.7")
+
+[autoload]
+
+Red="*res://scripts/red.gd"
 
 [display]
 

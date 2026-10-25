@@ -12,10 +12,6 @@ func test_recorrido_tiene_lo_necesario() -> void:
 	n.free()
 
 
-func test_es_la_escena_principal() -> void:
-	comprobar(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/recorrido_prueba.tscn", "main_scene")
-
-
 func test_formato_tiempo() -> void:
 	var hud_script: GDScript = load("res://scripts/hud.gd")
 	comprobar(hud_script != null and hud_script.formatear(3.456) == "03.46", "03.46")
