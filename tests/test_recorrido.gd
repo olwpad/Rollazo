@@ -89,3 +89,39 @@ func test_meta_y_caida_no_se_contagian_entre_niveles() -> void:
 	comprobar(limpio.get_node("Meta/Forma").shape.size.y >= 1200.0, "una torre no encoge la meta de otro nivel")
 	limpio.free()
 	nivel.free()
+
+
+func _nivel_solo() -> Node:
+	return _nivel_construido(7)
+
+
+func test_solo_llegar_trae_mapa_nuevo() -> void:
+	var nivel := _nivel_solo()
+	var antes: int = nivel.semilla_actual
+	nivel.llegada(1, 1, 12.0)
+	comprobar(nivel.jugador_local().congelado, "tras la meta no te devuelve a un control")
+	nivel._mapa_nuevo_solo()
+	comprobar(nivel.semilla_actual != antes and nivel.mejor == INF and nivel.ronda == 2, "otro mapa, otro tema, mejor de cero")
+	nivel.free()
+
+
+func test_solo_r_tras_llegar_repite_el_mismo() -> void:
+	var nivel := _nivel_solo()
+	var antes: int = nivel.semilla_actual
+	nivel.llegada(1, 1, 12.0)
+	nivel.reiniciar()  # lo que hace la R
+	comprobar(nivel.semilla_actual == antes and nivel.mejor == 12.0, "mismo mapa y se guarda el mejor")
+	comprobar(not nivel.jugador_local().congelado, "vuelves a moverte")
+	nivel.free()
+
+
+func test_solo_aviso_viejo_no_pisa_el_mapa_repetido() -> void:
+	var nivel := _nivel_solo()
+	var antes: int = nivel.semilla_actual
+	var viejo: int = nivel._serial_mapa  # el que lleva el aviso de 3 s
+	nivel.reiniciar()  # R
+	nivel._mapa_nuevo_si_vigente(viejo)
+	comprobar(nivel.semilla_actual == antes and nivel.ronda == 1, "el aviso viejo no cambia el mapa")
+	nivel._mapa_nuevo_si_vigente(nivel._serial_mapa)
+	comprobar(nivel.semilla_actual != antes and nivel.ronda == 2, "el aviso vigente sí")
+	nivel.free()

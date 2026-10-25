@@ -10,6 +10,7 @@ const FONDO := preload("res://scripts/fondo.gd")
 const ESPERA_TRAS_PRIMERO := 20.0  # segundos que tienen los demás tras llegar el primero
 const SEGUNDOS_RESULTADOS := 5.0
 const SEGUNDOS_POSTAL := 2.5  # la postal de "RONDA N" con los mocos quietos
+const SEGUNDOS_MAPA_NUEVO := 3.0  # solo: tras llegar, el tiempo a la vista antes del mapa siguiente
 const SEGUNDOS_FINAL := 8.0  # el ganador del torneo antes de volver a la sala
 
 var ronda := 1  # en todos los PCs
@@ -26,6 +27,7 @@ var mejor := INF
 var corriendo := true  # el cronómetro de este PC: se para al llegar su moco
 var reloj_ronda := 0.0  # mueve las sierras: sigue aunque llegue el moco local, igual en todos los PCs
 var en_postal := false
+var _serial_mapa := 0  # cada reinicio lo sube: un cambio de mapa pendiente de antes ya no vale
 var ultimos_controles := {}  # id de jugador -> último punto de control
 var clasificacion := Clasificacion.new()  # solo la usa el anfitrión
 var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
@@ -320,6 +322,10 @@ func _quitar_desconectados() -> void:
 
 
 func reiniciar() -> void:
+	_serial_mapa += 1
+	en_postal = false
+	if not Red.es_online():
+		clasificacion.llegadas.clear()  # si no, la próxima llegada no contaría como nueva
 	tiempo = 0.0
 	reloj_ronda = 0.0
 	corriendo = true
@@ -333,6 +339,7 @@ func reiniciar() -> void:
 	_dejar_de_mirar()
 	for j in jugadores():
 		j.visible = true
+		j.congelado = false
 	if multiplayer.is_server():
 		var lista := jugadores()
 		for i in lista.size():
@@ -410,6 +417,8 @@ func _al_caer(cuerpo: Node2D) -> void:
 		return
 	if Red.es_online() and cuerpo.id_dueno() in clasificacion.llegadas:  # ya llegó: a mirar
 		_mandar_a_mirar(cuerpo as Jugador)
+		return
+	if not Red.es_online() and cuerpo.congelado:  # solo y ya en la meta: no vuelve a ningún control
 		return
 	_volver_al_control(cuerpo)
 
@@ -489,6 +498,24 @@ func llegada(id: int, puesto: int, t: float) -> void:
 		tiempo = t  # el reloj del anfitrión: cada PC cargó la escena en un momento distinto
 		hud.meta(tiempo, mejor, puesto, not Red.es_online())
 		mejor = minf(mejor, tiempo)
+	if not Red.es_online() and j != null:
+		j.congelado = true  # (solo hay un moco, el local) quieto mientras se ve el tiempo
+		var serial := _serial_mapa
+		await get_tree().create_timer(SEGUNDOS_MAPA_NUEVO).timeout
+		_mapa_nuevo_si_vigente(serial)
+
+
+# Si pulsaste R mientras tanto, el aviso es de otra partida y no hace nada.
+func _mapa_nuevo_si_vigente(serial: int) -> void:
+	if serial == _serial_mapa:
+		_mapa_nuevo_solo()
+
+
+func _mapa_nuevo_solo() -> void:
+	ronda += 1  # también rota el tema
+	mejor = INF
+	construir(randi())
+	reiniciar()
 
 
 # Sin red no hay rondas: se repite con R, como en la fase 1.
