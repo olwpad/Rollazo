@@ -14,7 +14,7 @@ func _ready() -> void:
 	papel.width = 5.0
 	papel.default_color = Acuarela.LAVANDA.darkened(0.25)
 	add_child(papel)
-	moco.color = Jugador.COLORES[0]
+	moco.color = Jugador.COLORES[3]  # melocotón: no se confunde con "TÚ" (menta) ni con el techo rosa
 	moco.scale = Vector2(1.3, 1.3)
 	add_child(moco)
 
