@@ -20,7 +20,6 @@ const PARED_ANCHO := 60.0
 const SALIENTE_ANCHO := Vector2(140.0, 170.0)  # (mín, máx)
 const SALIENTE_SUBIDA := Vector2(180.0, 220.0)  # de un saliente al siguiente, en el otro lado
 const DESCANSO_TORRE_ANCHO := 180.0
-const DESCANSO_BAJO_SALIENTE := 280.0  # el descanso va debajo del saliente siguiente, como el suelo bajo un techo
 # Bajada. Se sale BAJADA_ALTO px más arriba que en horizontal y se acaba a la altura de siempre
 const BAJADA_ALTO := 1600.0
 const ESCALON_X := Vector2(500.0, 600.0)  # de un techo al siguiente (mín, máx)
@@ -220,8 +219,8 @@ static func _tramo_bajada(m: Dictionary, rng: RandomNumberGenerator, desde: Vect
 
 # Un pozo entre dos paredes que sube `alto` px desde el borde `desde` del suelo anterior.
 # Los salientes se alternan izquierda/derecha; cada 3-4, un descanso con control en el lado
-# del saliente siguiente, justo debajo de él. Se entra por abajo a la izquierda y se sale
-# por el último descanso, arriba a la derecha. Devuelve el borde de ese descanso.
+# del saliente siguiente, encima del anterior de ese lado. Se entra por abajo a la izquierda y
+# se sale por el último descanso, arriba a la derecha. Devuelve el borde de ese descanso.
 static func _tramo_torre(m: Dictionary, rng: RandomNumberGenerator, desde: Vector2, alto: float) -> Vector2:
 	var izq := desde.x + PARED_ANCHO
 	var der := izq + POZO_ANCHO
@@ -242,10 +241,11 @@ static func _tramo_torre(m: Dictionary, rng: RandomNumberGenerator, desde: Vecto
 			break
 		# Con TORRE_ALTO 2400 caben siempre 2 descansos más el final (3 controles)
 		if desde_descanso >= 3 and y > tope + 200.0 and (desde_descanso >= 4 or rng.randf() < 0.5):
-			_descanso_torre(m, izq, der, lado, y + DESCANSO_BAJO_SALIENTE, DESCANSO_TORRE_ANCHO)
+			# Apoyado sobre el saliente de ese lado de debajo: si quedara hueco entre los dos, el bot (y un moco) se encajaba ahí
+			_descanso_torre(m, izq, der, lado, m.camino[-2].y - 40.0, DESCANSO_TORRE_ANCHO)
 			desde_descanso = 0
 	# El último tapa la pared derecha para salir andando hacia la meta
-	var centro_y := y + DESCANSO_BAJO_SALIENTE
+	var centro_y: float = m.camino[-2].y - 40.0  # igual, sobre el último de la derecha; se sube desde el último saliente
 	_descanso_torre(m, izq, der + PARED_ANCHO, 1, centro_y, DESCANSO_TORRE_ANCHO + PARED_ANCHO)
 	m.salidas_descanso[-1] = Vector2(der + PARED_ANCHO, centro_y - 20.0)  # de este se sale andando por la derecha
 	_pieza(m, "Pared", Vector2(desde.x + PARED_ANCHO / 2.0, (tope - 400.0 + desde.y - 260.0) / 2.0), _caja(PARED_ANCHO, desde.y - 260.0 - tope + 400.0), false)  # abajo deja la entrada

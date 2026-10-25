@@ -36,6 +36,7 @@ var colores := {}  # id -> color de su moco, en todos los PCs
 var cuenta := -1.0  # segundos que quedan tras llegar el primero (en todos los PCs)
 var piezas := Node2D.new()  # techos, descansos y obstáculos generados
 var limites := Rect2(0, 0, 8800, 1400)  # la caja del mapa de esta ronda (cámara del espectador)
+var forma_forzada := ""  # "" = la que toque por semilla; el bot probador la fija antes de añadir la escena
 
 @onready var hud := $HUD
 
@@ -72,7 +73,7 @@ func construir(semilla: int) -> void:
 		viejo.queue_free()
 	semilla_actual = semilla
 	tema = Temas.de_ronda(Red.config.mapas, Red.semilla, ronda)
-	var mapa := Generador.generar(semilla)
+	var mapa := Generador.generar(semilla, forma_forzada)
 	for i in mapa.piezas.size():
 		var p: Dictionary = mapa.piezas[i]
 		if p.nombre.begins_with("SueloSalida"):  # ya está el SueloInicio de la escena, que se mueve ahí abajo
