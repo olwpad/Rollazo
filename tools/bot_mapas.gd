@@ -58,7 +58,7 @@ func _clasificar(nombre: String, poly: PackedVector2Array) -> String:
 			return "broken" if absf(poly[1].x - poly[0].x) < 150.0 else "tilted"
 		if absf(poly[2].x - poly[1].x) > 1.0: return "trapezoid"
 		return "flat"
-	for k in ["Descanso", "Pilar", "Bloque", "Atajo", "SueloMeta", "SueloPozo", "Pared"]:
+	for k in ["Descanso", "Pilar", "Bloque", "Atajo", "SueloMeta", "SueloPozo", "FondoPozo", "Pared"]:
 		if nombre.begins_with(k): return k
 	return "?"
 
@@ -292,6 +292,10 @@ func _bot(b: Dictionary) -> void:
 			b.fin = true
 			b.t_fin = frame / 60.0
 			return
+	for r: Rect2 in m.pozos:
+		if p.x > r.position.x and p.x < r.end.x + 5.0 and p.y > r.position.y - 40.0 and p.y < r.end.y + 40.0:
+			_pozo(b, j, p, r, dt)
+			return
 	# Progreso: el siguiente techo del camino por alcanzar
 	var antes: int = b.prog
 	if j.papel != null and b.idx_hook >= 0:
@@ -432,6 +436,51 @@ func _trepar(b: Dictionary, j: Jugador, p: Vector2, dt: float) -> void:
 			return
 	b.estado = "suelo" if j.is_on_floor() else "aire"
 	j.sostenido = {"eje_x": hacia if _suelo_delante(j, hacia) or not j.is_on_floor() else 0.0}
+
+
+# Pozo: caer y, al ir demasiado rápido, engancharse al saliente más cercano por encima, soltar
+# enseguida (ya sin la caída libre) y repetir. Cerca del fondo se frena antes. Abajo, salir andando.
+func _pozo(b: Dictionary, j: Jugador, p: Vector2, r: Rect2, dt: float) -> void:
+	var centro := r.position.x + r.size.x / 2.0
+	if j.papel != null:
+		b.t_hook += dt
+		j.sostenido = {"eje_x": 0.0, "eje_largo": 0.0}
+		if (b.t_hook > 0.25 and j.velocity.y < 250.0) or b.t_hook > 0.8 or j.papel.aguante < 0.15:
+			j.guion = {"soltar": true}
+		return
+	b.t_hook = 0.0
+	b.estado = "suelo" if j.is_on_floor() else "aire"
+	if j.is_on_floor():
+		j.sostenido = {"eje_x": 1.0 if p.y > r.end.y - 100.0 else signf(centro - p.x)}
+		return
+	var eje := 0.0
+	for s: Dictionary in m.sierras:  # apartarse de una sierra que queda justo debajo
+		var q: Vector2 = Geometry2D.get_closest_point_to_segment(p, s.pos, s.pos + s.riel)
+		if q.y > p.y and q.y - p.y < 600.0 and absf(q.x - p.x) < 170.0:
+			eje = signf(centro - q.x) if absf(q.x - centro) > 20.0 else signf(p.x - q.x)  # al lado libre: el opuesto al de la sierra
+	j.sostenido = {"eje_x": eje}
+	if j.velocity.y > (600.0 if p.y > r.end.y - 900.0 else 850.0):
+		var o := _freno(j)
+		if not o.is_empty():
+			_lanzar(b, o)
+
+
+func _freno(j: Jugador) -> Dictionary:
+	var p := j.global_position
+	var mejor := {}
+	var mejor_d := INF
+	for n in piezas_info:
+		var pi: Dictionary = piezas_info[n]
+		if not pi.nodo.is_in_group("enganchable") or pi.pos.distance_to(p) > ALCANCE + 150.0: continue
+		for q: Vector2 in _puntos(pi):
+			var h := _rayo(j, q)
+			if h.is_empty() or (h.collider as Node).name != n: continue
+			var hit: Vector2 = h.position
+			if hit.y > p.y - 30.0 or _arco_cruza_sierra(hit, p): continue
+			if hit.distance_to(p) < mejor_d:
+				mejor_d = hit.distance_to(p)
+				mejor = {"apunta": q, "hit": hit, "nombre": n}
+	return mejor
 
 
 func _lanzar(b: Dictionary, o: Dictionary) -> void:

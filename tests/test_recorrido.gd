@@ -134,3 +134,12 @@ func test_mapa_nuevo_nunca_repite_forma() -> void:
 		nivel._mapa_nuevo_solo()
 		comprobar(Generador.forma_de(nivel.semilla_actual) != antes, "vuelta %d: otra vez %s" % [i, antes])
 	nivel.free()
+
+
+func test_choque_rapido_en_el_fondo_del_pozo_manda_al_control() -> void:
+	var nivel := _nivel_construido(_semilla_de("pozo"))
+	var j: Jugador = nivel.jugador_local()
+	comprobar(nivel._choque_en_pozo(Generador.ESTRELLON + 100.0, j, "FondoPozo7"), "rápido en el fondo: te estrellas")
+	comprobar(not nivel._choque_en_pozo(Generador.ESTRELLON - 200.0, j, "FondoPozo7"), "frenando antes: se pasa")
+	comprobar(not nivel._choque_en_pozo(Generador.ESTRELLON + 100.0, j, "Descanso3"), "solo el fondo estrella, no un descanso")
+	nivel.free()

@@ -79,6 +79,18 @@ static func estiron(vel: Vector2) -> Transform2D:
 	return Transform2D(d * d.x * (1.0 + e) + l * l.x * (1.0 - e * 0.4), d * d.y * (1.0 + e) + l * l.y * (1.0 - e * 0.4), Vector2.ZERO)
 
 
+# Rayitas de viento sobre el moco al caer rápido; sin contorno, como el resto.
+func _viento(t: float) -> void:
+	var fuerza := clampf((velocidad.y - 700.0) / 700.0, 0.0, 1.0)
+	if fuerza <= 0.0:
+		return
+	for i in 4:
+		var x := (i - 1.5) * 16.0 + sin(t * 9.0 + i * 2.1) * 3.0
+		var y := -34.0 - fmod(t * 160.0 + i * 23.0, 40.0)
+		var largo := 14.0 + 16.0 * fuerza
+		draw_colored_polygon(PackedVector2Array([Vector2(x - 1.5, y), Vector2(x + 1.5, y), Vector2(x, y - largo)]), Color(1, 1, 1, 0.5 * fuerza))
+
+
 func _process(_delta: float) -> void:
 	queue_redraw()
 
@@ -93,6 +105,7 @@ func aplastar(escala: Vector2) -> void:
 func _draw() -> void:
 	var foto := Tinta.fotograma()
 	var t := foto / float(Tinta.FPS)  # el temblor avanza a 12 fps, como dibujado a mano
+	_viento(t)
 	# Todo (cuerpo, pelo, cara, ropa) se pinta quieto y se estira junto: nada flota ni se sale al moverse.
 	draw_set_transform_matrix(estiron(velocidad))
 	var cuerpo := Tinta.temblar(forma(28, t, Vector2.ZERO), 77, foto, 0.8)

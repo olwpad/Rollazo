@@ -6,6 +6,7 @@ extends CharacterBody2D
 signal papel_roto
 signal papel_lanzado
 signal aterrizaje_fuerte
+signal aterrizado(caida: float)  # cada vez que toca suelo, con la velocidad vertical que traía
 signal efecto_red(tipo: String, pos: Vector2)  # llega a todos los PCs
 
 const VELOCIDAD_PLOF := 700.0  # caer más rápido que esto hace "¡PLOF!"
@@ -182,9 +183,11 @@ func _physics_process(delta: float) -> void:
 	var antes := velocity  # move_and_slide recorta la parte que va contra el otro moco
 	move_and_slide()
 	_chocar(antes)
-	if estaba_en_aire and is_on_floor() and caida > VELOCIDAD_PLOF:
-		aterrizaje_fuerte.emit()
-		efecto.rpc("aterrizaje", global_position + Vector2(0, 18))
+	if estaba_en_aire and is_on_floor():
+		aterrizado.emit(caida)
+		if caida > VELOCIDAD_PLOF:
+			aterrizaje_fuerte.emit()
+			efecto.rpc("aterrizaje", global_position + Vector2(0, 18))
 
 	if papel != null:
 		var r := Pendulo.restringir(global_position, velocity, papel.ancla, papel.largo)
