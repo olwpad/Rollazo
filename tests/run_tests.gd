@@ -10,6 +10,11 @@ func _init() -> void:
 		if not (archivo.begins_with("test_") and archivo.ends_with(".gd")):
 			continue
 		var clase: GDScript = load("res://tests/" + archivo)
+		if clase == null or not clase.can_instantiate():
+			total += 1
+			fallidos += 1
+			print("  FALLO ", archivo, " no compila")
+			continue
 		for metodo in clase.get_script_method_list():
 			var nombre: String = metodo["name"]
 			if not nombre.begins_with("test_"):
