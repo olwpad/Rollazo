@@ -134,6 +134,7 @@ func construir(semilla: int) -> void:
 		piezas.add_child(s)
 	_poner_vivos(mapa, semilla)
 	limites = mapa.limites
+	_poner_moviles(mapa, semilla)
 	$Inicio.position = mapa.inicio
 	$SueloInicio.position = mapa.inicio + Vector2(100, 80)
 	$Meta.position = mapa.meta
@@ -163,6 +164,50 @@ func _poner_vivos(mapa: Dictionary, semilla: int) -> void:
 				piezas.add_child(g)
 			for a in Apagon.nuevos(semilla, mapa, self, piezas):
 				piezas.add_child(a)
+
+
+# Lo que se mueve y se puede agarrar de cada tema (Moviles decide dónde); con las piezas, se borra con ellas.
+func _poner_moviles(mapa: Dictionary, semilla: int) -> void:
+	var cosas: Array[Node2D] = []
+	match tema:
+		"mar":
+			for d: Dictionary in Moviles.barcos(mapa, semilla):
+				var b := Barco.new()
+				b.position = d.pos
+				b.riel = d.riel
+				b.fase = d.fase
+				cosas.append(b)
+		"jungla":
+			for d: Dictionary in Moviles.lianas(mapa, semilla):
+				var l := Liana.new()
+				l.pivote = d.pivote
+				l.largo = d.largo
+				l.fase = d.fase
+				cosas.append(l)
+		"azotea":
+			for d: Dictionary in Moviles.ropas(mapa, semilla):
+				for k in 2:
+					var p := Prenda.new()
+					p.cuerda_a = d.a
+					p.cuerda_b = d.b
+					p.pivote = d.a.lerp(d.b, 0.3 + 0.4 * k)
+					p.fase = d.fase + 0.37 * k
+					p.color = [Acuarela.ROSA, Acuarela.MENTA, Acuarela.LAVANDA][(int(d.a.x / 100.0) + k) % 3]
+					cosas.append(p)
+		"noche":
+			var gs := Moviles.globos(mapa, semilla)
+			for i in gs.size():
+				var g := Globo.new()
+				g.x = gs[i].x
+				g.abajo = gs[i].abajo
+				g.alto = gs[i].alto
+				g.fase = gs[i].fase
+				g.color = i
+				cosas.append(g)
+	for i in cosas.size():
+		cosas[i].name = "Movil%d" % i
+		cosas[i].set("nivel", self)
+		piezas.add_child(cosas[i])
 
 
 # Cielo, siluetas del fondo, lo que se mueve y el suelo de salida con los colores del tema.

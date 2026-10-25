@@ -28,6 +28,8 @@ const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b3
 @export var fuerza_salto := 650.0
 
 var papel: PapelRope = null  # null = no está enganchado. Solo existe en el anfitrión.
+var _papel_cuerpo: Node2D = null  # si el enganche es en algo que se mueve (barco, liana, globo): el ancla lo sigue
+var _papel_local := Vector2.ZERO  # el punto enganchado, en el espacio de ese cuerpo
 var _tiempo_enganchado := 0.0
 
 # Lo que ven los demás PCs: el anfitrión lo copia de `papel` y el Sync lo replica.
@@ -143,6 +145,7 @@ func _physics_process(delta: float) -> void:
 	if congelado or poder == "congelado":  # se lee la entrada igual, para que un clic no salte después
 		velocity = Vector2.ZERO
 		return
+	_seguir_ancla()
 	if poder == "punetazo":
 		golpear_cercanos()
 	if e.cortar:
@@ -252,6 +255,17 @@ func golpear_cercanos() -> void:
 		otro.velocity = dir * FUERZA_PUNETAZO + Vector2(0, -350)
 		otro.papel = null  # el golpe le suelta del papel
 		efecto.rpc("choque", (global_position + otro.global_position) / 2.0)
+
+
+# El ancla va con el cuerpo al que me enganché; si desaparece (o deja de ser enganchable), se suelta.
+func _seguir_ancla() -> void:
+	if papel == null or _papel_cuerpo == null:
+		return
+	if is_instance_valid(_papel_cuerpo) and _papel_cuerpo.is_in_group("enganchable"):
+		papel.ancla = _papel_cuerpo.to_global(_papel_local)
+	else:
+		papel = null
+		_publicar_papel()
 
 
 # Aro de fuego: se quema el papel y se chamusca. Dónde vuelve lo decide el recorrido (como al caer).
@@ -368,6 +382,10 @@ func _lanzar_papel(objetivo: Vector2) -> void:
 	var choque := rayo.get_collider()
 	if choque is Node and (choque as Node).is_in_group("enganchable"):
 		var punto := rayo.get_collision_point()
+		_papel_cuerpo = null
+		if not choque is StaticBody2D:  # los techos fijos no hacen falta seguirlos
+			_papel_cuerpo = choque as Node2D
+			_papel_local = _papel_cuerpo.to_local(punto)
 		papel = PapelRope.new(punto, global_position.distance_to(punto), segundos_aguante)
 		papel_lanzado.emit()
 		efecto.rpc("enganche", punto)
