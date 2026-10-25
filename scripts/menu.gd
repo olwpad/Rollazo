@@ -13,6 +13,7 @@ func _ready() -> void:
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
+	$Caja/Salir.pressed.connect(_salir)
 	empezar.pressed.connect(func(): Red.empezar_carrera.rpc(randi()))
 	listo.pressed.connect(func(): Red.marcar_listo.rpc_id(1, not Red.listos.get(multiplayer.get_unique_id(), false)))
 	$Caja/Partida/Rondas/Menos.pressed.connect(_cambiar_rondas.bind(-1))
@@ -44,6 +45,18 @@ func _unirse() -> void:
 	estado.text = "Conectando a %s…" % ip.text if Red.unirse(ip.text.strip_edges()) == OK else "IP no válida"
 
 
+# Atrás desde la sala. Si sale el anfitrión, los demás vuelven solos con "El anfitrión se ha ido".
+func _salir() -> void:
+	Red.salir()
+	estado.text = ""
+	_actualizar()
+
+
+func _unhandled_input(evento: InputEvent) -> void:
+	if evento.is_action_pressed("volver_menu") and Red.es_online():  # Esc, como pone el pie
+		_salir()
+
+
 func _cambiar_rondas(paso: int) -> void:
 	var i := clampi(Red.RONDAS.find(Red.config.rondas) + paso, 0, Red.RONDAS.size() - 1)
 	Red.poner_rondas(Red.RONDAS[i])
@@ -56,6 +69,7 @@ func _actualizar() -> void:
 	for opcion in [$Caja/Solo, $Caja/Crear, $Caja/Fila]:
 		opcion.visible = not online
 	partida.visible = online
+	$Caja/Salir.visible = online
 	$Caja/Partida/Rondas/Valor.text = str(Red.config.rondas)
 	for boton: Button in [$Caja/Partida/Rondas/Menos, $Caja/Partida/Rondas/Mas]:
 		boton.disabled = not anfitrion  # los demás ven la partida pero no la tocan

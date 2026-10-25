@@ -61,6 +61,19 @@ func test_cliente_no_toca_la_partida() -> void:
 	red.salir()
 
 
+func test_boton_para_salir_de_la_sala() -> void:
+	var red: Node = Engine.get_main_loop().root.get_node("Red")
+	var menu: Node = load("res://scenes/menu.tscn").instantiate()
+	Engine.get_main_loop().root.add_child(menu)
+	comprobar(not menu.get_node("Caja/Salir").visible, "sin partida no hay nada de lo que salir")
+	red.crear_partida(7798)
+	menu._actualizar()
+	comprobar(menu.get_node("Caja/Salir").visible, "en la sala se puede volver atrás")
+	menu.get_node("Caja/Salir").pressed.emit()
+	comprobar(not red.es_online() and menu.get_node("Caja/Crear").visible, "vuelve al menú de antes")
+	menu.free()
+
+
 func test_practicar_solo_oculto_en_partida_online() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.crear_partida(7795)

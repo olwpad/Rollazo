@@ -147,6 +147,12 @@ text = "Estoy listo"
 script = ExtResource("7")
 principal = true
 
+[node name="Salir" type="Button" parent="Caja"]
+visible = false
+layout_mode = 2
+text = "‹ Salir de la sala"
+script = ExtResource("7")
+
 [node name="Solo" type="Button" parent="Caja"]
 layout_mode = 2
 text = "Practicar solo"
