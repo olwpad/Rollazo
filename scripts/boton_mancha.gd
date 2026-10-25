@@ -47,6 +47,8 @@ func _pintar_mancha() -> void:
 
 func _mostrar(encima: bool) -> void:
 	mancha.visible = (encima and not disabled) or principal
-	if encima:  # pequeño "pop" al aparecer
-		mancha.scale = Vector2(0.9, 0.8)
-		create_tween().tween_property(mancha, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if encima:  # pequeño "pop" al aparecer; el relleno de listos va con la mancha, si no se ve a destiempo
+		var tw := create_tween().set_parallel()
+		for p: Polygon2D in [mancha, lleno]:
+			p.scale = Vector2(0.9, 0.8)
+			tw.tween_property(p, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
