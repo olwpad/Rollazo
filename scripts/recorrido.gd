@@ -31,6 +31,7 @@ var en_resultados := false
 var colores := {}  # id -> color de su moco, en todos los PCs
 var cuenta := -1.0  # segundos que quedan tras llegar el primero (en todos los PCs)
 var piezas := Node2D.new()  # techos, descansos y obstáculos generados
+var limites := Rect2(0, 0, 8800, 1400)  # la caja del mapa de esta ronda (cámara del espectador)
 
 @onready var hud := $HUD
 
@@ -70,6 +71,8 @@ func construir(semilla: int) -> void:
 	var mapa := Generador.generar(semilla)
 	for i in mapa.piezas.size():
 		var p: Dictionary = mapa.piezas[i]
+		if p.nombre.begins_with("SueloSalida"):  # ya está el SueloInicio de la escena, que se mueve ahí abajo
+			continue
 		var cuerpo := StaticBody2D.new()
 		cuerpo.name = p.nombre
 		cuerpo.position = p.pos
@@ -112,14 +115,18 @@ func construir(semilla: int) -> void:
 			a.set("mov", mapa.aros[i].mov)
 			a.body_entered.connect(_al_tocar_aro.bind(a))
 			piezas.add_child(a)
+	limites = mapa.limites
+	$Inicio.position = mapa.inicio
+	$SueloInicio.position = mapa.inicio + Vector2(100, 80)
 	$Meta.position = mapa.meta
-	$Caida.position.x = mapa.caida_x
+	$Meta/Forma.shape.size = mapa.meta_tam  # formas locales a la escena: no se cuelan en otro nivel
+	$Caida.position = Vector2(mapa.caida_x, mapa.caida_y)
 	$Caida/Forma.shape.size.x = mapa.caida_ancho
-	_pintar_tema(mapa.meta.x)
+	_pintar_tema(mapa)
 
 
 # Cielo, siluetas del fondo, lo que se mueve y el suelo de salida con los colores del tema.
-func _pintar_tema(fin_x: float) -> void:
+func _pintar_tema(mapa: Dictionary) -> void:
 	var d: Dictionary = Temas.DATOS[tema]
 	var cielo: ShaderMaterial = $Ciudad/Cielo/Pintura.material
 	for k in 3:
@@ -134,18 +141,21 @@ func _pintar_tema(fin_x: float) -> void:
 		edificios.set("color_ventana", d.ventanas)
 		edificios.set("guirnaldas", tema == "noche" and capa == "Cerca")
 		edificios.queue_redraw()
-		_poner_fondo(get_node("Ciudad/" + capa), capa.to_lower(), fin_x)
+		# Que la salida se vea como siempre aunque esté arriba (bajada): el fondo se mide desde ahí
+		var parallax: Parallax2D = get_node("Ciudad/" + capa)
+		parallax.scroll_offset.y = (mapa.inicio.y - 640.0) * parallax.scroll_scale.y
+		_poner_fondo(get_node("Ciudad/" + capa), capa.to_lower(), mapa)
 	if d.superficie != "":
-		_poner_fondo(self, "superficie", fin_x).z_index = 5  # delante de los mocos: el que cae se hunde
+		_poner_fondo(self, "superficie", mapa).z_index = 5  # delante de los mocos: el que cae se hunde
 	else:
-		_poner_fondo(self, "", fin_x)  # solo quita la del mapa anterior
+		_poner_fondo(self, "", mapa)  # solo quita la del mapa anterior
 	var suelo: Polygon2D = $SueloInicio/Dibujo
 	for viejo in suelo.get_children():
 		viejo.free()
 	_estilo_acuarela(suelo, 0)
 
 
-func _poner_fondo(padre: Node, capa: String, fin_x: float) -> Node2D:
+func _poner_fondo(padre: Node, capa: String, mapa: Dictionary) -> Node2D:
 	var nombre := "Superficie" if padre == self else "Fondo"
 	var viejo := padre.get_node_or_null(nombre)
 	if viejo != null:
@@ -158,7 +168,10 @@ func _poner_fondo(padre: Node, capa: String, fin_x: float) -> Node2D:
 	fondo.name = nombre
 	fondo.set("tema", tema)
 	fondo.set("capa", capa)
-	fondo.set("hasta_x", fin_x + 2000.0)
+	fondo.set("desde_x", mapa.limites.position.x - 2000.0)
+	fondo.set("hasta_x", mapa.limites.end.x + 2000.0)
+	# Bajo todo el mapa y sobre la franja que mata: primero te hundes, luego reapareces
+	fondo.set("superficie_y", maxf(mapa.caida_y - 300.0, mapa.limites.end.y))
 	padre.add_child(fondo)
 	return fondo
 
@@ -196,6 +209,11 @@ func _physics_process(delta: float) -> void:
 		hud.ocultar_ayuda()  # ya sabe lanzar el papel
 	if mio != null:
 		hud.poder(mio.poder, mio.poder_restante, Poderes.DURACION.get(mio.poder, 1.0))
+	if Red.es_online() and multiplayer.is_server():  # en una torre se cae sobre un saliente, no a la Caida
+		for j in jugadores():
+			var id := j.id_dueno()
+			if id in clasificacion.llegadas and not id in espectadores and j.global_position.y > $Meta.position.y + 400.0:
+				_mandar_a_mirar(j)
 	if desde_primero >= 0.0 and not en_resultados and multiplayer.is_server():
 		desde_primero += delta
 		if clasificacion.todos_llegaron(Red.ids) or desde_primero >= ESPERA_TRAS_PRIMERO:
@@ -210,11 +228,10 @@ func _process(_delta: float) -> void:
 	if objetivo_espectador < jugando.size():
 		camara_espectador.global_position = jugando[objetivo_espectador].global_position
 		camara_espectador.zoom = Vector2(0.85, 0.85)
-	else:  # el mapa entero, de la salida a la meta
-		var ancho: float = $Meta.position.x + 600.0
-		camara_espectador.global_position = Vector2(ancho / 2.0 - 300.0, 400.0)
-		var z: float = get_viewport_rect().size.x / ancho
-		camara_espectador.zoom = Vector2(z, z)
+	else:  # el mapa entero, con el zoom que quepa
+		camara_espectador.global_position = limites.get_center()
+		var hueco := get_viewport_rect().size / limites.size
+		camara_espectador.zoom = Vector2.ONE * minf(hueco.x, hueco.y)
 
 
 func _unhandled_input(evento: InputEvent) -> void:
@@ -363,11 +380,16 @@ func _al_caer(cuerpo: Node2D) -> void:
 	if not (cuerpo is Jugador and multiplayer.is_server()):
 		return
 	if Red.es_online() and cuerpo.id_dueno() in clasificacion.llegadas:  # ya llegó: a mirar
-		(cuerpo as Jugador).congelado = true
-		cuerpo.reaparecer.call_deferred(Vector2($Meta.position.x, -4000.0))  # fuera de en medio
-		espectador.rpc(cuerpo.id_dueno())
+		_mandar_a_mirar(cuerpo as Jugador)
 		return
 	_volver_al_control(cuerpo)
+
+
+# Un moco que ya llegó deja de jugar: quieto, fuera de en medio y su PC pasa a espectador.
+func _mandar_a_mirar(cuerpo: Jugador) -> void:
+	cuerpo.congelado = true
+	cuerpo.reaparecer.call_deferred(Vector2($Meta.position.x, limites.position.y - 4000.0))
+	espectador.rpc(cuerpo.id_dueno())
 
 
 func _volver_al_control(cuerpo: Node2D) -> void:

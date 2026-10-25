@@ -5,12 +5,12 @@
 extends Node2D
 
 const ANCHO := 2400.0
-const SUPERFICIE_Y := 1000.0  # la caída mata más abajo (y=1200): primero te hundes, luego reapareces
 
 var tema := "azotea"
 var capa := "lejos"
 var desde_x := -2000.0  # solo superficie: de dónde a dónde cubre
 var hasta_x := 10000.0
+var superficie_y := 1000.0  # la caída mata más abajo (300 px): primero te hundes, luego reapareces
 var _formas := []  # [polígono, color] fijos, ya en acuarela
 var _cosas := []  # lo que se mueve: posiciones y semillas
 
@@ -139,15 +139,15 @@ func _ondas(t: float, arriba: Color, abajo: Color, punto: Color) -> void:
 		var ola := PackedVector2Array()
 		var x := desde_x
 		while x <= hasta_x:
-			ola.append(Vector2(x, SUPERFICIE_Y + k * 18.0 + sin(x / 90.0 + t * (1.6 - k * 0.5) + k) * 9.0))
+			ola.append(Vector2(x, superficie_y + k * 18.0 + sin(x / 90.0 + t * (1.6 - k * 0.5) + k) * 9.0))
 			x += 40.0
-		ola.append(Vector2(hasta_x, SUPERFICIE_Y + 900.0))
-		ola.append(Vector2(desde_x, SUPERFICIE_Y + 900.0))
+		ola.append(Vector2(hasta_x, superficie_y + 900.0))
+		ola.append(Vector2(desde_x, superficie_y + 900.0))
 		draw_colored_polygon(ola, Color(arriba if k == 0 else abajo, 0.9))
-	draw_rect(Rect2(desde_x, SUPERFICIE_Y - 120.0, hasta_x - desde_x, 120.0), Color(arriba, 0.08))  # el brillo encima
+	draw_rect(Rect2(desde_x, superficie_y - 120.0, hasta_x - desde_x, 120.0), Color(arriba, 0.08))  # el brillo encima
 	for c: Dictionary in _cosas:
 		var vida := fposmod(t * 0.5 + c.fase, 1.0)  # crece y estalla
-		draw_circle(Vector2(c.x, SUPERFICIE_Y + 10.0 - vida * 14.0), 3.0 + vida * 6.0, Color(punto, 1.0 - vida))
+		draw_circle(Vector2(c.x, superficie_y + 10.0 - vida * 14.0), 3.0 + vida * 6.0, Color(punto, 1.0 - vida))
 
 
 func _nube(rng: RandomNumberGenerator) -> PackedVector2Array:

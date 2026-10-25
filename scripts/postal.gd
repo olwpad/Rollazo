@@ -47,12 +47,15 @@ func _draw() -> void:
 		draw_string(FUENTE, Vector2(size.x - 50.0, y + 14.0), str(filas[i][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Acuarela.CIRUELA)
 
 
-# El primer tramo del recorrido dentro de la foto, con los colores del juego. Entero sería
-# una tira de rayitas: el mapa es 10 veces más largo que alto.
+# El mapa de arriba abajo dentro de la foto, con los colores del juego, desde la salida hasta
+# donde quepa: una torre o una bajada caben enteras; un horizontal entero sería una tira de rayitas.
 func _miniatura(foto: Rect2, d: Dictionary) -> void:
 	if _mapa.is_empty():
 		return
-	var mundo := Rect2(300.0, 0.0, 1100.0 * foto.size.x / foto.size.y, 1100.0)
+	var lim: Rect2 = _mapa.limites
+	var mundo := Rect2(lim.position, Vector2(lim.size.y * foto.size.x / foto.size.y, lim.size.y))
+	if mundo.size.x > lim.size.x:  # más estrecho que la foto: centrado
+		mundo.position.x = lim.get_center().x - mundo.size.x / 2.0
 	var escala := foto.size.y / mundo.size.y
 	var origen := foto.position - mundo.position * escala
 	var ciudad := PackedVector2Array()  # edificios del fondo, para que se lea como "tejados"
