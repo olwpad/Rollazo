@@ -88,8 +88,9 @@ Le gustaron las cuatro formas y pidió que también haya **híbridos**:
 - El bot probador de mapas entra en el repo (`tests/` o `tools/`) y se adapta a las formas
   verticales y a las sierras, como fase propia del plan: hoy vive en un scratchpad temporal y
   solo sabe ir hacia la derecha (decisión de Claude).
-- Las sierras que se mueven usan un instante de inicio que manda el anfitrión, para estar en el
-  mismo sitio en los 4 PCs (decisión de Claude).
+- Las sierras que se mueven las mueve cada PC con su reloj de ronda y el contacto lo decide
+  solo el anfitrión (como los aros); si el desfase de unas décimas se nota, se envía el
+  instante de arranque por la red (decisión de Claude).
 - Tras cruzar la meta online, pasar a espectador no puede depender solo de caer a la franja
   `Caida`: en una torre se cae sobre un saliente. Basta con caer por debajo de la meta o tocar
   una sierra (decisión de Claude; detalle para quien construya).
