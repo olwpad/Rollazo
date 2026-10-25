@@ -21,9 +21,10 @@ const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 
 static func generar(semilla: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
-	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": []}
+	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": []}
 	var x := INICIO_FIN
 	var desde_descanso := 0
+	var desde_burbuja := 0  # techos sin burbuja: a los 3, sale una seguro
 	var recien_descanso := true  # el suelo de salida cuenta como descanso
 	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0))
 	while x < LARGO:
@@ -54,6 +55,11 @@ static func generar(semilla: int) -> Dictionary:
 		elif rng.randf() < 0.25:  # bloque flotante para chocarse a mitad de vuelo
 			var r := rng.randf_range(35.0, 50.0)
 			_pieza(m, "Bloque", pos + Vector2(rng.randf_range(260.0, 320.0), rng.randf_range(130.0, 200.0)), _poligono(rng, r, rng.randi_range(5, 7)), false)
+		desde_burbuja += 1
+		if not recien_descanso and (rng.randf() < 0.35 or desde_burbuja >= 3):  # burbuja de poder donde pasa el columpio
+			desde_burbuja = 0
+			m.burbujas.append({"pos": pos + Vector2(rng.randf_range(-120.0, 120.0), rng.randf_range(170.0, 220.0)),
+					"tipo": Poderes.TIPOS[rng.randi_range(0, Poderes.TIPOS.size() - 1)]})
 		if rng.randf() < 0.15:  # atajo alto: más difícil de alcanzar, pero ahorra un columpio
 			_pieza(m, "Atajo", Vector2(pos.x + rng.randf_range(250.0, 330.0), rng.randf_range(60.0, 110.0)), _caja(rng.randf_range(120.0, 170.0), 40.0), true)
 		x = pos.x

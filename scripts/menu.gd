@@ -18,6 +18,7 @@ func _ready() -> void:
 	$SalaUI/Ip/Fila/Copiar.pressed.connect(func(): DisplayServer.clipboard_set($SalaUI/Ip/Fila/Valor.text))
 	$SalaUI/Notita/Caja/Cambiar.pressed.connect(func(): config.visible = true)
 	$Config/Papel/Caja/Hecho.pressed.connect(func(): config.visible = false)
+	$Config/Papel/Caja/Poderes.pressed.connect(func(): Red.poner_poderes(not Red.config.poderes))
 	for n in Red.RONDAS:
 		get_node("Config/Papel/Caja/Rondas/R%d" % n).pressed.connect(Red.poner_rondas.bind(n))
 	var mapa: Postal = $Config/Papel/Caja/Mapas/Azotea
@@ -95,7 +96,9 @@ func _actualizar() -> void:
 		return
 	$SalaUI/Ip.visible = anfitrion  # los amigos ya la escribieron para entrar
 	$SalaUI/Ip/Fila/Valor.text = Red.ip_propia()
-	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s" % [Red.config.rondas, Generador.NOMBRE]
+	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s\n%s" % [Red.config.rondas, Generador.NOMBRE,
+			"CON PODERES" if Red.config.poderes else "SIN PODERES"]
+	$Config/Papel/Caja/Poderes.text = "PODERES: " + ("SÍ" if Red.config.poderes else "NO")
 	$SalaUI/Notita/Caja/Cambiar.visible = anfitrion
 	for n in Red.RONDAS:
 		var b = get_node("Config/Papel/Caja/Rondas/R%d" % n)

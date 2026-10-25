@@ -4,6 +4,7 @@ extends Node2D
 
 const ESCENA_JUGADOR := preload("res://scenes/jugador.tscn")
 const CAMARA := preload("res://scripts/camara.gd")
+const BURBUJA := preload("res://scripts/burbuja.gd")
 const ESPERA_TRAS_PRIMERO := 20.0  # segundos que tienen los demás tras llegar el primero
 const SEGUNDOS_RESULTADOS := 5.0
 const SEGUNDOS_POSTAL := 2.5  # la postal de "RONDA N" con los mocos quietos
@@ -93,6 +94,15 @@ func construir(semilla: int) -> void:
 		control.add_child(caja)
 		control.body_entered.connect(_al_pasar_control.bind(control))
 		$Controles.add_child(control)
+	if Red.config.poderes:
+		for i in mapa.burbujas.size():
+			var b := Area2D.new()
+			b.set_script(BURBUJA)
+			b.name = "Burbuja%d" % i
+			b.position = mapa.burbujas[i].pos
+			b.set("tipo", mapa.burbujas[i].tipo)  # set(): Area2D no sabe que el script tiene `tipo`
+			b.body_entered.connect(_al_tocar_burbuja.bind(b))
+			piezas.add_child(b)  # con las piezas: se borran solas al cambiar de mapa
 	$Meta.position = mapa.meta
 	$Caida.position.x = mapa.caida_x
 	$Caida/Forma.shape.size.x = mapa.caida_ancho
@@ -129,6 +139,8 @@ func _physics_process(delta: float) -> void:
 	var mio := jugador_local()
 	if mio != null and mio.papel_activo:
 		hud.ocultar_ayuda()  # ya sabe lanzar el papel
+	if mio != null:
+		hud.poder(mio.poder, mio.poder_restante, Poderes.DURACION.get(mio.poder, 1.0))
 	if desde_primero >= 0.0 and not en_resultados and multiplayer.is_server():
 		desde_primero += delta
 		if clasificacion.todos_llegaron(Red.ids) or desde_primero >= ESPERA_TRAS_PRIMERO:
@@ -237,6 +249,7 @@ func reiniciar() -> void:
 		var lista := jugadores()
 		for i in lista.size():
 			lista[i].reaparecer($Inicio.global_position + Vector2(i * 90, 0))  # en fila, no apilados
+			lista[i].poder = ""  # cada ronda se empieza sin poderes
 	if Red.es_online():
 		_postal()
 
@@ -260,6 +273,22 @@ func _congelar(si: bool) -> void:
 	if multiplayer.is_server():
 		for j in jugadores():
 			j.congelado = si
+
+
+# El anfitrión decide quién la coge; todos la quitan a la vez.
+func _al_tocar_burbuja(cuerpo: Node2D, burbuja: Area2D) -> void:
+	if not (cuerpo is Jugador and multiplayer.is_server()) or not burbuja.visible:
+		return
+	(cuerpo as Jugador).dar_poder(burbuja.get("tipo"))
+	cuerpo.efecto.rpc("poder", burbuja.global_position)
+	burbuja_cogida.rpc(burbuja.name)
+
+
+@rpc("authority", "call_local", "reliable")
+func burbuja_cogida(nombre_burbuja: String) -> void:
+	var b := piezas.get_node_or_null(nombre_burbuja)
+	if b != null:
+		b.recogida()
 
 
 func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:

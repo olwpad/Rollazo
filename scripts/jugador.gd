@@ -39,6 +39,12 @@ var agarre_pos := Vector2.ZERO
 var agarrado_a: Jugador = null  # a quién me agarro (solo en el anfitrión)
 var carga := 0  # cuántos están agarrados a mí
 var congelado := false  # quieto: durante la postal de la ronda o ya de espectador (solo en el anfitrión)
+var poder := ""  # el que lleva ahora ("" = ninguno); el Sync lo copia a todos para el brillo y el HUD
+var poder_restante := 0.0
+var _golpeados := {}  # puñetazo: a quién le pegué y cuándo, para no pegarle cada frame
+
+const DIST_PUNETAZO := 70.0
+const FUERZA_PUNETAZO := 950.0
 
 const EVENTOS := ["lanzar", "saltar", "cortar", "agarrar"]
 var _remoto := {"soltar": true, "apunta": Vector2.ZERO, "eje_x": 0.0, "eje_largo": 0.0}
@@ -125,9 +131,12 @@ func _physics_process(delta: float) -> void:
 			_enviar_input()
 		return  # solo el anfitrión simula; los demás reciben la posición por el Sync
 	var e := _leer_input()
-	if congelado:  # se lee la entrada igual, para que un clic durante la postal no salte después
+	gastar_poder(delta)
+	if congelado or poder == "congelado":  # se lee la entrada igual, para que un clic no salte después
 		velocity = Vector2.ZERO
 		return
+	if poder == "punetazo":
+		golpear_cercanos()
 	if e.cortar:
 		_cortar_cercanos()
 	if e.agarrar:
@@ -145,13 +154,19 @@ func _physics_process(delta: float) -> void:
 			velocity *= impulso_soltar
 		papel = null
 
-	velocity.y += gravedad * (1.0 + PESO_POR_CARGA * carga) * delta
-	if e.saltar and is_on_floor():
-		velocity.y = -fuerza_salto
-	if is_on_floor():
-		velocity.x = move_toward(velocity.x, e.eje_x * velocidad_suelo, 3000.0 * delta)
+	var en_pared := poder == "pared" and is_on_wall() and papel == null
+	if en_pared and e.saltar:  # despegarse: salto hacia fuera de la pared
+		velocity = get_wall_normal() * 450.0 + Vector2(0, -fuerza_de_salto())
+	elif en_pared:  # pegado: un empujoncito contra la pared para seguir tocándola
+		velocity = -get_wall_normal() * 30.0 + Vector2(0, e.eje_largo * velocidad_encoger)
 	else:
-		velocity.x += e.eje_x * control_aire * delta
+		velocity.y += gravedad * (1.0 + PESO_POR_CARGA * carga) * delta
+	if e.saltar and is_on_floor():
+		velocity.y = -fuerza_de_salto()
+	if is_on_floor():
+		velocity.x = move_toward(velocity.x, e.eje_x * velocidad_suelo * factor_velocidad(), 3000.0 * delta)
+	elif not en_pared:
+		velocity.x += e.eje_x * control_aire * factor_velocidad() * delta
 	if papel != null:
 		papel.cambiar_largo(e.eje_largo * velocidad_encoger * delta)
 
@@ -181,6 +196,52 @@ func _physics_process(delta: float) -> void:
 		_mover_deslizando(r[0] - global_position)
 		velocity = r[1]
 	_publicar_papel()
+
+
+# Al coger una burbuja (solo en el anfitrión). Congelar no se lo queda: para a los demás.
+func dar_poder(tipo: String) -> void:
+	poder = tipo
+	poder_restante = Poderes.DURACION[tipo]
+	if tipo == "congelar":
+		for otro in get_parent().get_children():
+			if otro is Jugador and otro != self:
+				otro.poder = "congelado"
+				otro.poder_restante = Poderes.DURACION.congelado
+				otro.efecto.rpc("congelado", otro.global_position)
+
+
+func gastar_poder(delta: float) -> void:
+	if poder == "":
+		return
+	poder_restante -= delta
+	if poder_restante <= 0.0:
+		poder = ""
+		poder_restante = 0.0
+
+
+func factor_velocidad() -> float:
+	return 1.6 if poder == "rapidez" else 1.0
+
+
+func fuerza_de_salto() -> float:
+	return fuerza_salto * (1.5 if poder == "salto" else 1.0)
+
+
+# Puñetazo: quien esté al lado sale volando hacia fuera (y un poco hacia arriba).
+func golpear_cercanos() -> void:
+	var ahora := Time.get_ticks_msec()
+	for otro in get_parent().get_children():
+		if not (otro is Jugador and otro != self) or global_position.distance_to(otro.global_position) > DIST_PUNETAZO:
+			continue
+		if ahora - _golpeados.get(otro.name, -100000) < 600:
+			continue
+		_golpeados[otro.name] = ahora
+		var dir: Vector2 = (otro.global_position - global_position).normalized()
+		if dir == Vector2.ZERO:
+			dir = Vector2.RIGHT
+		otro.velocity = dir * FUERZA_PUNETAZO + Vector2(0, -350)
+		otro.papel = null  # el golpe le suelta del papel
+		efecto.rpc("choque", (global_position + otro.global_position) / 2.0)
 
 
 # Como move_and_collide, pero si choca con una pared resbala por ella en vez de quedarse
@@ -295,8 +356,20 @@ func _lanzar_papel(objetivo: Vector2) -> void:
 		efecto.rpc("enganche", punto)
 
 
+var _poder_dibujado := ""
+
+
+# Brillo del color del poder alrededor del moco: así se ve qué lleva cada uno.
+func _draw() -> void:
+	if poder != "":
+		draw_circle(Vector2.ZERO, 40.0, Color(Poderes.COLOR[poder], 0.32))
+
+
 # El moco se estira solo según la velocidad; aquí solo se inclina un poco.
 func _process(_delta: float) -> void:
+	if poder != _poder_dibujado:
+		_poder_dibujado = poder
+		queue_redraw()
 	var visual: Node2D = $Visual
 	visual.rotation = lerp_angle(visual.rotation, clampf(velocity.x / 3000.0, -0.25, 0.25), 0.2)
 	$Visual/Moco.velocidad = velocity

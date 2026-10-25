@@ -17,7 +17,8 @@ var ids: Array[int] = []  # ids conectados, incluido el anfitrión (1). Solo fia
 
 var semilla := 0  # del mapa de la carrera; la elige el anfitrión
 var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
-var config := {"rondas": 5}  # la elige el anfitrión y la ven todos
+const CONFIG_INICIAL := {"rondas": 5, "poderes": true}
+var config := CONFIG_INICIAL.duplicate()  # la elige el anfitrión y la ven todos
 var listos := {}  # id -> true; el anfitrión no hace falta, es quien pulsa empezar
 
 
@@ -53,7 +54,7 @@ func salir() -> void:
 	multiplayer.refuse_new_connections = false
 	ids.clear()
 	listos.clear()
-	config = {"rondas": 5}
+	config = CONFIG_INICIAL.duplicate()
 	jugadores_cambiaron.emit()
 
 
@@ -98,9 +99,18 @@ func todos_listos() -> bool:
 
 # Solo el anfitrión. Cambiar la partida borra los listos: nadie empieza con opciones que no vio.
 func poner_rondas(n: int) -> void:
-	if not multiplayer.is_server() or not n in RONDAS:
+	if n in RONDAS:
+		_cambiar("rondas", n)
+
+
+func poner_poderes(si: bool) -> void:
+	_cambiar("poderes", si)
+
+
+func _cambiar(clave: String, valor: Variant) -> void:
+	if not multiplayer.is_server():
 		return
-	config.rondas = n
+	config[clave] = valor
 	listos.clear()
 	_config.rpc(config, listos)
 	config_cambiada.emit()

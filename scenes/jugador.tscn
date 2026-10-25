@@ -31,6 +31,12 @@ properties/5/replication_mode = 2
 properties/6/path = NodePath(".:agarre_pos")
 properties/6/spawn = true
 properties/6/replication_mode = 1
+properties/7/path = NodePath(".:poder")
+properties/7/spawn = true
+properties/7/replication_mode = 2
+properties/8/path = NodePath(".:poder_restante")
+properties/8/spawn = true
+properties/8/replication_mode = 1
 
 [node name="Jugador" type="CharacterBody2D"]
 collision_layer = 2

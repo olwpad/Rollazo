@@ -52,7 +52,7 @@ func test_sala_del_anfitrion() -> void:
 	var menu: Node = load("res://scenes/menu.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(menu)
 	comprobar(menu.get_node("SalaUI").visible and not menu.get_node("Caja").visible, "en la sala no queda el menú de antes")
-	comprobar(menu.get_node("SalaUI/Notita/Caja/Resumen").text == "5 RONDAS · LA AZOTEA", "resumen de la partida")
+	comprobar(menu.get_node("SalaUI/Notita/Caja/Resumen").text == "5 RONDAS · LA AZOTEA\nCON PODERES", "resumen de la partida")
 	comprobar(menu.get_node("SalaUI/Notita/Caja/Cambiar").visible, "el anfitrión puede cambiarla")
 	menu.get_node("SalaUI/Notita/Caja/Cambiar").pressed.emit()
 	comprobar(menu.get_node("Config").visible, "CAMBIAR abre la pantalla de postales")

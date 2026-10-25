@@ -61,6 +61,18 @@ static func minutos(t: float) -> String:
 	return "%d:%02d" % [int(t) / 60, int(t) % 60]
 
 
+# El poder que llevas y cuánto le queda. tipo "" = ninguno.
+func poder(tipo: String, restante: float, total: float) -> void:
+	var p = $Poder  # sin tipo: es el indicador_poder
+	p.visible = tipo != ""
+	if tipo == "":
+		return
+	p.tipo = tipo
+	p.fraccion = clampf(restante / total, 0.0, 1.0)
+	p.queue_redraw()
+	$Poder/Texto.text = "%s · %d S" % [Poderes.NOMBRE[tipo], ceili(restante)]
+
+
 # Texto grande arriba: modo espectador, ganador del torneo...
 func titular(texto: String) -> void:
 	$Titular.text = texto

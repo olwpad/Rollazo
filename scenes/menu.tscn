@@ -335,6 +335,12 @@ focus_mode = 0
 text = "10"
 script = ExtResource("7")
 
+[node name="Poderes" type="Button" parent="Config/Papel/Caja"]
+layout_mode = 2
+focus_mode = 0
+text = "PODERES: SÍ"
+script = ExtResource("7")
+
 [node name="Hecho" type="Button" parent="Config/Papel/Caja"]
 layout_mode = 2
 size_flags_horizontal = 8
