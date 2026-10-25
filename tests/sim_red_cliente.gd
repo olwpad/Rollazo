@@ -34,6 +34,8 @@ func _process(delta: float) -> bool:
 		var camaras := current_scene.find_children("*", "Camera2D", true, false)
 		if camaras.size() != 1 or camaras[0].get_parent().name != str(root.get_node("Red").multiplayer.get_unique_id()):
 			fallos.append("el cliente debe tener 1 cámara, la de su moco")
+		if current_scene.get_node("Piezas").get_child_count() != Generador.generar(123).piezas.size():
+			fallos.append("el cliente no construyó el mapa de la semilla del anfitrión")
 		_fin()
 	elif espera > 12.0:
 		fallos.append("la carrera no empezó en el cliente")

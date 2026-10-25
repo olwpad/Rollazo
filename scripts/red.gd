@@ -12,6 +12,7 @@ const RECORRIDO := "res://scenes/recorrido_prueba.tscn"
 var ids: Array[int] = []  # ids conectados, incluido el anfitrión (1). Solo fiable en el anfitrión.
 
 
+var semilla := 0  # del mapa de la carrera; la elige el anfitrión
 var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
 
 
@@ -55,7 +56,8 @@ func es_online() -> bool:
 
 # Solo el anfitrión la llama; "call_local" hace que también se ejecute en su propio PC.
 @rpc("authority", "call_local", "reliable")
-func empezar_carrera() -> void:
+func empezar_carrera(p_semilla: int) -> void:
+	semilla = p_semilla
 	if multiplayer.is_server():
 		multiplayer.refuse_new_connections = true  # quien llegue tarde no tendría moco
 	get_tree().change_scene_to_file(RECORRIDO)

@@ -15,6 +15,7 @@ var clasificacion := Clasificacion.new()  # solo la usa el anfitrión
 var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
 var en_resultados := false
 var colores := {}  # id -> color de su moco, en todos los PCs
+var piezas := Node2D.new()  # techos, descansos y obstáculos generados
 
 @onready var hud := $HUD
 
@@ -31,15 +32,54 @@ func _ready() -> void:
 		Red.jugadores_cambiaron.connect(_quitar_desconectados)
 	$Caida.body_entered.connect(_al_caer)
 	$Meta.body_entered.connect(_al_llegar)
-	for control: Area2D in $Controles.get_children():
-		control.body_entered.connect(_al_pasar_control.bind(control))
 	var i := 0
-	for dibujo: Polygon2D in find_children("Dibujo", "Polygon2D"):
+	for dibujo: Polygon2D in find_children("Dibujo", "Polygon2D"):  # el suelo de salida
 		_estilo_acuarela(dibujo, i)
 		i += 1
 	_estilo_acuarela($Meta/Bandera, 99)
+	piezas.name = "Piezas"
+	add_child(piezas)
+	move_child(piezas, $Jugadores.get_index())  # detrás de los mocos
+	construir(Red.semilla)
 	hud.get_node("Menu").pressed.connect(volver_al_menu)
 	reiniciar()
+
+
+# Monta el mapa de esta semilla. Todos los PCs lo llaman con la misma, así es idéntico.
+func construir(semilla: int) -> void:
+	for viejo in piezas.get_children() + $Controles.get_children():
+		viejo.get_parent().remove_child(viejo)
+		viejo.queue_free()
+	var mapa := Generador.generar(semilla)
+	for i in mapa.piezas.size():
+		var p: Dictionary = mapa.piezas[i]
+		var cuerpo := StaticBody2D.new()
+		cuerpo.name = p.nombre
+		cuerpo.position = p.pos
+		if p.enganchable:
+			cuerpo.add_to_group("enganchable")
+		var forma := CollisionPolygon2D.new()
+		forma.polygon = p.poly
+		var dibujo := Polygon2D.new()
+		dibujo.name = "Dibujo"
+		dibujo.polygon = p.poly
+		cuerpo.add_child(forma)
+		cuerpo.add_child(dibujo)
+		piezas.add_child(cuerpo)
+		_estilo_acuarela(dibujo, semilla + i)
+	for pos: Vector2 in mapa.controles:
+		var control := Area2D.new()
+		control.position = pos
+		control.collision_mask = 3
+		var caja := CollisionShape2D.new()
+		caja.shape = RectangleShape2D.new()
+		caja.shape.size = Vector2(220, 120)
+		control.add_child(caja)
+		control.body_entered.connect(_al_pasar_control.bind(control))
+		$Controles.add_child(control)
+	$Meta.position = mapa.meta
+	$Caida.position.x = mapa.caida_x
+	$Caida/Forma.shape.size.x = mapa.caida_ancho
 
 
 # Cada forma se pinta como mancha de acuarela, sin contorno: techos enganchables en rosa
@@ -172,7 +212,7 @@ func _terminar_ronda() -> void:
 	mostrar_resultados.rpc(filas)
 	await get_tree().create_timer(SEGUNDOS_RESULTADOS).timeout
 	clasificacion.nueva_ronda()
-	nueva_ronda.rpc()
+	nueva_ronda.rpc(randi())  # cada ronda, mapa nuevo
 
 
 @rpc("authority", "call_local", "reliable")
@@ -181,7 +221,8 @@ func mostrar_resultados(filas: Array) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func nueva_ronda() -> void:
+func nueva_ronda(semilla: int) -> void:
+	construir(semilla)
 	reiniciar()
 
 

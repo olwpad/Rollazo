@@ -10,8 +10,8 @@ func _ready() -> void:
 	Musica.tocar("menu")
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Unirse.pressed.connect(_unirse)
-	$Caja/Solo.pressed.connect(func(): get_tree().change_scene_to_file(Red.RECORRIDO))
-	empezar.pressed.connect(func(): Red.empezar_carrera.rpc())
+	$Caja/Solo.pressed.connect(_practicar)
+	empezar.pressed.connect(func(): Red.empezar_carrera.rpc(randi()))
 	Red.jugadores_cambiaron.connect(_actualizar)
 	Red.desconectado.connect(func(motivo): estado.text = motivo)
 	multiplayer.connected_to_server.connect(func(): estado.text = "Conectado. Esperando a que el anfitrión empiece…")
@@ -19,6 +19,11 @@ func _ready() -> void:
 	if Red.ultimo_motivo != "":
 		estado.text = Red.ultimo_motivo
 		Red.ultimo_motivo = ""
+
+
+func _practicar() -> void:
+	Red.semilla = randi()  # cada práctica, un mapa distinto
+	get_tree().change_scene_to_file(Red.RECORRIDO)
 
 
 func _crear() -> void:

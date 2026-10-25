@@ -23,14 +23,3 @@ func test_boton_y_tecla_para_volver_al_menu() -> void:
 	comprobar(nivel.get_node_or_null("HUD/Menu") is Button, "botón de menú en el HUD")
 	comprobar(InputMap.has_action("volver_menu"), "tecla para volver al menú")
 	nivel.free()
-
-
-func test_recorrido_largo_y_con_caida_hasta_el_final() -> void:
-	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
-	var meta_x: float = nivel.get_node("Meta").position.x
-	var caida: Area2D = nivel.get_node("Caida")
-	var ancho: float = caida.get_node("Forma").shape.size.x
-	comprobar(meta_x >= 7500.0, "el recorrido mide el doble (meta en x=%.0f)" % meta_x)
-	comprobar(caida.position.x + ancho / 2.0 > meta_x + 500.0, "caer más allá de la meta también reaparece")
-	comprobar(nivel.get_node("Controles").get_child_count() >= 3, "puntos de control en el tramo nuevo")
-	nivel.free()

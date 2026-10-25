@@ -24,7 +24,7 @@ func _process(delta: float) -> bool:
 	if t_carrera < 0.0:
 		if red.ids.size() == 2:
 			id_cliente = red.ids[1]
-			red.empezar_carrera.rpc()
+			red.empezar_carrera.rpc(123)
 			t_carrera = espera
 		elif espera > 10.0:
 			_fin("ningún cliente en 10 s")
