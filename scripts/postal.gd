@@ -31,9 +31,14 @@ func _draw() -> void:
 	var d: Dictionary = Temas.DATOS[tema]
 	draw_rect(foto, d.cielo[1].lerp(d.cielo[0], 0.4))
 	_miniatura(foto, d)
-	if apagada:  # el papel tapa la foto: se ve que ese mapa no va
+	if apagada:  # el papel tapa la foto y un sello torcido: ese mapa no va
 		draw_rect(papel, Color(PAPEL, 0.7))
+		draw_set_transform(Vector2(ancho / 2.0, size.y / 2.0), -0.3, Vector2.ONE)
+		draw_string(FUENTE, Vector2(-ancho / 2.0, alto_titulo * 0.1), "FUERA", HORIZONTAL_ALIGNMENT_CENTER, ancho, int(size.y * 0.3), Acuarela.ROSA)
+		draw_set_transform(Vector2(ancho / 2.0, size.y / 2.0), -0.05, Vector2.ONE)
 	var letra := int(alto_titulo * 0.8)
+	while letra > 8 and FUENTE.get_string_size(titulo, HORIZONTAL_ALIGNMENT_LEFT, -1, letra).x > ancho * 0.92:
+		letra -= 1  # nombres largos ("VERBENA EN LOS TEJADOS"): más pequeño antes que cortado
 	draw_string(FUENTE, Vector2(papel.position.x, papel.end.y - alto_titulo * 0.3), titulo, HORIZONTAL_ALIGNMENT_CENTER, ancho, letra, Acuarela.CIRUELA)
 	draw_set_transform(Vector2.ZERO)
 	for i in filas.size():  # victorias, al lado de la postal

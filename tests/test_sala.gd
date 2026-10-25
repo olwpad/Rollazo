@@ -72,6 +72,6 @@ func test_en_partida_son_tarjetas() -> void:
 	var ids: Array[int] = [1, 7, 8]
 	sala.mostrar(ids, 1, {7: true})
 	comprobar(sala.etiqueta(3) == "HUECO LIBRE", "hueco libre en tarjeta")
-	comprobar(sala.estado(0) == "ANFITRIÓN" and sala.estado(2) == "PENSÁNDOSELO…", "estado de cada uno")
+	comprobar(sala.estado(0) == "LISTO · ANFITRIÓN" and sala.estado(2) == "PENSÁNDOSELO…", "estado de cada uno")
 	comprobar(sala.sello_visible(1) and sala.estado(1) == "", "el listo lleva sello en vez de texto")
 	sala.free()

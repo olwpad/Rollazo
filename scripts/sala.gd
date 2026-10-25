@@ -111,7 +111,7 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 		h.sello.visible = listo
 		h.estado.text = ""
 		if tarjetas and ocupado and not listo:
-			h.estado.text = "ANFITRIÓN" if ids[i] == 1 else "PENSÁNDOSELO…"
+			h.estado.text = "LISTO · ANFITRIÓN" if ids[i] == 1 else "PENSÁNDOSELO…"
 	queue_redraw()
 
 
@@ -155,8 +155,11 @@ func _dibujar_tarjetas() -> void:
 		var r := Rect2(-TARJETA / 2.0, TARJETA)
 		if huecos[i].ocupado:
 			draw_rect(r, Color(CREMA, 0.95))
-		else:
+		else:  # papel claro (no deja ver antenas por detrás), borde punteado y un "+" donde irá el moco
+			draw_rect(r, Color(CREMA, 0.6))
 			var esquinas := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
 			for k in 4:
 				draw_dashed_line(esquinas[k], esquinas[k + 1], Color(CREMA, 0.8), 3.0, 12.0)
+			draw_circle(Vector2(0, -15), 34.0, Color(Acuarela.CIRUELA, 0.08))
+			draw_string(FUENTE, Vector2(-40, 8), "+", HORIZONTAL_ALIGNMENT_CENTER, 80, 70, Color(Acuarela.CIRUELA, 0.35))
 	draw_set_transform(Vector2.ZERO)

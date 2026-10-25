@@ -56,17 +56,38 @@ func test_sala_del_anfitrion() -> void:
 	comprobar(menu.get_node("SalaUI/Notita/Caja/Cambiar").visible, "el anfitrión puede cambiarla")
 	menu.get_node("SalaUI/Notita/Caja/Cambiar").pressed.emit()
 	comprobar(menu.get_node("Config").visible, "CAMBIAR abre la pantalla de postales")
-	menu.get_node("Config/Papel/Caja/Rondas/R7").pressed.emit()
-	comprobar(red.config.rondas == 7 and menu.get_node("SalaUI/Notita/Caja/Resumen").text.begins_with("7 RONDAS"), "elige 7 rondas")
-	comprobar(menu.get_node("Config/Papel/Caja/Mapas").get_child_count() == 5, "una postal por mapa")
+	menu.get_node("Config/Papel/Caja/Pegatinas/Rondas").pressed.emit()
+	comprobar(red.config.rondas == 7 and menu.get_node("SalaUI/Notita/Caja/Resumen").text.begins_with("7 RONDAS"), "la pegatina pasa de 5 a 7 rondas")
+	comprobar(menu.get_node("Config/Papel/Caja/Pegatinas/Rondas").text == "7", "la pegatina enseña el número")
+	var postales := menu.get_node("Config/Papel/Caja/Mapas").get_children().filter(func(n: Node) -> bool: return n is Postal)
+	comprobar(postales.size() == 5, "una postal por mapa")
 	var clic := InputEventMouseButton.new()
 	clic.pressed = true
 	clic.button_index = MOUSE_BUTTON_LEFT
 	menu.get_node("Config/Papel/Caja/Mapas/cueva").gui_input.emit(clic)
 	comprobar(not "cueva" in red.config.mapas and menu.get_node("Config/Papel/Caja/Mapas/cueva").apagada, "tocar una postal quita ese mapa")
-	menu.get_node("Config/Papel/Caja/Aros").pressed.emit()
+	menu.get_node("Config/Papel/Caja/Mapas/Todos").pressed.emit()
+	comprobar(red.config.mapas.size() == 5, "TODOS vuelve a poner los 5")
+	menu.get_node("Config/Papel/Caja/Pegatinas/Aros").pressed.emit()
 	comprobar(not red.config.aros and menu.get_node("SalaUI/Notita/Caja/Resumen").text.ends_with("SIN AROS"), "quita los aros")
 	comprobar(menu.get_node("SalaUI/Principal").text.begins_with("¡A CORRER!"), "botón principal del anfitrión")
+	menu.free()
+	red.salir()
+
+
+# El anfitrión cuenta como listo y debajo del botón se dice quién falta.
+func test_contador_de_listos_y_quien_falta() -> void:
+	var red: Node = Engine.get_main_loop().root.get_node("Red")
+	red.crear_partida(7795)
+	var menu: Node = load("res://scenes/menu.tscn").instantiate()
+	Engine.get_main_loop().root.add_child(menu)
+	red.ids.assign([1, 5, 6])
+	red.listos[5] = true
+	menu._actualizar()
+	comprobar(menu.get_node("SalaUI/Principal").text == "¡A CORRER! · 2/3 LISTOS", "cuenta al anfitrión: " + menu.get_node("SalaUI/Principal").text)
+	comprobar(menu.get_node("SalaUI/Estado").text == "FALTA: JUGADOR 3", "quién falta: " + menu.get_node("SalaUI/Estado").text)
+	menu.get_node("SalaUI/Ip/Fila/Copiar").pressed.emit()
+	comprobar(menu.get_node("SalaUI/Ip/Fila/Copiar").text == "¡COPIADA!", "copiar avisa")
 	menu.free()
 	red.salir()
 

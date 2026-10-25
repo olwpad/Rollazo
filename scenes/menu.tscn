@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/columpio_menu.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/sala.gd" id="6"]
 [ext_resource type="Script" path="res://scripts/boton_mancha.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/pegatina.gd" id="8"]
 
 [sub_resource type="ShaderMaterial" id="cielo"]
 shader = ExtResource("3")
@@ -137,6 +138,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
+[node name="Franja" type="ColorRect" parent="SalaUI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -150.0
+mouse_filter = 2
+color = Color(1, 0.98, 0.957, 0.55)
+
 [node name="Logo" type="Label" parent="SalaUI"]
 layout_mode = 0
 offset_left = 40.0
@@ -177,6 +188,18 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 24
 text = "COPIAR"
 script = ExtResource("7")
+principal = true
+color_mancha = Color(0.424, 0.765, 0.69, 1)
+
+[node name="PistaIp" type="Label" parent="SalaUI"]
+layout_mode = 0
+offset_left = 44.0
+offset_top = 168.0
+offset_right = 760.0
+offset_bottom = 198.0
+theme_override_colors/font_color = Color(0.227, 0.208, 0.314, 0.75)
+theme_override_font_sizes/font_size = 20
+text = "PÁSALA A TUS AMIGOS: LA ESCRIBEN EN «UNIRSE»"
 
 [node name="Notita" type="PanelContainer" parent="SalaUI"]
 layout_mode = 1
@@ -204,6 +227,7 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 26
 text = "CAMBIAR ✎"
 script = ExtResource("7")
+principal = true
 
 [node name="Principal" type="Button" parent="SalaUI"]
 layout_mode = 1
@@ -233,7 +257,7 @@ offset_left = -520.0
 offset_top = -130.0
 offset_right = -40.0
 offset_bottom = -96.0
-theme_override_colors/font_color = Color(1, 0.98, 0.957, 1)
+theme_override_colors/font_color = Color(0.227, 0.208, 0.314, 1)
 theme_override_font_sizes/font_size = 22
 
 [node name="Salir" type="Button" parent="."]
@@ -272,80 +296,73 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -370.0
-offset_top = -290.0
-offset_right = 370.0
-offset_bottom = 290.0
-rotation = -0.015
+offset_left = -440.0
+offset_top = -315.0
+offset_right = 440.0
+offset_bottom = 305.0
+rotation = -0.012
 
 [node name="Caja" type="VBoxContainer" parent="Config/Papel"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 14
 
 [node name="Titulo" type="Label" parent="Config/Papel/Caja"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 52
+theme_override_font_sizes/font_size = 50
 text = "LA PARTIDA"
+horizontal_alignment = 1
 
-[node name="TextoMapas" type="Label" parent="Config/Papel/Caja"]
+[node name="Mapas" type="GridContainer" parent="Config/Papel/Caja"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
-theme_override_font_sizes/font_size = 26
-text = "MAPAS · TOCA UNO PARA QUITARLO O PONERLO"
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 12
+columns = 4
 
-[node name="Mapas" type="HBoxContainer" parent="Config/Papel/Caja"]
+[node name="Pegatinas" type="HBoxContainer" parent="Config/Papel/Caja"]
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_horizontal = 4
+theme_override_constants/separation = 50
 
-[node name="TextoRondas" type="Label" parent="Config/Papel/Caja"]
+[node name="Rondas" type="Button" parent="Config/Papel/Caja/Pegatinas"]
+custom_minimum_size = Vector2(130, 130)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
-theme_override_font_sizes/font_size = 26
-text = "RONDAS"
-
-[node name="Rondas" type="HBoxContainer" parent="Config/Papel/Caja"]
-layout_mode = 2
-theme_override_constants/separation = 24
-
-[node name="R3" type="Button" parent="Config/Papel/Caja/Rondas"]
-layout_mode = 2
-focus_mode = 0
-text = "3"
-script = ExtResource("7")
-
-[node name="R5" type="Button" parent="Config/Papel/Caja/Rondas"]
-layout_mode = 2
-focus_mode = 0
 text = "5"
-script = ExtResource("7")
+script = ExtResource("8")
+color = Color(0.961, 0.827, 0.541, 1)
+titulo = "RONDAS"
+inclinacion = -0.05
+letra_oscura = true
 
-[node name="R7" type="Button" parent="Config/Papel/Caja/Rondas"]
+[node name="Poderes" type="Button" parent="Config/Papel/Caja/Pegatinas"]
+custom_minimum_size = Vector2(130, 130)
 layout_mode = 2
-focus_mode = 0
-text = "7"
-script = ExtResource("7")
+text = "SÍ"
+script = ExtResource("8")
+color = Color(0.663, 0.608, 0.878, 1)
+titulo = "PODERES"
+inclinacion = 0.035
 
-[node name="R10" type="Button" parent="Config/Papel/Caja/Rondas"]
+[node name="Aros" type="Button" parent="Config/Papel/Caja/Pegatinas"]
+custom_minimum_size = Vector2(130, 130)
 layout_mode = 2
-focus_mode = 0
-text = "10"
-script = ExtResource("7")
+text = "SÍ"
+script = ExtResource("8")
+color = Color(0.949, 0.627, 0.498, 1)
+titulo = "AROS DE FUEGO"
+inclinacion = -0.02
 
-[node name="Poderes" type="Button" parent="Config/Papel/Caja"]
+[node name="Pista" type="Label" parent="Config/Papel/Caja"]
 layout_mode = 2
-focus_mode = 0
-text = "PODERES: SÍ"
-script = ExtResource("7")
-
-[node name="Aros" type="Button" parent="Config/Papel/Caja"]
-layout_mode = 2
-focus_mode = 0
-text = "AROS DE FUEGO: SÍ"
-script = ExtResource("7")
+theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
+theme_override_font_sizes/font_size = 20
+text = "TOCA UNA POSTAL PARA QUITAR O PONER ESE MAPA · TOCA UNA PEGATINA PARA CAMBIARLA"
+horizontal_alignment = 1
 
 [node name="Hecho" type="Button" parent="Config/Papel/Caja"]
 layout_mode = 2
-size_flags_horizontal = 8
+size_flags_horizontal = 4
+size_flags_vertical = 10
 focus_mode = 0
 text = "¡HECHO!"
 script = ExtResource("7")

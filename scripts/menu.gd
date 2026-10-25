@@ -22,22 +22,31 @@ func _ready() -> void:
 	$Caja/Solo.pressed.connect(_practicar)
 	$Salir.pressed.connect(_salir)
 	principal.pressed.connect(_pulsar_principal)
-	$SalaUI/Ip/Fila/Copiar.pressed.connect(func(): DisplayServer.clipboard_set($SalaUI/Ip/Fila/Valor.text))
+	$SalaUI/Ip/Fila/Copiar.pressed.connect(_copiar_ip)
 	$SalaUI/Notita/Caja/Cambiar.pressed.connect(func(): config.visible = true)
 	$Config/Papel/Caja/Hecho.pressed.connect(func(): config.visible = false)
-	$Config/Papel/Caja/Poderes.pressed.connect(func(): Red.poner_poderes(not Red.config.poderes))
-	for n in Red.RONDAS:
-		get_node("Config/Papel/Caja/Rondas/R%d" % n).pressed.connect(Red.poner_rondas.bind(n))
-	$Config/Papel/Caja/Aros.pressed.connect(func(): Red.poner_aros(not Red.config.aros))
+	$Config/Papel/Caja/Pegatinas/Poderes.pressed.connect(func(): Red.poner_poderes(not Red.config.poderes))
+	$Config/Papel/Caja/Pegatinas/Rondas.pressed.connect(func():  # 3 → 5 → 7 → 10 → 3
+		Red.poner_rondas(Red.RONDAS[(Red.RONDAS.find(Red.config.rondas) + 1) % Red.RONDAS.size()]))
+	$Config/Papel/Caja/Pegatinas/Aros.pressed.connect(func(): Red.poner_aros(not Red.config.aros))
 	for t in Temas.LISTA:  # una postal por mapa; tocarla lo quita o lo pone
 		var mapa := Postal.new()
 		mapa.name = t
-		mapa.custom_minimum_size = Vector2(130, 100)
+		mapa.custom_minimum_size = Vector2(190, 130)
 		mapa.titulo = Temas.DATOS[t].nombre
 		mapa.tema = t
 		mapa.semilla = 2026  # de muestra; cada ronda sale un trazado distinto
 		mapa.gui_input.connect(_tocar_mapa.bind(t))
 		$Config/Papel/Caja/Mapas.add_child(mapa)
+	var todos := Button.new()  # el hueco que queda en la segunda fila
+	todos.name = "Todos"
+	todos.text = "PONER TODOS"
+	todos.focus_mode = Control.FOCUS_NONE
+	todos.set_script(preload("res://scripts/boton_mancha.gd"))
+	todos.custom_minimum_size = Vector2(190, 130)
+	todos.add_theme_font_size_override("font_size", 30)
+	todos.pressed.connect(func(): Red.poner_mapas(Temas.LISTA))
+	$Config/Papel/Caja/Mapas.add_child(todos)
 	Red.jugadores_cambiaron.connect(_actualizar)
 	Red.config_cambiada.connect(_actualizar)
 	Red.desconectado.connect(func(motivo): estado.text = motivo)
@@ -50,6 +59,15 @@ func _ready() -> void:
 func _practicar() -> void:
 	Red.semilla = randi()  # cada práctica, un mapa distinto
 	get_tree().change_scene_to_file(Red.RECORRIDO)
+
+
+func _copiar_ip() -> void:
+	DisplayServer.clipboard_set($SalaUI/Ip/Fila/Valor.text)
+	var boton: Button = $SalaUI/Ip/Fila/Copiar
+	boton.text = "¡COPIADA!"
+	await get_tree().create_timer(1.5).timeout
+	if is_instance_valid(boton):
+		boton.text = "COPIAR"
 
 
 func _tocar_mapa(evento: InputEvent, t: String) -> void:
@@ -137,21 +155,24 @@ func _actualizar() -> void:
 	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s\n%s · %s" % [Red.config.rondas,
 			Temas.DATOS[mapas[0]].nombre if mapas.size() == 1 else "%d MAPAS" % mapas.size(),
 			"CON PODERES" if Red.config.poderes else "SIN PODERES", "CON AROS" if Red.config.aros else "SIN AROS"]
-	$Config/Papel/Caja/Poderes.text = "PODERES: " + ("SÍ" if Red.config.poderes else "NO")
-	$Config/Papel/Caja/Aros.text = "AROS DE FUEGO: " + ("SÍ" if Red.config.aros else "NO")
-	for mapa: Postal in $Config/Papel/Caja/Mapas.get_children():
-		mapa.apagada = not mapa.name in mapas
+	$Config/Papel/Caja/Pegatinas/Rondas.text = str(Red.config.rondas)
+	$Config/Papel/Caja/Pegatinas/Poderes.text = "SÍ" if Red.config.poderes else "NO"
+	$Config/Papel/Caja/Pegatinas/Aros.text = "SÍ" if Red.config.aros else "NO"
+	for mapa in $Config/Papel/Caja/Mapas.get_children():
+		if mapa is Postal:
+			mapa.apagada = not mapa.name in mapas
 	$SalaUI/Notita/Caja/Cambiar.visible = anfitrion
-	for n in Red.RONDAS:
-		var b = get_node("Config/Papel/Caja/Rondas/R%d" % n)
-		b.principal = n == Red.config.rondas  # la elegida lleva la mancha puesta
-		b._mostrar(false)
-	var amigos := Red.ids.filter(func(id: int) -> bool: return id != 1)
-	var listos := amigos.filter(func(id: int) -> bool: return Red.listos.get(id, false)).size()
+	$SalaUI/PistaIp.visible = anfitrion
+	# El anfitrión cuenta como listo: con 3 jugadores, "2/3", no "1/2".
+	var faltan := []
+	for i in Red.ids.size():
+		if Red.ids[i] != 1 and not Red.listos.get(Red.ids[i], false):
+			faltan.append("JUGADOR %d" % (i + 1))  # el mismo nombre que en su tarjeta
+	var total := Red.ids.size()
 	if anfitrion:
-		principal.text = "¡A CORRER!" if amigos.is_empty() or listos == amigos.size() else "¡A CORRER! · %d/%d LISTOS" % [listos, amigos.size()]
-		principal.progreso = 1.0 if amigos.is_empty() else float(listos) / amigos.size()
-		$SalaUI/Estado.text = "PASA TU IP A LOS DEMÁS" if amigos.is_empty() else ("" if listos == amigos.size() else "ESPERANDO A QUE ESTÉN LISTOS")
+		principal.text = "¡A CORRER!" if faltan.is_empty() else "¡A CORRER! · %d/%d LISTOS" % [total - faltan.size(), total]
+		principal.progreso = float(total - faltan.size()) / total
+		$SalaUI/Estado.text = "" if faltan.is_empty() else ("FALTA: " if faltan.size() == 1 else "FALTAN: ") + ", ".join(faltan)
 	else:
 		var yo_listo: bool = Red.listos.get(multiplayer.get_unique_id(), false)
 		principal.text = "¡LISTO! (QUITAR)" if yo_listo else "ESTOY LISTO"
