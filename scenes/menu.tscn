@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/boton_mancha.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/pegatina.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/vestidor.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/boton_musica.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/deslizador_volumen.gd" id="11"]
 
 [sub_resource type="ShaderMaterial" id="cielo"]
 shader = ExtResource("3")
@@ -371,12 +373,29 @@ text = "¡HECHO!"
 script = ExtResource("7")
 principal = true
 
+[node name="Nota" type="Button" parent="."]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 652.0
+offset_right = 104.0
+offset_bottom = 696.0
+focus_mode = 0
+script = ExtResource("10")
+
+[node name="Volumen" type="Control" parent="Nota"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 12.0
+offset_right = 112.0
+offset_bottom = 34.0
+script = ExtResource("11")
+
 [node name="Pie" type="Label" parent="."]
 layout_mode = 0
-offset_left = 70.0
-offset_top = 664.0
+offset_left = 178.0
+offset_top = 659.0
 offset_right = 700.0
 offset_bottom = 700.0
 theme_override_font_sizes/font_size = 22
 modulate = Color(1, 1, 1, 0.6)
-text = "M MÚSICA"
+text = "M"

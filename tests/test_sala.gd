@@ -39,7 +39,7 @@ func test_ip_vacia_y_se_recuerda() -> void:
 	menu.ip.text = "100.1.2.3"
 	menu.ip.text_changed.emit(menu.ip.text)
 	comprobar(not menu.get_node("Caja/Fila/Unirse").disabled, "con IP se enciende")
-	comprobar(menu.get_node("Pie").text == "M MÚSICA", "en el inicio Esc no hace nada: no se anuncia")
+	comprobar(not "ESC" in menu.get_node("Pie").text.to_upper(), "en el inicio Esc no hace nada: no se anuncia")
 	menu._unirse()
 	menu.free()
 	Engine.get_main_loop().root.get_node("Red").salir()

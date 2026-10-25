@@ -142,7 +142,8 @@ func _actualizar() -> void:
 	$SalaUI.visible = en_sala
 	# El columpio sigue en la sala (inicio y sala son la misma azotea), entre la IP y la nota.
 	$Columpio.position = Vector2(600, 40) if en_sala else Vector2(760, 60)
-	$Pie.visible = not online
+	$Pie.visible = not online  # en la sala, abajo a la izquierda va SALIR
+	$Nota.visible = not online
 	$Salir.visible = online
 	$Sala.position = Vector2(265, 493) if en_sala else Vector2(740, 560)
 	if en_sala:  # sobre la azotea morada, el texto claro
@@ -188,7 +189,7 @@ func _actualizar() -> void:
 
 # El vestidor ocupa la pantalla: fuera el menú, la azotea de adorno y el columpio mientras tanto.
 func _vestir(si: bool) -> void:
-	for nodo in [$Caja, $Sala, $Columpio, $Pie]:
+	for nodo in [$Caja, $Sala, $Columpio, $Pie, $Nota]:
 		nodo.visible = not si
 	if si:
 		$Vestidor.abrir()
