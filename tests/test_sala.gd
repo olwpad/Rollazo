@@ -26,5 +26,5 @@ func test_mostrar_jugadores_que_entran() -> void:
 		sala.mostrar(ids, 7)
 		comprobar(sala.ocupados() == 2, "dos mocos")
 		comprobar(sala.etiqueta(1) == "TÚ" and sala.etiqueta(0) == "JUGADOR 1", "tú y el anfitrión")
-		comprobar(sala.etiqueta(2) == "ESPERANDO…", "hueco libre")
+		comprobar(sala.etiqueta(2) == "ESPERANDO UN MOCO", "hueco libre")
 	menu.free()

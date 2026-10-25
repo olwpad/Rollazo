@@ -45,18 +45,29 @@ func test_sala_marca_los_listos() -> void:
 	Engine.get_main_loop().root.add_child(sala)
 	var ids: Array[int] = [1, 7]
 	sala.mostrar(ids, 1, {7: true})
-	comprobar(sala.etiqueta(1).ends_with("✓") and not sala.etiqueta(0).ends_with("✓"), "✓ solo bajo quien está listo")
+	comprobar(sala.sello_visible(1) and not sala.sello_visible(0), "sello ¡LISTO! solo sobre quien está listo")
 	sala.free()
 
 
-func test_cliente_no_toca_la_partida() -> void:
+func test_elige_la_ip_de_tailscale() -> void:
+	var red: GDScript = load("res://scripts/red.gd")
+	comprobar(red.elegir_ip(PackedStringArray(["127.0.0.1", "fe80::1", "192.168.1.5", "100.64.0.7"])) == "100.64.0.7", "la de Tailscale primero")
+	comprobar(red.elegir_ip(PackedStringArray(["127.0.0.1", "192.168.1.5"])) == "192.168.1.5", "si no, la de la red de casa")
+
+
+func test_sala_del_anfitrion() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.crear_partida(7797)
 	var menu: Node = load("res://scenes/menu.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(menu)
-	comprobar(menu.get_node("Caja/Partida").visible, "online se ve LA PARTIDA")
-	comprobar(not menu.get_node("Caja/Partida/Rondas/Menos").disabled, "el anfitrión cambia las rondas")
-	comprobar(not menu.get_node("Caja/Listo").visible, "el anfitrión no necesita LISTO")
+	comprobar(menu.get_node("SalaUI").visible and not menu.get_node("Caja").visible, "en la sala no queda el menú de antes")
+	comprobar(menu.get_node("SalaUI/Notita/Caja/Resumen").text == "5 RONDAS · LA AZOTEA", "resumen de la partida")
+	comprobar(menu.get_node("SalaUI/Notita/Caja/Cambiar").visible, "el anfitrión puede cambiarla")
+	menu.get_node("SalaUI/Notita/Caja/Cambiar").pressed.emit()
+	comprobar(menu.get_node("Config").visible, "CAMBIAR abre la pantalla de postales")
+	menu.get_node("Config/Papel/Caja/Rondas/R7").pressed.emit()
+	comprobar(red.config.rondas == 7 and menu.get_node("SalaUI/Notita/Caja/Resumen").text.begins_with("7 RONDAS"), "elige 7 rondas")
+	comprobar(menu.get_node("SalaUI/Principal").text.begins_with("¡A CORRER!"), "botón principal del anfitrión")
 	menu.free()
 	red.salir()
 
@@ -65,11 +76,11 @@ func test_boton_para_salir_de_la_sala() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	var menu: Node = load("res://scenes/menu.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(menu)
-	comprobar(not menu.get_node("Caja/Salir").visible, "sin partida no hay nada de lo que salir")
+	comprobar(not menu.get_node("Salir").visible, "sin partida no hay nada de lo que salir")
 	red.crear_partida(7798)
 	menu._actualizar()
-	comprobar(menu.get_node("Caja/Salir").visible, "en la sala se puede volver atrás")
-	menu.get_node("Caja/Salir").pressed.emit()
+	comprobar(menu.get_node("Salir").visible, "en la sala se puede volver atrás")
+	menu.get_node("Salir").pressed.emit()
 	comprobar(not red.es_online() and menu.get_node("Caja/Crear").visible, "vuelve al menú de antes")
 	menu.free()
 

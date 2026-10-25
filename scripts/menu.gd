@@ -1,11 +1,11 @@
-# Menú: crear partida, unirse por IP, configurar la partida y empezar (solo el anfitrión).
+# Menú: practicar, crear partida o unirse por IP. Dentro de una partida, la sala: la azotea
+# con los mocos, tu IP, la notita con la partida y un único botón grande.
 extends Control
 
 @onready var ip: LineEdit = $Caja/Fila/IP
 @onready var estado: Label = $Caja/Estado
-@onready var empezar: Button = $Caja/Empezar
-@onready var listo: Button = $Caja/Listo
-@onready var partida: VBoxContainer = $Caja/Partida
+@onready var principal = $SalaUI/Principal  # sin tipo: es un boton_mancha (tiene progreso)
+@onready var config: Control = $Config
 
 
 func _ready() -> void:
@@ -13,17 +13,19 @@ func _ready() -> void:
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
-	$Caja/Salir.pressed.connect(_salir)
-	empezar.pressed.connect(func(): Red.empezar_carrera.rpc(randi()))
-	listo.pressed.connect(func(): Red.marcar_listo.rpc_id(1, not Red.listos.get(multiplayer.get_unique_id(), false)))
-	$Caja/Partida/Rondas/Menos.pressed.connect(_cambiar_rondas.bind(-1))
-	$Caja/Partida/Rondas/Mas.pressed.connect(_cambiar_rondas.bind(1))
-	partida.get_node("Mapa").titulo = Generador.NOMBRE
-	partida.get_node("Mapa").semilla = 2026  # de muestra; cada ronda sale un mapa distinto
+	$Salir.pressed.connect(_salir)
+	principal.pressed.connect(_pulsar_principal)
+	$SalaUI/Ip/Fila/Copiar.pressed.connect(func(): DisplayServer.clipboard_set($SalaUI/Ip/Fila/Valor.text))
+	$SalaUI/Notita/Caja/Cambiar.pressed.connect(func(): config.visible = true)
+	$Config/Papel/Caja/Hecho.pressed.connect(func(): config.visible = false)
+	for n in Red.RONDAS:
+		get_node("Config/Papel/Caja/Rondas/R%d" % n).pressed.connect(Red.poner_rondas.bind(n))
+	var mapa: Postal = $Config/Papel/Caja/Mapas/Azotea
+	mapa.titulo = Generador.NOMBRE
+	mapa.semilla = 2026  # de muestra; cada ronda sale un mapa distinto
 	Red.jugadores_cambiaron.connect(_actualizar)
 	Red.config_cambiada.connect(_actualizar)
 	Red.desconectado.connect(func(motivo): estado.text = motivo)
-	multiplayer.connected_to_server.connect(func(): estado.text = "Conectado. Pulsa LISTO cuando quieras")
 	_actualizar()
 	if Red.ultimo_motivo != "":
 		estado.text = Red.ultimo_motivo
@@ -43,47 +45,69 @@ func _crear() -> void:
 
 func _unirse() -> void:
 	estado.text = "Conectando a %s…" % ip.text if Red.unirse(ip.text.strip_edges()) == OK else "IP no válida"
+	_actualizar()
 
 
 # Atrás desde la sala. Si sale el anfitrión, los demás vuelven solos con "El anfitrión se ha ido".
 func _salir() -> void:
 	Red.salir()
 	estado.text = ""
+	config.visible = false
 	_actualizar()
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if evento.is_action_pressed("volver_menu") and Red.es_online():  # Esc, como pone el pie
-		_salir()
+	if evento.is_action_pressed("volver_menu") and Red.es_online():  # Esc, como pone el botón
+		if config.visible:
+			config.visible = false
+		else:
+			_salir()
 
 
-func _cambiar_rondas(paso: int) -> void:
-	var i := clampi(Red.RONDAS.find(Red.config.rondas) + paso, 0, Red.RONDAS.size() - 1)
-	Red.poner_rondas(Red.RONDAS[i])
+# El anfitrión empieza (cuando todos están listos); los demás dicen si están listos.
+func _pulsar_principal() -> void:
+	if multiplayer.is_server():
+		if Red.todos_listos():
+			Red.empezar_carrera.rpc(randi())
+	else:
+		Red.marcar_listo.rpc_id(1, not Red.listos.get(multiplayer.get_unique_id(), false))
 
 
 func _actualizar() -> void:
 	var online := Red.es_online()
 	var anfitrion := online and multiplayer.is_server()
+	var en_sala := online and multiplayer.get_unique_id() in Red.ids  # conectando todavía no
 	# Ya dentro de una partida: ni practicar, ni crear otra, ni unirse a otra (dejaría a los demás colgados).
 	for opcion in [$Caja/Solo, $Caja/Crear, $Caja/Fila]:
 		opcion.visible = not online
-	partida.visible = online
-	$Caja/Salir.visible = online
-	$Caja/Partida/Rondas/Valor.text = str(Red.config.rondas)
-	for boton: Button in [$Caja/Partida/Rondas/Menos, $Caja/Partida/Rondas/Mas]:
-		boton.disabled = not anfitrion  # los demás ven la partida pero no la tocan
-		boton.modulate.a = 1.0 if anfitrion else 0.0
-	empezar.visible = anfitrion
-	var faltan := Red.ids.filter(func(id: int) -> bool: return id != 1 and not Red.listos.get(id, false)).size()
-	empezar.disabled = faltan > 0
-	empezar.text = "¡Empezar carrera!" if faltan == 0 else "Faltan %d por estar listos" % faltan
-	var yo_listo: bool = Red.listos.get(multiplayer.get_unique_id(), false)
-	listo.visible = online and not anfitrion and multiplayer.get_unique_id() in Red.ids
-	listo.text = "¡Listo! ✓ (quitar)" if yo_listo else "Estoy listo"
+	$Caja.visible = not en_sala
+	$SalaUI.visible = en_sala
+	$Columpio.visible = not en_sala  # en la sala, los únicos mocos son los jugadores
+	$Pie.visible = not online
+	$Salir.visible = online
+	$Sala.position = Vector2(190, 490) if en_sala else Vector2(740, 560)
+	$Sala.separacion = 205.0 if en_sala else 135.0
 	var solo_yo: Array[int] = [1]
 	$Sala.mostrar(Red.ids if online else solo_yo, multiplayer.get_unique_id(), Red.listos)
-	var mocos := "%d/%d MOCOS · " % [Red.ids.size(), Red.MAX_JUGADORES] if online else ""
-	$Pie.text = mocos + "ESC VOLVER · M MÚSICA"
+	if not en_sala:
+		config.visible = false
+		return
+	$SalaUI/Ip.visible = anfitrion  # los amigos ya la escribieron para entrar
+	$SalaUI/Ip/Fila/Valor.text = Red.ip_propia()
+	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s" % [Red.config.rondas, Generador.NOMBRE]
+	$SalaUI/Notita/Caja/Cambiar.visible = anfitrion
+	for n in Red.RONDAS:
+		var b = get_node("Config/Papel/Caja/Rondas/R%d" % n)
+		b.principal = n == Red.config.rondas  # la elegida lleva la mancha puesta
+		b._mostrar(false)
+	var amigos := Red.ids.filter(func(id: int) -> bool: return id != 1)
+	var listos := amigos.filter(func(id: int) -> bool: return Red.listos.get(id, false)).size()
 	if anfitrion:
-		estado.text = "Pasa tu IP a los demás y pulsa empezar cuando estén listos"
+		principal.text = "¡A CORRER!" if amigos.is_empty() or listos == amigos.size() else "¡A CORRER! · %d/%d LISTOS" % [listos, amigos.size()]
+		principal.progreso = 1.0 if amigos.is_empty() else float(listos) / amigos.size()
+		$SalaUI/Estado.text = "PASA TU IP A LOS DEMÁS" if amigos.is_empty() else ("" if listos == amigos.size() else "ESPERANDO A QUE ESTÉN LISTOS")
+	else:
+		var yo_listo: bool = Red.listos.get(multiplayer.get_unique_id(), false)
+		principal.text = "¡LISTO! (QUITAR)" if yo_listo else "ESTOY LISTO"
+		principal.progreso = -1.0
+		$SalaUI/Estado.text = "ESPERANDO AL ANFITRIÓN" if yo_listo else "PULSA CUANDO QUIERAS EMPEZAR"

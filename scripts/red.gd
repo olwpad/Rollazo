@@ -57,6 +57,19 @@ func salir() -> void:
 	jugadores_cambiaron.emit()
 
 
+# La IP que el anfitrión pasa a los demás: la de Tailscale (100.x) si la hay; si no, la de casa.
+static func elegir_ip(direcciones: PackedStringArray) -> String:
+	var v4 := Array(direcciones).filter(func(d: String) -> bool: return d.count(".") == 3 and not d.begins_with("127."))
+	for d: String in v4:
+		if d.begins_with("100."):
+			return d
+	return v4[0] if not v4.is_empty() else "127.0.0.1"
+
+
+func ip_propia() -> String:
+	return elegir_ip(IP.get_local_addresses())
+
+
 func es_online() -> bool:
 	return not multiplayer.multiplayer_peer is OfflineMultiplayerPeer
 

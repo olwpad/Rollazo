@@ -23,6 +23,13 @@ content_margin_right = 14.0
 content_margin_top = 4.0
 content_margin_bottom = 4.0
 
+[sub_resource type="StyleBoxFlat" id="hoja"]
+bg_color = Color(1, 0.98, 0.957, 0.96)
+content_margin_left = 22.0
+content_margin_right = 22.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+
 [sub_resource type="Theme" id="tema"]
 default_font = ExtResource("2")
 default_font_size = 40
@@ -35,6 +42,7 @@ LineEdit/colors/font_color = Color(0.227, 0.208, 0.314, 1)
 LineEdit/font_sizes/font_size = 28
 LineEdit/styles/normal = SubResource("papel")
 LineEdit/styles/focus = SubResource("papel")
+PanelContainer/styles/panel = SubResource("hoja")
 
 [node name="Menu" type="Control"]
 layout_mode = 3
@@ -91,68 +99,6 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 120
 text = "ROLLAZO"
 
-[node name="Partida" type="VBoxContainer" parent="Caja"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="Titulo" type="Label" parent="Caja/Partida"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 30
-text = "LA PARTIDA"
-
-[node name="Rondas" type="HBoxContainer" parent="Caja/Partida"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="Texto" type="Label" parent="Caja/Partida/Rondas"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 30
-text = "RONDAS"
-
-[node name="Menos" type="Button" parent="Caja/Partida/Rondas"]
-layout_mode = 2
-focus_mode = 0
-text = "‹"
-flat = true
-
-[node name="Valor" type="Label" parent="Caja/Partida/Rondas"]
-custom_minimum_size = Vector2(50, 0)
-layout_mode = 2
-horizontal_alignment = 1
-text = "5"
-
-[node name="Mas" type="Button" parent="Caja/Partida/Rondas"]
-layout_mode = 2
-focus_mode = 0
-text = "›"
-flat = true
-
-[node name="Mapa" type="Control" parent="Caja/Partida"]
-custom_minimum_size = Vector2(300, 170)
-layout_mode = 2
-script = ExtResource("8")
-
-[node name="Empezar" type="Button" parent="Caja"]
-visible = false
-layout_mode = 2
-text = "¡Empezar carrera!"
-script = ExtResource("7")
-principal = true
-
-[node name="Listo" type="Button" parent="Caja"]
-visible = false
-layout_mode = 2
-text = "Estoy listo"
-script = ExtResource("7")
-principal = true
-
-[node name="Salir" type="Button" parent="Caja"]
-visible = false
-layout_mode = 2
-text = "‹ Salir de la sala"
-script = ExtResource("7")
-
 [node name="Solo" type="Button" parent="Caja"]
 layout_mode = 2
 text = "Practicar solo"
@@ -182,6 +128,220 @@ script = ExtResource("7")
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 autowrap_mode = 3
+
+[node name="SalaUI" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Logo" type="Label" parent="SalaUI"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 20.0
+offset_right = 400.0
+offset_bottom = 90.0
+theme_override_font_sizes/font_size = 60
+text = "ROLLAZO"
+
+[node name="Ip" type="PanelContainer" parent="SalaUI"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 100.0
+offset_right = 470.0
+offset_bottom = 160.0
+rotation = -0.02
+
+[node name="Fila" type="HBoxContainer" parent="SalaUI/Ip"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Texto" type="Label" parent="SalaUI/Ip/Fila"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
+theme_override_font_sizes/font_size = 26
+text = "TU IP"
+vertical_alignment = 1
+
+[node name="Valor" type="Label" parent="SalaUI/Ip/Fila"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "100.0.0.0"
+vertical_alignment = 1
+
+[node name="Copiar" type="Button" parent="SalaUI/Ip/Fila"]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 24
+text = "COPIAR"
+script = ExtResource("7")
+
+[node name="Notita" type="PanelContainer" parent="SalaUI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -420.0
+offset_top = 40.0
+offset_right = -50.0
+offset_bottom = 150.0
+rotation = 0.03
+
+[node name="Caja" type="VBoxContainer" parent="SalaUI/Notita"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Resumen" type="Label" parent="SalaUI/Notita/Caja"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "5 RONDAS · LA AZOTEA"
+
+[node name="Cambiar" type="Button" parent="SalaUI/Notita/Caja"]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "CAMBIAR ✎"
+script = ExtResource("7")
+
+[node name="Principal" type="Button" parent="SalaUI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -520.0
+offset_top = -96.0
+offset_right = -40.0
+offset_bottom = -36.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 42
+text = "¡A CORRER!"
+script = ExtResource("7")
+principal = true
+
+[node name="Estado" type="Label" parent="SalaUI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -520.0
+offset_top = -130.0
+offset_right = -40.0
+offset_bottom = -96.0
+theme_override_colors/font_color = Color(1, 0.98, 0.957, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="Salir" type="Button" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -90.0
+offset_right = 300.0
+offset_bottom = -40.0
+focus_mode = 0
+theme_override_font_sizes/font_size = 28
+text = "‹ SALIR (ESC)"
+script = ExtResource("7")
+
+[node name="Config" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Velo" type="ColorRect" parent="Config"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.227, 0.208, 0.314, 0.35)
+
+[node name="Papel" type="PanelContainer" parent="Config"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -250.0
+offset_right = 250.0
+offset_bottom = 250.0
+rotation = -0.015
+
+[node name="Caja" type="VBoxContainer" parent="Config/Papel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Titulo" type="Label" parent="Config/Papel/Caja"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 52
+text = "LA PARTIDA"
+
+[node name="TextoMapas" type="Label" parent="Config/Papel/Caja"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
+theme_override_font_sizes/font_size = 26
+text = "MAPAS (PRONTO HABRÁ MÁS)"
+
+[node name="Mapas" type="HBoxContainer" parent="Config/Papel/Caja"]
+layout_mode = 2
+
+[node name="Azotea" type="Control" parent="Config/Papel/Caja/Mapas"]
+custom_minimum_size = Vector2(280, 190)
+layout_mode = 2
+script = ExtResource("8")
+
+[node name="TextoRondas" type="Label" parent="Config/Papel/Caja"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
+theme_override_font_sizes/font_size = 26
+text = "RONDAS"
+
+[node name="Rondas" type="HBoxContainer" parent="Config/Papel/Caja"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="R3" type="Button" parent="Config/Papel/Caja/Rondas"]
+layout_mode = 2
+focus_mode = 0
+text = "3"
+script = ExtResource("7")
+
+[node name="R5" type="Button" parent="Config/Papel/Caja/Rondas"]
+layout_mode = 2
+focus_mode = 0
+text = "5"
+script = ExtResource("7")
+
+[node name="R7" type="Button" parent="Config/Papel/Caja/Rondas"]
+layout_mode = 2
+focus_mode = 0
+text = "7"
+script = ExtResource("7")
+
+[node name="R10" type="Button" parent="Config/Papel/Caja/Rondas"]
+layout_mode = 2
+focus_mode = 0
+text = "10"
+script = ExtResource("7")
+
+[node name="Hecho" type="Button" parent="Config/Papel/Caja"]
+layout_mode = 2
+size_flags_horizontal = 8
+focus_mode = 0
+text = "¡HECHO!"
+script = ExtResource("7")
+principal = true
 
 [node name="Pie" type="Label" parent="."]
 layout_mode = 0

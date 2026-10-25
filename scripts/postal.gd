@@ -36,18 +36,27 @@ func _draw() -> void:
 		draw_string(FUENTE, Vector2(size.x - 50.0, y + 14.0), str(filas[i][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Acuarela.CIRUELA)
 
 
-# El recorrido entero encogido dentro de la foto, con los colores del juego.
+# El primer tramo del recorrido dentro de la foto, con los colores del juego. Entero sería
+# una tira de rayitas: el mapa es 10 veces más largo que alto.
 func _miniatura(foto: Rect2) -> void:
 	if _mapa.is_empty():
 		return
-	var mundo := Rect2(-100.0, 0.0, _mapa.meta.x + 500.0, 900.0)
-	var escala := minf(foto.size.x / mundo.size.x, foto.size.y / mundo.size.y)
-	var origen := foto.position + (foto.size - mundo.size * escala) / 2.0 - mundo.position * escala
+	var mundo := Rect2(300.0, 0.0, 1100.0 * foto.size.x / foto.size.y, 1100.0)
+	var escala := foto.size.y / mundo.size.y
+	var origen := foto.position - mundo.position * escala
+	var ciudad := PackedVector2Array()  # edificios del fondo, para que se lea como "tejados"
+	for k in 7:
+		var x := foto.position.x + foto.size.x * k / 7.0
+		var alto := foto.size.y * (0.25 + 0.15 * ((k * 37 + semilla) % 5) / 4.0)
+		ciudad.append_array([Vector2(x, foto.end.y - alto), Vector2(x + foto.size.x / 7.0 - 3.0, foto.end.y - alto)])
+	ciudad.append_array([foto.end, Vector2(foto.position.x, foto.end.y)])
+	Acuarela.pintar(self, ciudad, Acuarela.AZUL_LEJOS, semilla)
 	for p: Dictionary in _mapa.piezas:
+		if p.pos.x > mundo.end.x + 200.0:
+			continue
 		var color := Acuarela.ROSA if p.enganchable else Acuarela.AZOTEA
 		var poly := PackedVector2Array()
 		for v: Vector2 in p.poly:
 			var punto: Vector2 = origen + (p.pos + v) * escala
 			poly.append(punto.clamp(foto.position, foto.end))  # los pilares no se salen de la foto
-		draw_colored_polygon(poly, Color(color, 0.8))
-	draw_circle(origen + _mapa.meta * escala, maxf(3.0, 40.0 * escala), Acuarela.CIRUELA)
+		Acuarela.pintar(self, poly, color, hash(p.nombre))
