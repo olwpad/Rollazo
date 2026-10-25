@@ -1,6 +1,5 @@
 # Los 4 huecos de jugador, en dos formas:
-# - En el menú principal: la azotea pequeña; cuando alguien entra, su moco cae de un salto
-#   con su color, y los huecos libres son un charco.
+# - En el menú principal: la azotea pequeña solo con tu moco (ahí todavía no entra nadie).
 # - Dentro de una partida (tarjetas = true): una tarjeta de papel por jugador con su moco,
 #   su nombre y su estado; sello "¡LISTO!" para quien está listo y hueco punteado si falta gente.
 extends Node2D
@@ -72,7 +71,7 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 		h.moco.visible = ocupado
 		h.ocupado = ocupado
 		if not ocupado:
-			h.nombre.text = "HUECO LIBRE" if tarjetas else "ESPERANDO…"
+			h.nombre.text = "HUECO LIBRE" if tarjetas else ""  # en el menú nadie puede entrar todavía
 		elif ids[i] == mi_id:
 			h.nombre.text = "TÚ"
 		else:
@@ -120,13 +119,6 @@ func _draw() -> void:
 	var izq := -separacion * 0.8
 	var azotea := PackedVector2Array([Vector2(izq, 22), Vector2(izq + separacion * 4.45, 14), Vector2(izq + separacion * 4.45, 400), Vector2(izq, 400)])
 	Acuarela.pintar(self, azotea, Acuarela.AZOTEA, 11)
-	for i in huecos.size():
-		if not huecos[i].ocupado:  # charco del color que tendrá quien entre
-			var charco := PackedVector2Array()
-			for k in 14:
-				var a := TAU * k / 14
-				charco.append(Vector2(i * separacion + cos(a) * 30.0, 22.0 + sin(a) * 8.0))
-			draw_colored_polygon(Tinta.irregular(charco, i, 2.0, 8.0), Color(Jugador.COLORES[i], 0.45))
 
 
 # Una tarjeta de papel por hueco, cada una un poco torcida; la libre, solo el borde punteado.
