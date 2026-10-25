@@ -88,3 +88,29 @@ func test_campos_nuevos_del_mapa() -> void:
 	for p in m.piezas:
 		comprobar(m.limites.grow(1.0).has_point(p.pos), "pieza %s dentro de los límites" % p.nombre)
 	comprobar(m.limites.has_point(m.meta), "meta dentro")
+
+
+func test_torre_sube_y_se_puede_escalar() -> void:
+	for semilla in 40:
+		var m := Generador.generar(semilla, "torre")
+		comprobar(m.meta.y < m.inicio.y - 1500.0, "semilla %d: la meta queda muy arriba" % semilla)
+		for i in range(1, m.camino.size()):
+			var d: Vector2 = m.camino[i] - m.camino[i - 1]
+			comprobar(d.length() <= PapelRope.LARGO_MAX - 40.0, "semilla %d: saliente %d a %.0f px" % [semilla, i, d.length()])
+		for p in _piezas(m, "Pared"):
+			comprobar(not p.enganchable, "las paredes no enganchan")
+		comprobar(m.controles.size() >= 3, "semilla %d: controles a lo largo de la torre" % semilla)
+
+
+func test_torre_mapa_completo() -> void:
+	var m := Generador.generar(5, "torre")
+	comprobar(m.forma == "torre", "forma")
+	comprobar(_piezas(m, "SueloMeta").size() == 1 and _piezas(m, "Pared").size() == 2, "suelo de meta y dos paredes")
+	for borde: Vector2 in m.salidas_descanso:
+		var alcanza: bool = m.camino.any(func(c: Vector2) -> bool: return c.y < borde.y and c.distance_to(borde) <= PapelRope.LARGO_MAX - 20.0)
+		comprobar(alcanza or borde == m.salidas_descanso.back(), "desde el descanso en %s se alcanza un saliente" % borde)
+	for p in m.piezas:
+		comprobar(m.limites.has_point(p.pos), "pieza %s dentro de los límites" % p.nombre)
+	comprobar(m.limites.has_point(m.meta) and m.limites.has_point(m.inicio), "meta y salida dentro")
+	comprobar(m.caida_y >= m.limites.end.y, "caída por debajo de todo")
+	comprobar(m.meta_tam.y < 500.0, "la meta solo cubre el suelo de arriba")

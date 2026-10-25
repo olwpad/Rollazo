@@ -13,6 +13,14 @@ const LARGO := 7600.0  # a partir de aquí se pone la meta
 const SUELO_Y := 690.0  # centro de los descansos (la parte de arriba queda en y=670)
 const FORMAS := ["horizontal", "torre", "bajada", "montaña", "hibrido"]
 const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 px)
+# Torre. Con estas medidas dos salientes seguidos quedan a <= 372 px (el papel llega a 420)
+const TORRE_ALTO := 2400.0  # lo que sube el pozo desde el suelo
+const POZO_ANCHO := 440.0  # hueco entre las dos paredes
+const PARED_ANCHO := 60.0
+const SALIENTE_ANCHO := Vector2(140.0, 170.0)  # (mín, máx)
+const SALIENTE_SUBIDA := Vector2(180.0, 220.0)  # de un saliente al siguiente, en el otro lado
+const DESCANSO_TORRE_ANCHO := 180.0
+const DESCANSO_BAJO_SALIENTE := 280.0  # el descanso va debajo del saliente siguiente, como el suelo bajo un techo
 
 
 # Devuelve un Dictionary con:
@@ -23,19 +31,24 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
 	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": []}
-	m.forma = "horizontal"  # shortcut: solo hay tramo horizontal, cualquier otra forma cae aquí
+	m.forma = "torre" if forma == "torre" else "horizontal"  # shortcut: solo hay horizontal y torre, lo demás cae en horizontal
 	m.inicio = Vector2(200, 640)
 	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0))
-	var x := _tramo_horizontal(m, rng, Vector2(INICIO_FIN, SUELO_Y), LARGO - INICIO_FIN).x
+	var fin: Vector2
+	if m.forma == "torre":
+		fin = _tramo_torre(m, rng, Vector2(INICIO_FIN, SUELO_Y), TORRE_ALTO)
+	else:
+		fin = _tramo_horizontal(m, rng, Vector2(INICIO_FIN, SUELO_Y), LARGO - INICIO_FIN)
 	_quitar_estorbos(m)
-	var suelo_meta := Vector2(x + 450.0, 720.0)  # el borde queda a 100 px del último techo
+	# En horizontal el borde queda a 100 px del último techo; en la torre se sale andando del último descanso
+	var suelo_meta := fin + Vector2(450.0 if m.forma == "horizontal" else 350.0, 30.0)
 	_pieza(m, "SueloMeta", suelo_meta, _caja(700.0, 80.0), false)
 	m.meta = suelo_meta + Vector2(150.0, -120.0)
+	m.meta_tam = Vector2(220, 1600) if m.forma == "horizontal" else Vector2(400, 300)
 	m.caida_x = m.meta.x / 2.0  # de x=-2000 a 2000 más allá de la meta
 	m.caida_ancho = m.meta.x + 4000.0
-	m.caida_y = 1300.0
-	m.meta_tam = Vector2(220, 1600)
-	m.limites = Rect2(0, 0, m.meta.x + 600.0, 1300.0)
+	m.limites = _limites(m)
+	m.caida_y = maxf(1300.0, m.limites.end.y)
 	m.aros = _aros(semilla, m)
 	return m
 
@@ -87,6 +100,61 @@ static func _tramo_horizontal(m: Dictionary, rng: RandomNumberGenerator, desde: 
 		desde_descanso += 1
 		recien_descanso = false
 	return Vector2(x, desde.y)
+
+
+# Un pozo entre dos paredes que sube `alto` px desde el borde `desde` del suelo anterior.
+# Los salientes se alternan izquierda/derecha; cada 3-4, un descanso con control en el lado
+# del saliente siguiente, justo debajo de él. Se entra por abajo a la izquierda y se sale
+# por el último descanso, arriba a la derecha. Devuelve el borde de ese descanso.
+static func _tramo_torre(m: Dictionary, rng: RandomNumberGenerator, desde: Vector2, alto: float) -> Vector2:
+	var izq := desde.x + PARED_ANCHO
+	var der := izq + POZO_ANCHO
+	var tope := desde.y - alto
+	_pieza(m, "SueloPozo", Vector2((desde.x + der + PARED_ANCHO) / 2.0, desde.y), _caja(der + PARED_ANCHO - desde.x, 40.0), false)
+	var y := desde.y - 20.0 - rng.randf_range(300.0, 340.0)  # el primero, a tiro desde el suelo
+	var lado := 0  # 0 = izquierda (al alcance desde el suelo de salida), 1 = derecha
+	var desde_descanso := 0
+	while true:
+		var ancho := rng.randf_range(SALIENTE_ANCHO.x, SALIENTE_ANCHO.y)
+		var pos := Vector2(izq + ancho / 2.0 if lado == 0 else der - ancho / 2.0, y)
+		_pieza(m, "Techo", pos, _caja(ancho, 40.0), true)
+		m.camino.append(pos)
+		desde_descanso += 1
+		lado = 1 - lado
+		y -= rng.randf_range(SALIENTE_SUBIDA.x, SALIENTE_SUBIDA.y)
+		if pos.y < tope and lado == 1:  # el último a la izquierda: el descanso final va a la derecha
+			break
+		# Con TORRE_ALTO 2400 caben siempre 2 descansos más el final (3 controles)
+		if desde_descanso >= 3 and y > tope + 200.0 and (desde_descanso >= 4 or rng.randf() < 0.5):
+			_descanso_torre(m, izq, der, lado, y + DESCANSO_BAJO_SALIENTE, DESCANSO_TORRE_ANCHO)
+			desde_descanso = 0
+	# El último tapa la pared derecha para salir andando hacia la meta
+	var centro_y := y + DESCANSO_BAJO_SALIENTE
+	_descanso_torre(m, izq, der + PARED_ANCHO, 1, centro_y, DESCANSO_TORRE_ANCHO + PARED_ANCHO)
+	_pieza(m, "Pared", Vector2(desde.x + PARED_ANCHO / 2.0, (tope - 400.0 + desde.y - 260.0) / 2.0), _caja(PARED_ANCHO, desde.y - 260.0 - tope + 400.0), false)  # abajo deja la entrada
+	_pieza(m, "Pared", Vector2(der + PARED_ANCHO / 2.0, (centro_y + 20.0 + desde.y) / 2.0), _caja(PARED_ANCHO, desde.y - centro_y - 20.0), false)
+	return Vector2(der + PARED_ANCHO, centro_y)
+
+
+# Un descanso pegado a la pared `lado` (de `izq` a `der`), con su control y su borde hacia el pozo.
+static func _descanso_torre(m: Dictionary, izq: float, der: float, lado: int, centro_y: float, ancho: float) -> void:
+	var centro := Vector2(izq + ancho / 2.0 if lado == 0 else der - ancho / 2.0, centro_y)
+	_pieza(m, "Descanso", centro, _caja(ancho, 40.0), false)
+	m.controles.append(centro + Vector2(0, -80.0))
+	m.salidas_descanso.append(Vector2(izq + ancho if lado == 0 else der - ancho, centro_y - 20.0))
+
+
+# La caja que lo contiene todo, con margen; por abajo menos, para que la caída siga en y=1300.
+static func _limites(m: Dictionary) -> Rect2:
+	var caja := Rect2(m.inicio, Vector2.ZERO).expand(m.meta)
+	for p: Dictionary in m.piezas:
+		for v: Vector2 in p.poly:
+			caja = caja.expand(p.pos + v)
+	for c: Vector2 in m.controles:
+		caja = caja.expand(c)
+	for b: Dictionary in m.burbujas:
+		caja = caja.expand(b.pos)
+	return caja.grow_individual(200.0, 200.0, 200.0, 100.0)
 
 
 # Aros de fuego en el hueco entre dos techos, por donde pasa el vuelo. Van con su propio
