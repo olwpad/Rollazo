@@ -23,15 +23,31 @@ const NOMBRES := {"calvo": "CALVO", "cresta": "CRESTA", "skrillex": "MEDIO RAPAD
 		"ciborg": "GAFAS DE CÍBORG", "mascara_roja": "MÁSCARA DE HÉROE", "mascara_negra": "MÁSCARA NEGRA Y ROJA",
 		"cafetera": "CAMISETA CAFETERA", "reloj": "CAMISETA CON RELOJ VERDE"}
 # Candados: partidas jugadas (ganes o pierdas). Lo que no sale aquí es libre.
-var partidas_para := {"tupe": 2, "bigotito": 3, "bombin": 3, "afro": 4, "vaquero": 5, "melena": 6,
+# Libres desde el principio: el rey del rock, el cómico mudo y el 10 zurdo (tupe, bombin, bigotito, barba, diez).
+var partidas_para := {"afro": 4, "vaquero": 5, "melena": 6,
 		"rizado": 7, "boina": 7, "diva": 8, "boina_roja": 9, "chandal": 9, "redondas": 10, "tupe_rubio": 11,
-		"corbata": 11, "barba": 12, "diez": 12, "engominado": 13, "siete": 13, "rizos": 14,
+		"corbata": 11, "engominado": 13, "siete": 13, "rizos": 14,
 		"cinta": 15, "sonrisa": 15, "amarilla": 15, "pasta": 16, "raya": 17, "traje": 17,
 		"cafetera": 18, "rulos": 19, "cepillo": 20, "ciborg": 20, "oca": 21, "rulos_cortos": 22,
 		"reloj": 23, "mascara_roja": 24, "mascara_negra": 25}
 const TORNEOS_PARA := {"estrella": 1}  # las gafas de estrella, solo ganando
 const POR_DEFECTO := {"color": 0, "pelo": "calvo", "sombrero": "nada", "cara": "nada", "ropa": "nada"}
 const FILAS := {"pelo": PELOS, "sombrero": SOMBREROS, "cara": CARAS, "ropa": ROPAS}
+# Famosos ya montados: un clic y el moco va vestido entero. Nombres genéricos, sin apodos reales.
+const LOOKS := {
+	"EL REY DEL ROCK": {"pelo": "tupe"}, "EL CÓMICO MUDO": {"sombrero": "bombin", "cara": "bigotito"},
+	"EL 10 ZURDO": {"cara": "barba", "ropa": "diez"}, "EL DEL AFRO DISCO": {"pelo": "afro"},
+	"EL HEAVY": {"pelo": "melena"}, "LA DIVA DEL SOUL": {"pelo": "diva"}, "LA ESTRELLA COUNTRY": {"sombrero": "vaquero"},
+	"EL PINTOR GENIO": {"sombrero": "boina", "cara": "rizado"}, "EL MÚSICO PACIFISTA": {"pelo": "melena", "cara": "redondas"},
+	"LA ESTRELLA DEL POP": {"cara": "estrella"}, "EL COMANDANTE": {"sombrero": "boina_roja", "ropa": "chandal"},
+	"EL MAGNATE": {"pelo": "tupe_rubio", "ropa": "corbata"}, "EL 7 GOLEADOR": {"pelo": "engominado", "ropa": "siete"},
+	"LA DIVA LATINA": {"pelo": "rizos"}, "EL MAGO DEL BALÓN": {"pelo": "cinta", "cara": "sonrisa", "ropa": "amarilla"},
+	"EL DJ": {"pelo": "skrillex", "cara": "pasta"}, "EL DEBATIENTE": {"pelo": "raya", "ropa": "traje"},
+	"EL 10 CAFETERO": {"pelo": "raya", "ropa": "cafetera"}, "EL 10 DE LOS RULOS": {"pelo": "rulos", "ropa": "diez"},
+	"EL CÍBORG": {"pelo": "cepillo", "cara": "ciborg"}, "LA OCA": {"sombrero": "oca"},
+	"EL HÉROE ENMASCARADO": {"cara": "mascara_roja"}, "EL HÉROE NOCTURNO": {"cara": "mascara_negra"},
+	"EL NIÑO DEL RELOJ": {"pelo": "raya", "ropa": "reloj"}, "EL CANTERANO": {"pelo": "rulos_cortos"},
+}
 
 var ruta := "user://perfil.cfg"
 var aspecto := POR_DEFECTO.duplicate()
@@ -53,6 +69,38 @@ func requisito(cosa: String) -> String:
 	if desbloqueado(cosa):
 		return ""
 	return "GANA UN TORNEO" if TORNEOS_PARA.has(cosa) else "SE GANA CON %d PARTIDAS" % partidas_para[cosa]
+
+
+# Las piezas de un famoso (lo que no lleva, "calvo"/"nada").
+func look(nombre: String) -> Dictionary:
+	var a := POR_DEFECTO.duplicate()
+	a.erase("color")
+	return a.merged(LOOKS[nombre], true)
+
+
+# Lo que pide la pieza más difícil del famoso ("" si está libre).
+func requisito_look(nombre: String) -> String:
+	var piezas := look(nombre).values().filter(func(c: String) -> bool: return not desbloqueado(c))
+	piezas.sort_custom(func(x: String, y: String) -> bool: return TORNEOS_PARA.has(x) or partidas_para.get(x, 0) > partidas_para.get(y, 0))
+	return requisito(piezas[0]) if piezas else ""
+
+
+func poner_look(nombre: String) -> bool:
+	if requisito_look(nombre) != "":
+		return false
+	aspecto.merge(look(nombre), true)  # el color se queda el tuyo
+	guardar()
+	return true
+
+
+# Qué famoso llevas (o llevaría `a`), "" si ninguno.
+func look_puesto(a: Dictionary = {}) -> String:
+	if a.is_empty():
+		a = aspecto
+	for nombre in LOOKS:
+		if look(nombre).keys().all(func(k: String) -> bool: return a[k] == look(nombre)[k]):
+			return nombre
+	return ""
 
 
 # Al acabar un torneo. Devuelve lo que se acaba de desbloquear, para celebrarlo.

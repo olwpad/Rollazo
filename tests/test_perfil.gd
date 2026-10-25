@@ -36,7 +36,7 @@ func test_todo_libre_menos_lo_que_lleva_candado() -> void:
 			comprobar(p.NOMBRES.has(cosa), cosa + " tiene nombre para el vestidor")
 	var nuevo := Node.new()
 	nuevo.set_script(load("res://scripts/perfil.gd"))  # uno recién estrenado, sin partidas
-	for cosa in ["tupe", "afro", "bombin", "bigotito", "pasta", "sonrisa", "diez", "siete", "amarilla", "traje", "boina_roja", "tupe_rubio", "rizos", "cinta", "raya", "rulos", "cepillo", "rulos_cortos", "oca", "ciborg", "mascara_roja", "mascara_negra", "cafetera", "reloj"]:
+	for cosa in ["afro", "pasta", "sonrisa", "siete", "amarilla", "traje", "boina_roja", "tupe_rubio", "rizos", "cinta", "raya", "rulos", "cepillo", "rulos_cortos", "oca", "ciborg", "mascara_roja", "mascara_negra", "cafetera", "reloj"]:
 		comprobar(not nuevo.desbloqueado(cosa), cosa + " (famoso) empieza con candado")
 	comprobar(nuevo.requisito("estrella") == "GANA UN TORNEO", "las gafas de estrella se ganan ganando")
 	nuevo.free()
@@ -141,4 +141,33 @@ func test_al_acabar_el_torneo_se_cuenta_y_se_avisa() -> void:
 	comprobar("GORRO DE LANA" in titular, "avisa de lo nuevo: " + titular)
 	nivel.free()
 	red.config = red.CONFIG_INICIAL.duplicate(true)
+	_devolver(p)
+
+
+func test_famosos_predefinidos() -> void:
+	var nuevo := Node.new()
+	nuevo.set_script(load("res://scripts/perfil.gd"))  # recién estrenado, sin partidas
+	for nombre in ["EL REY DEL ROCK", "EL CÓMICO MUDO", "EL 10 ZURDO"]:
+		comprobar(nombre in nuevo.LOOKS and nuevo.requisito_look(nombre) == "", nombre + " libre desde el principio")
+	comprobar(nuevo.LOOKS.size() >= 20, "un famoso por personaje: %d" % nuevo.LOOKS.size())
+	comprobar(nuevo.requisito_look("EL MAGNATE") != "", "los demás con candado")
+	comprobar(nuevo.poner_look("EL CÓMICO MUDO") and nuevo.aspecto.sombrero == "bombin" and nuevo.aspecto.cara == "bigotito" and nuevo.aspecto.pelo == "calvo", "un clic y va vestido entero")
+	comprobar(not nuevo.poner_look("EL MAGNATE") and nuevo.aspecto.sombrero == "bombin", "con candado no se pone")
+	comprobar(nuevo.look_puesto() == "EL CÓMICO MUDO", "sabe qué famoso llevas")
+	for nombre in nuevo.LOOKS:
+		comprobar(nuevo.valido(nuevo.look(nombre).merged({"color": 0})), nombre + " solo usa piezas que existen")
+	nuevo.free()
+
+
+func test_vestidor_fila_de_famosos() -> void:
+	var p := _perfil()
+	var menu: Node = load("res://scenes/menu.tscn").instantiate()
+	Engine.get_main_loop().root.add_child(menu)
+	var v: Node = menu.get_node("Vestidor")
+	menu.get_node("Caja/TuMoco").pressed.emit()
+	comprobar(v.get_node("Famoso/Valor").text == "NINGUNO", "sin famoso al empezar")
+	v.get_node("Famoso/Mas").pressed.emit()
+	comprobar(v.get_node("Famoso/Valor").text == p.LOOKS.keys()[0], "› pasa al primer famoso")
+	comprobar(v.moco.pelo == p.look(p.LOOKS.keys()[0]).pelo and v.get_node("Pelo/Valor").text == p.NOMBRES[v.moco.pelo], "y viste al moco y mueve las demás filas")
+	menu.free()
 	_devolver(p)
