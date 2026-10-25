@@ -85,7 +85,7 @@ func _draw() -> void:
 		var m4: MocoVisual = get_child(3)
 		m4.scale = Vector2(0.9, 0.9)
 		m4.position = Vector2(cx + 400, SUELO - 20)
-		draw_string(FUENTE, Vector2(cx + 330, SUELO + 40), "4º " + filas[3][1], HORIZONTAL_ALIGNMENT_CENTER, 140, 30, Color(Acuarela.CIRUELA, 0.8))
+		draw_string(FUENTE, Vector2(cx + 330, SUELO + 40), "4. " + filas[3][1], HORIZONTAL_ALIGNMENT_CENTER, 140, 30, Color(Acuarela.CIRUELA, 0.8))
 
 
 func _copa(c: Vector2, alfa: float) -> void:
