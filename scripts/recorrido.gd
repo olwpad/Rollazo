@@ -109,6 +109,8 @@ func construir(semilla: int) -> void:
 			b.name = "Burbuja%d" % i
 			b.position = mapa.burbujas[i].pos
 			b.set("tipo", mapa.burbujas[i].tipo)  # set(): Area2D no sabe que el script tiene `tipo`
+			b.set("semilla", semilla)
+			b.set("indice", i)
 			b.body_entered.connect(_al_tocar_burbuja.bind(b))
 			piezas.add_child(b)  # con las piezas: se borran solas al cambiar de mapa
 	if Red.config.aros and Temas.DATOS[tema].aros:

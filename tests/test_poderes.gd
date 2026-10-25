@@ -82,3 +82,32 @@ func test_hud_del_poder() -> void:
 	hud.poder("", 0.0, 1.0)
 	comprobar(not hud.get_node("Poder").visible, "sin poder no se ve")
 	hud.free()
+
+
+func test_burbujas_seguidas_con_poder_distinto() -> void:
+	for forma in Generador.FORMAS:
+		for semilla in 20:
+			var b: Array = Generador.generar(semilla, forma).burbujas
+			for i in range(1, b.size()):
+				comprobar(b[i].tipo != b[i - 1].tipo, "%s %d: burbujas %d y %d con %s" % [forma, semilla, i - 1, i, b[i].tipo])
+
+
+# Al volver a salir trae otro poder, el mismo en todos los PCs (aquí, dos burbujas iguales).
+func test_burbuja_vuelve_con_otro_poder() -> void:
+	var n := _escenario()
+	var pcs := []
+	for k in 2:
+		var b := Area2D.new()
+		b.set_script(load("res://scripts/burbuja.gd"))
+		b.set("tipo", "salto")
+		b.set("semilla", 1234)
+		b.set("indice", 3)
+		n.add_child(b)
+		pcs.append(b)
+	for vez in 6:
+		var antes: String = pcs[0].tipo
+		for b in pcs:
+			b.recogida()
+		comprobar(pcs[0].tipo != antes and pcs[0].tipo in Poderes.TIPOS, "vez %d: repite %s" % [vez, antes])
+		comprobar(pcs[0].tipo == pcs[1].tipo, "vez %d: los PCs no coinciden" % vez)
+	n.free()

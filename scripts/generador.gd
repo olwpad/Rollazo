@@ -137,7 +137,15 @@ static func _burbujas_vuelo(m: Dictionary, rng: RandomNumberGenerator, desde_i: 
 				and m.huecos_sierra.all(func(h: Vector2) -> bool: return pos.distance_to(h) > 150.0) \
 				and m.burbujas.all(func(q: Dictionary) -> bool: return pos.distance_to(q.pos) > 300.0)
 		if rng.randf() < 0.7 and libre:
-			m.burbujas.append({"pos": pos, "tipo": Poderes.TIPOS[rng.randi_range(0, Poderes.TIPOS.size() - 1)]})
+			m.burbujas.append({"pos": pos, "tipo": _tipo_burbuja(m, rng)})
+
+
+# Un poder distinto del de la burbuja anterior del camino: si no, una torre da siempre el mismo.
+static func _tipo_burbuja(m: Dictionary, rng: RandomNumberGenerator) -> String:
+	var tipos: Array = Poderes.TIPOS.duplicate()
+	if not m.burbujas.is_empty():
+		tipos.erase(m.burbujas.back().tipo)
+	return tipos[rng.randi_range(0, tipos.size() - 1)]
 
 
 # El bucle de techos y descansos, desde el borde `desde` del suelo anterior y a lo largo de
@@ -182,7 +190,7 @@ static func _tramo_horizontal(m: Dictionary, rng: RandomNumberGenerator, desde: 
 		if not recien_descanso and (rng.randf() < 0.35 or desde_burbuja >= 3):  # burbuja de poder donde pasa el columpio
 			desde_burbuja = 0
 			m.burbujas.append({"pos": pos + Vector2(rng.randf_range(-120.0, 120.0), rng.randf_range(170.0, 220.0)),
-					"tipo": Poderes.TIPOS[rng.randi_range(0, Poderes.TIPOS.size() - 1)]})
+					"tipo": _tipo_burbuja(m, rng)})
 		if rng.randf() < 0.15:  # atajo alto: más difícil de alcanzar, pero ahorra un columpio
 			_pieza(m, "Atajo", Vector2(pos.x + rng.randf_range(250.0, 330.0), dy + rng.randf_range(60.0, 110.0)), _caja(rng.randf_range(120.0, 170.0), 40.0), true)
 		x = pos.x

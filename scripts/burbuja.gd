@@ -6,6 +6,9 @@ const RADIO := 30.0
 const SEGUNDOS_PARA_VOLVER := 10.0
 
 var tipo := "rapidez"
+var semilla := 0  # la del mapa y su sitio en él: de ahí sale el poder siguiente
+var indice := 0
+var _veces := 0
 var _t := 0.0
 
 
@@ -34,8 +37,18 @@ func _draw() -> void:
 # Se va al cogerla y vuelve más tarde (en todos los PCs, que lo llaman a la vez).
 func recogida() -> void:
 	visible = false
+	tipo = siguiente_tipo()
 	set_deferred("monitoring", false)
 	await get_tree().create_timer(SEGUNDOS_PARA_VOLVER, false).timeout
 	if is_inside_tree():
 		visible = true
 		monitoring = true
+
+
+# Otro poder, el mismo en todos los PCs: sale de la semilla, sin mandar nada por la red.
+func siguiente_tipo() -> String:
+	_veces += 1
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector2i(semilla, indice * 1000 + _veces))
+	var otros: Array = Poderes.TIPOS.filter(func(t: String) -> bool: return t != tipo)
+	return otros[rng.randi_range(0, otros.size() - 1)]
