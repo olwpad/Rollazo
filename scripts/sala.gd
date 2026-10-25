@@ -1,6 +1,6 @@
 # Los 4 huecos de jugador, en dos formas:
-# - En el menú principal: la azotea pequeña; cuando alguien entra, su moco cae de un salto
-#   con su color, y los huecos libres son un charco.
+# - En el menú principal: la azotea con los 4 mocos de adorno (los libres botan) y un único
+#   texto "HASTA 4 JUGADORES": aún no hay partida, así que nadie "espera".
 # - Dentro de una partida (tarjetas = true): una tarjeta de papel por jugador con su moco,
 #   su nombre y su estado; sello "¡LISTO!" para quien está listo y hueco punteado si falta gente.
 extends Node2D
@@ -14,13 +14,17 @@ var separacion := 135.0:  # el menú la ensancha en la sala online
 		separacion = v
 		for i in huecos.size():
 			huecos[i].nodo.position = Vector2(i * separacion, 0)
+		_colocar_capacidad()
 		queue_redraw()
 var tarjetas := false:
 	set(v):
 		tarjetas = v
 		for h in huecos:
 			h.nombre.add_theme_color_override("font_color", Acuarela.CIRUELA if v else CREMA)
+		if capacidad != null:
+			capacidad.visible = not v
 		queue_redraw()
+var capacidad: Label = null
 var huecos: Array[Dictionary] = []  # {nodo, moco: MocoVisual, nombre, estado, sello: Label, ocupado: bool}
 
 
@@ -47,8 +51,29 @@ func _ready() -> void:
 			hueco.add_child(l)
 		add_child(hueco)
 		huecos.append({"nodo": hueco, "moco": moco, "nombre": nombre, "estado": estado, "sello": sello, "ocupado": false})
+	capacidad = _etiqueta(Vector2.ZERO, 26, CREMA)
+	capacidad.name = "Capacidad"
+	capacidad.text = "HASTA 4 JUGADORES"
+	add_child(capacidad)
+	_colocar_capacidad()
 	var solo_yo: Array[int] = [1]
 	mostrar(solo_yo, 1)
+
+
+# Debajo de los 3 mocos libres, a la altura del "TÚ".
+func _colocar_capacidad() -> void:
+	if capacidad != null:
+		capacidad.position = Vector2(separacion - 90.0, 40.0)
+		capacidad.size = Vector2(separacion * 2.0 + 180.0, 36.0)
+
+
+func _process(_delta: float) -> void:
+	if tarjetas:
+		return
+	var t := Time.get_ticks_msec() / 1000.0
+	for i in huecos.size():
+		if not huecos[i].ocupado:  # los de adorno botan, cada uno a su ritmo
+			huecos[i].moco.position.y = -absf(sin(t * 2.4 + i * 1.3)) * 14.0
 
 
 func _etiqueta(pos: Vector2, tam: int, color: Color) -> Label:
@@ -69,10 +94,11 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 		var ocupado := i < ids.size()
 		if ocupado and not h.ocupado:
 			_caer(h.moco)
-		h.moco.visible = ocupado
+		h.moco.visible = ocupado or not tarjetas  # en el menú, los 4 de adorno
 		h.ocupado = ocupado
 		if not ocupado:
-			h.nombre.text = "HUECO LIBRE" if tarjetas else "ESPERANDO…"
+			h.moco.position = Vector2.ZERO
+			h.nombre.text = "HUECO LIBRE" if tarjetas else ""
 		elif ids[i] == mi_id:
 			h.nombre.text = "TÚ"
 		else:
@@ -120,13 +146,6 @@ func _draw() -> void:
 	var izq := -separacion * 0.8
 	var azotea := PackedVector2Array([Vector2(izq, 22), Vector2(izq + separacion * 4.45, 14), Vector2(izq + separacion * 4.45, 400), Vector2(izq, 400)])
 	Acuarela.pintar(self, azotea, Acuarela.AZOTEA, 11)
-	for i in huecos.size():
-		if not huecos[i].ocupado:  # charco del color que tendrá quien entre
-			var charco := PackedVector2Array()
-			for k in 14:
-				var a := TAU * k / 14
-				charco.append(Vector2(i * separacion + cos(a) * 30.0, 22.0 + sin(a) * 8.0))
-			draw_colored_polygon(Tinta.irregular(charco, i, 2.0, 8.0), Color(Jugador.COLORES[i], 0.45))
 
 
 # Una tarjeta de papel por hueco, cada una un poco torcida; la libre, solo el borde punteado.

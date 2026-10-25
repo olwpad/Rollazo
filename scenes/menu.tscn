@@ -113,10 +113,10 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="IP" type="LineEdit" parent="Caja/Fila"]
-custom_minimum_size = Vector2(240, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
-text = "127.0.0.1"
-placeholder_text = "IP del anfitrión"
+theme_override_colors/font_placeholder_color = Color(0.49, 0.455, 0.722, 0.85)
+placeholder_text = "IP del anfitrión (100.x.x.x)"
 
 [node name="Unirse" type="Button" parent="Caja/Fila"]
 layout_mode = 2

@@ -2,6 +2,8 @@
 # con los mocos, tu IP, la notita con la partida y un único botón grande.
 extends Control
 
+const AJUSTES := "user://ajustes.cfg"  # el mismo archivo que la mira
+
 @onready var ip: LineEdit = $Caja/Fila/IP
 @onready var estado: Label = $Caja/Estado
 @onready var principal = $SalaUI/Principal  # sin tipo: es un boton_mancha (tiene progreso)
@@ -10,6 +12,9 @@ extends Control
 
 func _ready() -> void:
 	Musica.tocar("menu")
+	var cfg := ConfigFile.new()
+	cfg.load(AJUSTES)
+	ip.text = cfg.get_value("red", "ultima_ip", "")
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
@@ -62,7 +67,15 @@ func _crear() -> void:
 
 
 func _unirse() -> void:
-	estado.text = "Conectando a %s…" % ip.text if Red.unirse(ip.text.strip_edges()) == OK else "IP no válida"
+	var direccion := ip.text.strip_edges()
+	if Red.unirse(direccion) != OK:
+		estado.text = "IP no válida"
+	else:
+		estado.text = "Conectando a %s…" % direccion
+		var cfg := ConfigFile.new()  # la próxima vez ya sale escrita
+		cfg.load(AJUSTES)
+		cfg.set_value("red", "ultima_ip", direccion)
+		cfg.save(AJUSTES)
 	_actualizar()
 
 

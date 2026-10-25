@@ -16,6 +16,37 @@ func test_sala_con_cuatro_huecos_y_tu_solo_sin_red() -> void:
 	menu.free()
 
 
+func test_menu_con_cuatro_mocos_y_hasta_4_jugadores() -> void:
+	var menu := _menu()
+	var sala = menu.get_node("Sala")
+	comprobar(sala.huecos.all(func(h: Dictionary) -> bool: return h.moco.visible), "los 4 mocos en la azotea, de adorno")
+	comprobar(sala.etiqueta(0) == "TÚ" and sala.etiqueta(1) == "", "solo el tuyo lleva nombre")
+	comprobar(sala.get_node("Capacidad").visible and sala.get_node("Capacidad").text == "HASTA 4 JUGADORES", "un único texto")
+	sala.tarjetas = true
+	comprobar(not sala.get_node("Capacidad").visible, "en la sala de la partida, tarjetas como antes")
+	menu.free()
+
+
+func test_ip_vacia_y_se_recuerda() -> void:
+	var cfg := ConfigFile.new()
+	cfg.load("user://ajustes.cfg")
+	var antes: String = cfg.get_value("red", "ultima_ip", "")  # la de verdad del jugador: se repone al final
+	cfg.set_value("red", "ultima_ip", "")
+	cfg.save("user://ajustes.cfg")
+	var menu := _menu()
+	comprobar(menu.ip.text == "" and menu.ip.placeholder_text == "IP del anfitrión (100.x.x.x)", "vacía con texto guía")
+	menu.ip.text = "100.1.2.3"
+	menu._unirse()
+	menu.free()
+	Engine.get_main_loop().root.get_node("Red").salir()
+	menu = _menu()
+	comprobar(menu.ip.text == "100.1.2.3", "recuerda la última IP")
+	menu.free()
+	cfg.load("user://ajustes.cfg")
+	cfg.set_value("red", "ultima_ip", antes)
+	cfg.save("user://ajustes.cfg")
+
+
 func test_mostrar_jugadores_que_entran() -> void:
 	var menu := _menu()
 	var sala = menu.get_node_or_null("Sala")
@@ -26,7 +57,7 @@ func test_mostrar_jugadores_que_entran() -> void:
 		sala.mostrar(ids, 7)
 		comprobar(sala.ocupados() == 2, "dos mocos")
 		comprobar(sala.etiqueta(1) == "TÚ" and sala.etiqueta(0) == "JUGADOR 1", "tú y el anfitrión")
-		comprobar(sala.etiqueta(2) == "ESPERANDO…", "hueco libre en el menú, como al principio")
+		comprobar(sala.etiqueta(2) == "", "en el menú los huecos libres no dicen nada")
 	menu.free()
 
 
