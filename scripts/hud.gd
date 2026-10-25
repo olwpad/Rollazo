@@ -10,8 +10,26 @@ static func formatear(t: float) -> String:
 	return "--.--" if t == INF else "%05.2f" % t
 
 
-func mostrar(t: float, mejor: float) -> void:
-	tiempo.text = "%s   mejor %s" % [formatear(t), formatear(mejor)]
+func mostrar(t: float, mejor: float, con_mejor := true) -> void:
+	tiempo.text = "%s   mejor %s" % [formatear(t), formatear(mejor)] if con_mejor else formatear(t)
+
+
+# Segundos que quedan tras llegar el primero; negativo = no hay cuenta. Late en los últimos 5.
+func cuenta_atras(segundos: float) -> void:
+	var cuenta: Label = $Cuenta
+	cuenta.visible = segundos >= 0.0
+	if not cuenta.visible:
+		return
+	var texto := str(ceili(segundos))
+	if texto != cuenta.text and segundos <= 5.0:
+		cuenta.scale = Vector2(1.4, 1.4)
+		create_tween().tween_property(cuenta, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	cuenta.text = texto
+
+
+func ocultar_ayuda() -> void:
+	if $Ayuda.visible and $Ayuda.modulate.a == 1.0:  # una sola vez, no un tween por frame
+		create_tween().tween_property($Ayuda, "modulate:a", 0.0, 0.6).finished.connect(func(): $Ayuda.visible = false)
 
 
 func meta(t: float, mejor: float, puesto: int, con_repetir: bool) -> void:

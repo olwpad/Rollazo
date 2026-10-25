@@ -30,10 +30,28 @@ func _al_efecto(tipo: String, pos: Vector2) -> void:
 			_salpicar(pos)
 			_moco().aplastar(Vector2(0.7, 1.3))
 			_temblar(0.5)
+		"corte":  # acertaste el corte
+			_moco().aplastar(Vector2(1.25, 0.8))
+			_temblar(0.3)
+		"corte_fallido":
+			_moco().aplastar(Vector2(1.15, 0.88))
+		"cortado":  # te lo cortaron: más fuerte que una rotura normal
+			_trozos(pos)
+			_temblar(0.6)
+		"agarrado":
+			_salpicar(pos)
+			_moco().aplastar(Vector2(1.3, 0.75))
+			_temblar(0.3)
+		"reaparecer":
+			_salpicar(pos)
+			_moco().aplastar(Vector2(0.6, 1.4))
+		"meta":
+			_trozos(pos)
+			_salpicar(pos)
+			_moco().aplastar(Vector2(1.5, 0.6))
+			_temblar(0.6)
 		"rotura":
-			var trozos: CPUParticles2D = jugador.get_node("PapelVisual/Trozos")
-			trozos.global_position = pos
-			trozos.restart()
+			_trozos(pos)
 			_temblar(0.45)
 
 
@@ -51,6 +69,12 @@ func _process(_delta: float) -> void:
 func _salpicar(pos: Vector2) -> void:
 	salpicadura.global_position = pos
 	salpicadura.restart()
+
+
+func _trozos(pos: Vector2) -> void:
+	var trozos: CPUParticles2D = jugador.get_node("PapelVisual/Trozos")
+	trozos.global_position = pos
+	trozos.restart()
 
 
 func _temblar(trauma: float) -> void:

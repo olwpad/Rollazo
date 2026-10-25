@@ -59,3 +59,34 @@ theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 28
 text = "MENÚ (Esc)"
 flat = true
+
+[node name="Cuenta" type="Label" parent="."]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 12.0
+offset_right = 80.0
+offset_bottom = 112.0
+pivot_offset = Vector2(80, 50)
+theme_override_colors/font_color = Color(0.937, 0.561, 0.682, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 84
+horizontal_alignment = 1
+
+[node name="Ayuda" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -600.0
+offset_top = -70.0
+offset_right = 600.0
+offset_bottom = -20.0
+theme_override_colors/font_color = Color(0.227, 0.208, 0.314, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 26
+text = "MANTÉN CLIC: LANZAR PAPEL  ·  SUELTA: IMPULSO  ·  W / S: RECOGER / SOLTAR  ·  CLIC DCHO: CORTAR  ·  E: AGARRAR"
+horizontal_alignment = 1

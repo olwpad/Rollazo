@@ -18,6 +18,9 @@ func _initialize() -> void:
 func _physics_process(_delta: float) -> bool:
 	frame += 1
 	if frame == 30:  # ya en el suelo
+		var mira = j.get_node_or_null("Mira")
+		_comprobar(mira != null and mira.calcular(j.global_position + Vector2(300, -500))[0], "la mira avisa de que engancha")
+		_comprobar(mira != null and not mira.calcular(j.global_position + Vector2(0, 500))[0], "la mira avisa de que no engancha")
 		j.guion = {"apunta": j.global_position + Vector2(300, -500), "lanzar": true}
 	elif frame == 31:
 		_comprobar(j.papel != null, "se engancha al techo")

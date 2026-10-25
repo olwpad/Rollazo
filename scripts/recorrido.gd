@@ -15,6 +15,7 @@ var clasificacion := Clasificacion.new()  # solo la usa el anfitrión
 var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
 var en_resultados := false
 var colores := {}  # id -> color de su moco, en todos los PCs
+var cuenta := -1.0  # segundos que quedan tras llegar el primero (en todos los PCs)
 var piezas := Node2D.new()  # techos, descansos y obstáculos generados
 
 @onready var hud := $HUD
@@ -36,7 +37,7 @@ func _ready() -> void:
 	for dibujo: Polygon2D in find_children("Dibujo", "Polygon2D"):  # el suelo de salida
 		_estilo_acuarela(dibujo, i)
 		i += 1
-	_estilo_acuarela($Meta/Bandera, 99)
+	_estilo_acuarela($Meta/Bandera, 99, Acuarela.CIRUELA)  # ningún moco es ciruela: se lee como meta
 	piezas.name = "Piezas"
 	add_child(piezas)
 	move_child(piezas, $Jugadores.get_index())  # detrás de los mocos
@@ -84,8 +85,8 @@ func construir(semilla: int) -> void:
 
 # Cada forma se pinta como mancha de acuarela, sin contorno: techos enganchables en rosa
 # o lavanda, azoteas en lavanda oscuro. Solo cambia el dibujo; la colisión sigue siendo exacta.
-func _estilo_acuarela(dibujo: Polygon2D, i: int) -> void:
-	var color := Acuarela.MENTA
+func _estilo_acuarela(dibujo: Polygon2D, i: int, forzado := Color.TRANSPARENT) -> void:
+	var color := Acuarela.MENTA if forzado == Color.TRANSPARENT else forzado
 	if dibujo.get_parent().is_in_group("enganchable"):
 		color = Acuarela.ROSA if i % 2 == 0 else Acuarela.LAVANDA
 	elif dibujo.get_parent() is StaticBody2D:
@@ -106,7 +107,13 @@ func _estilo_acuarela(dibujo: Polygon2D, i: int) -> void:
 func _physics_process(delta: float) -> void:
 	if corriendo:
 		tiempo += delta
-	hud.mostrar(tiempo, mejor)
+	hud.mostrar(tiempo, mejor, not Red.es_online())
+	if cuenta >= 0.0:
+		cuenta = maxf(cuenta - delta, 0.0)
+	hud.cuenta_atras(cuenta if not en_resultados else -1.0)
+	var mio := jugador_local()
+	if mio != null and mio.papel_activo:
+		hud.ocultar_ayuda()  # ya sabe lanzar el papel
 	if desde_primero >= 0.0 and not en_resultados and multiplayer.is_server():
 		desde_primero += delta
 		if clasificacion.todos_llegaron(Red.ids) or desde_primero >= ESPERA_TRAS_PRIMERO:
@@ -126,8 +133,8 @@ func crear_jugador(datos: Array) -> Node:
 	var indice: int = datos[1]
 	var j: Jugador = ESCENA_JUGADOR.instantiate()
 	j.name = str(id)
-	j.position = $Inicio.global_position + Vector2(indice * 50, 0)
-	j.get_node("Visual/Moco").color = Jugador.COLORES[indice % Jugador.COLORES.size()]
+	j.position = $Inicio.global_position + Vector2(indice * 90, 0)
+	j.pintar(Jugador.COLORES[indice % Jugador.COLORES.size()])
 	colores[id] = j.get_node("Visual/Moco").color
 	if id == multiplayer.get_unique_id():  # cada PC sigue con la cámara solo a su moco
 		var camara := Camera2D.new()
@@ -160,12 +167,13 @@ func reiniciar() -> void:
 	corriendo = true
 	desde_primero = -1.0
 	en_resultados = false
+	cuenta = -1.0
 	ultimos_controles.clear()
 	hud.limpiar()
 	if multiplayer.is_server():
 		var lista := jugadores()
 		for i in lista.size():
-			lista[i].reaparecer($Inicio.global_position + Vector2(i * 50, 0))  # en fila, no apilados
+			lista[i].reaparecer($Inicio.global_position + Vector2(i * 90, 0))  # en fila, no apilados
 
 
 func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
@@ -176,7 +184,7 @@ func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
 func _al_caer(cuerpo: Node2D) -> void:
 	if cuerpo is Jugador and multiplayer.is_server():
 		var punto: Vector2 = ultimos_controles.get(cuerpo.name, $Inicio.global_position)
-		cuerpo.reaparecer.call_deferred(punto)  # no mover cuerpos dentro de una señal de física
+		cuerpo.reaparecer.call_deferred(punto, true)  # no mover cuerpos dentro de una señal de física
 
 
 # El anfitrión apunta el puesto y avisa a todos; cada PC para su cronómetro si es su moco.
@@ -188,13 +196,19 @@ func _al_llegar(cuerpo: Node2D) -> void:
 	var puesto := clasificacion.registrar_llegada(id)
 	if nuevo:
 		desde_primero = maxf(desde_primero, 0.0)
-		llegada.rpc(id, puesto)
+		llegada.rpc(id, puesto, tiempo)
 
 
 @rpc("authority", "call_local", "reliable")
-func llegada(id: int, puesto: int) -> void:
+func llegada(id: int, puesto: int, t: float) -> void:
+	var j := $Jugadores.get_node_or_null(str(id)) as Jugador
+	if j != null:
+		j.efecto_red.emit("meta", j.global_position)  # ya llega a todos los PCs: este rpc es call_local
+	if puesto == 1 and Red.es_online():
+		cuenta = ESPERA_TRAS_PRIMERO
 	if id == multiplayer.get_unique_id() and corriendo:
 		corriendo = false
+		tiempo = t  # el reloj del anfitrión: cada PC cargó la escena en un momento distinto
 		hud.meta(tiempo, mejor, puesto, not Red.es_online())
 		mejor = minf(mejor, tiempo)
 

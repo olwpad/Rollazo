@@ -9,7 +9,7 @@
 shader = ExtResource("4")
 
 [sub_resource type="RectangleShape2D" id="r1"]
-size = Vector2(400, 80)
+size = Vector2(700, 80)
 
 [sub_resource type="RectangleShape2D" id="r10"]
 size = Vector2(13000, 200)
@@ -61,14 +61,14 @@ base_y = 1000.0
 position = Vector2(200, 640)
 
 [node name="SueloInicio" type="StaticBody2D" parent="." unique_id=1532369621]
-position = Vector2(200, 720)
+position = Vector2(300, 720)
 
 [node name="Forma" type="CollisionShape2D" parent="SueloInicio" unique_id=2041352986]
 shape = SubResource("r1")
 
 [node name="Dibujo" type="Polygon2D" parent="SueloInicio" unique_id=1836201252]
 color = Color(0.35, 0.55, 0.75, 1)
-polygon = PackedVector2Array(-200, -40, 200, -40, 200, 40, -200, 40)
+polygon = PackedVector2Array(-350, -40, 350, -40, 350, 40, -350, 40)
 
 [node name="Caida" type="Area2D" parent="." unique_id=1305548216]
 position = Vector2(4000, 1300)

@@ -48,6 +48,22 @@ var _mis_contadores := {}  # en el cliente dueño
 @onready var rayo: RayCast2D = $Rayo
 
 
+func _ready() -> void:
+	if id_dueno() == multiplayer.get_unique_id():  # la mira solo en el PC del dueño
+		var mira := Node2D.new()
+		mira.name = "Mira"
+		mira.set_script(preload("res://scripts/mira.gd"))
+		add_child(mira)
+
+
+# Color del moco y de todo lo que suelta (gotas, salpicadura, estela).
+func pintar(color: Color) -> void:
+	$Visual/Moco.color = color
+	$Efectos/Salpicadura.color = color
+	$Efectos/Goteo.color = color
+	$Efectos/Estela.default_color = Color(color, 0.4)
+
+
 # Cada moco se llama como el id de red de su dueño ("1" es el anfitrión).
 func id_dueno() -> int:
 	return name.to_int() if name.is_valid_int() else 1
@@ -174,16 +190,20 @@ func _chocar(antes: Vector2) -> void:
 		velocity = r[0]
 		otro.velocity = r[1]
 		efecto.rpc("choque", c.get_position())
+		otro.efecto.rpc("choque", c.get_position())
 		return
 
 
 # Corta el papel de todo moco cuyo papel pase cerca de mí. No hace falta estar colgado.
 func _cortar_cercanos() -> void:
+	var acerto := false
 	for otro in get_parent().get_children():
 		if not (otro is Jugador and otro != self and otro.papel != null):
 			continue
 		if Geometria.distancia_a_segmento(global_position, otro.global_position, otro.papel.ancla) < RADIO_CORTE:
 			otro.cortar_papel()
+			acerto = true
+	efecto.rpc("corte" if acerto else "corte_fallido", global_position)
 
 
 func _agarrar_cercano() -> void:
@@ -199,6 +219,7 @@ func _agarrar_cercano() -> void:
 	if mejor != null:
 		agarrado_a = mejor
 		mejor.carga += 1
+		mejor.efecto.rpc("agarrado", mejor.global_position)
 		efecto.rpc("enganche", mejor.global_position)
 
 
@@ -213,7 +234,7 @@ func _exit_tree() -> void:
 
 
 func cortar_papel() -> void:
-	efecto.rpc("rotura", (global_position + papel.ancla) / 2.0)
+	efecto.rpc("cortado", (global_position + papel.ancla) / 2.0)
 	papel = null
 	papel_roto.emit()
 	_publicar_papel()
@@ -235,8 +256,11 @@ func _publicar_papel() -> void:
 		papel_aguante = papel.aguante
 
 
-func reaparecer(pos: Vector2) -> void:
+# con_efecto solo tras caerse: al empezar ronda, los demás PCs quizá aún no tienen este moco.
+func reaparecer(pos: Vector2, con_efecto := false) -> void:
 	global_position = pos
+	if con_efecto:
+		efecto.rpc("reaparecer", pos)
 	velocity = Vector2.ZERO
 	papel = null
 	soltar_agarre()
