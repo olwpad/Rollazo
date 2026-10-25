@@ -1,12 +1,14 @@
 # Los 4 huecos de jugador, en dos formas:
 # - En el menú principal: la azotea con los 4 mocos de adorno (los libres botan) y un único
 #   texto "HASTA 4 JUGADORES": aún no hay partida, así que nadie "espera".
-# - Dentro de una partida (tarjetas = true): una tarjeta de papel por jugador con su moco,
-#   su nombre y su estado; sello "¡LISTO!" para quien está listo y hueco punteado si falta gente.
+# - Dentro de una partida (tarjetas = true): la misma azotea, ya de lado a lado, con cada moco de
+#   pie botando junto a su cartel clavado (nombre, estado o sello "¡LISTO!"); el hueco libre es un
+#   cartel punteado con "+". Así el inicio y la sala parecen el mismo sitio.
 extends Node2D
 
 const FUENTE := preload("res://assets/fuentes/Bangers-Regular.ttf")
-const TARJETA := Vector2(200, 240)
+const CARTEL := Rect2(-95, -190, 190, 110)  # encima del palo, que llega a la azotea (y=22)
+const MOCO_X := 70.0  # en la sala, el moco va al lado de su cartel
 const CREMA := Color("fffaf4")
 
 var separacion := 135.0:  # el menú la ensancha en la sala online
@@ -21,11 +23,15 @@ var tarjetas := false:
 		tarjetas = v
 		for h in huecos:
 			h.nombre.add_theme_color_override("font_color", Acuarela.CIRUELA if v else CREMA)
+			h.nombre.position = Vector2(-90, -178) if v else Vector2(-90, 40)  # en el cartel o bajo el moco
+			h.estado.position = Vector2(-90, -136)
+			h.sello.position = Vector2(-90, -142)
+			h.grande.position.x = MOCO_X if v else 0.0
 		if capacidad != null:
 			capacidad.visible = not v
 		queue_redraw()
 var capacidad: Label = null
-var huecos: Array[Dictionary] = []  # {nodo, moco: MocoVisual, nombre, estado, sello: Label, ocupado: bool}
+var huecos: Array[Dictionary] = []  # {nodo, grande, moco: MocoVisual, nombre, estado, sello: Label, ocupado, listo: bool}
 
 
 func _ready() -> void:
@@ -50,7 +56,7 @@ func _ready() -> void:
 		for l in [nombre, estado, sello]:
 			hueco.add_child(l)
 		add_child(hueco)
-		huecos.append({"nodo": hueco, "moco": moco, "nombre": nombre, "estado": estado, "sello": sello, "ocupado": false})
+		huecos.append({"nodo": hueco, "grande": grande, "moco": moco, "nombre": nombre, "estado": estado, "sello": sello, "ocupado": false, "listo": false})
 	capacidad = _etiqueta(Vector2.ZERO, 26, CREMA)
 	capacidad.name = "Capacidad"
 	capacidad.text = "HASTA 4 JUGADORES"
@@ -68,9 +74,12 @@ func _colocar_capacidad() -> void:
 
 
 func _process(_delta: float) -> void:
-	if tarjetas:
-		return
 	var t := Time.get_ticks_msec() / 1000.0
+	if tarjetas:  # en la sala botan los que están; el que está listo, más alto
+		for i in huecos.size():
+			if huecos[i].ocupado:
+				huecos[i].moco.position.y = -absf(sin(t * 2.4 + i * 1.3)) * (16.0 if huecos[i].listo else 5.0)
+		return
 	for i in huecos.size():
 		if not huecos[i].ocupado:  # los de adorno botan, cada uno a su ritmo
 			huecos[i].moco.position.y = -absf(sin(t * 2.4 + i * 1.3)) * 14.0
@@ -109,6 +118,7 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 			h.sello.scale = Vector2(1.8, 1.8)
 			create_tween().tween_property(h.sello, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		h.sello.visible = listo
+		h.listo = listo
 		h.estado.text = ""
 		if tarjetas and ocupado and not listo:
 			h.estado.text = "LISTO · ANFITRIÓN" if ids[i] == 1 else "PENSÁNDOSELO…"
@@ -148,18 +158,27 @@ func _draw() -> void:
 	Acuarela.pintar(self, azotea, Acuarela.AZOTEA, 11)
 
 
-# Una tarjeta de papel por hueco, cada una un poco torcida; la libre, solo el borde punteado.
+# La azotea de lado a lado y, por hueco, un cartel de papel clavado en un palo; el libre,
+# punteado con un "+" y la sombra en el suelo de donde irá su moco.
 func _dibujar_tarjetas() -> void:
+	var azotea := PackedVector2Array([Vector2(-330, 27), Vector2(1060, 14), Vector2(1060, 400), Vector2(-330, 400)])
+	draw_colored_polygon(azotea, Acuarela.AZOTEA.lightened(0.12))  # base opaca: es grande y los edificios de detrás ensuciaban
+	Acuarela.pintar(self, azotea, Acuarela.AZOTEA, 12)
 	for i in huecos.size():
-		draw_set_transform(Vector2(i * separacion, 5),[-0.03, 0.025, -0.015, 0.03][i], Vector2.ONE)
-		var r := Rect2(-TARJETA / 2.0, TARJETA)
+		var x := i * separacion
+		draw_rect(Rect2(x - 4, CARTEL.end.y - 4, 8, 22 - CARTEL.end.y + 6), Acuarela.AZOTEA.darkened(0.3))  # palo
+		draw_set_transform(Vector2(x, 0), [-0.035, 0.025, -0.015, 0.03][i], Vector2.ONE)
 		if huecos[i].ocupado:
-			draw_rect(r, Color(CREMA, 0.95))
-		else:  # papel claro (no deja ver antenas por detrás), borde punteado y un "+" donde irá el moco
-			draw_rect(r, Color(CREMA, 0.6))
+			draw_rect(CARTEL, Color(CREMA, 0.97))
+		else:
+			draw_rect(CARTEL, Color(CREMA, 0.6))
+			var r := CARTEL
 			var esquinas := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
 			for k in 4:
-				draw_dashed_line(esquinas[k], esquinas[k + 1], Color(CREMA, 0.8), 3.0, 12.0)
-			draw_circle(Vector2(0, -15), 34.0, Color(Acuarela.CIRUELA, 0.08))
-			draw_string(FUENTE, Vector2(-40, 8), "+", HORIZONTAL_ALIGNMENT_CENTER, 80, 70, Color(Acuarela.CIRUELA, 0.35))
-	draw_set_transform(Vector2.ZERO)
+				draw_dashed_line(esquinas[k], esquinas[k + 1], Color(CREMA, 0.9), 3.0, 12.0)
+			draw_string(FUENTE, Vector2(-40, -92), "+", HORIZONTAL_ALIGNMENT_CENTER, 80, 70, Color(Acuarela.CIRUELA, 0.35))
+		draw_set_transform(Vector2.ZERO)
+		if not huecos[i].ocupado:
+			draw_set_transform(Vector2(x + MOCO_X, 24), 0.0, Vector2(1.0, 0.3))  # sombra aplastada en el suelo
+			draw_circle(Vector2.ZERO, 30.0, Color(Acuarela.CIRUELA, 0.15))
+			draw_set_transform(Vector2.ZERO)

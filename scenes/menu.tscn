@@ -138,16 +138,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="Franja" type="ColorRect" parent="SalaUI"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -150.0
-mouse_filter = 2
-color = Color(1, 0.98, 0.957, 0.55)
-
 [node name="Logo" type="Label" parent="SalaUI"]
 layout_mode = 0
 offset_left = 40.0
@@ -257,7 +247,7 @@ offset_left = -520.0
 offset_top = -130.0
 offset_right = -40.0
 offset_bottom = -96.0
-theme_override_colors/font_color = Color(0.227, 0.208, 0.314, 1)
+theme_override_colors/font_color = Color(1, 0.98, 0.957, 1)
 theme_override_font_sizes/font_size = 22
 
 [node name="Salir" type="Button" parent="."]

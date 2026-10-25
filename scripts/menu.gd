@@ -138,10 +138,15 @@ func _actualizar() -> void:
 		opcion.visible = not online
 	$Caja.visible = not en_sala
 	$SalaUI.visible = en_sala
-	$Columpio.visible = not en_sala  # en la sala, los únicos mocos son los jugadores
+	# El columpio sigue en la sala (inicio y sala son la misma azotea), entre la IP y la nota.
+	$Columpio.position = Vector2(600, 40) if en_sala else Vector2(760, 60)
 	$Pie.visible = not online
 	$Salir.visible = online
-	$Sala.position = Vector2(265, 390) if en_sala else Vector2(740, 560)
+	$Sala.position = Vector2(265, 493) if en_sala else Vector2(740, 560)
+	if en_sala:  # sobre la azotea morada, el texto claro
+		$Salir.add_theme_color_override("font_color", Color("fffaf4"))
+	else:
+		$Salir.remove_theme_color_override("font_color")
 	$Sala.separacion = 250.0 if en_sala else 135.0
 	$Sala.tarjetas = en_sala
 	var solo_yo: Array[int] = [1]
