@@ -37,6 +37,7 @@ func _ready() -> void:
 		_estilo_acuarela(dibujo, i)
 		i += 1
 	_estilo_acuarela($Meta/Bandera, 99)
+	hud.get_node("Menu").pressed.connect(volver_al_menu)
 	reiniciar()
 
 
@@ -72,6 +73,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(evento: InputEvent) -> void:
+	if evento.is_action_pressed("volver_menu"):
+		volver_al_menu()
 	if evento.is_action_pressed("reiniciar") and not Red.es_online():  # online manda la ronda
 		reiniciar()
 
@@ -119,8 +122,9 @@ func reiniciar() -> void:
 	ultimos_controles.clear()
 	hud.limpiar()
 	if multiplayer.is_server():
-		for j in jugadores():
-			j.reaparecer($Inicio.global_position)
+		var lista := jugadores()
+		for i in lista.size():
+			lista[i].reaparecer($Inicio.global_position + Vector2(i * 50, 0))  # en fila, no apilados
 
 
 func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
@@ -178,3 +182,9 @@ func mostrar_resultados(filas: Array) -> void:
 @rpc("authority", "call_local", "reliable")
 func nueva_ronda() -> void:
 	reiniciar()
+
+
+# Si sale el anfitrión, los demás vuelven solos al menú (Red avisa de que se ha ido).
+func volver_al_menu() -> void:
+	Red.salir()
+	get_tree().change_scene_to_file("res://scenes/menu.tscn")

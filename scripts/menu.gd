@@ -15,6 +15,9 @@ func _ready() -> void:
 	Red.desconectado.connect(func(motivo): estado.text = motivo)
 	multiplayer.connected_to_server.connect(func(): estado.text = "Conectado. Esperando a que el anfitrión empiece…")
 	_actualizar()
+	if Red.ultimo_motivo != "":
+		estado.text = Red.ultimo_motivo
+		Red.ultimo_motivo = ""
 
 
 func _crear() -> void:
@@ -30,5 +33,6 @@ func _unirse() -> void:
 func _actualizar() -> void:
 	var anfitrion := Red.es_online() and multiplayer.is_server()
 	empezar.visible = anfitrion
+	$Caja/Solo.visible = not Red.es_online()  # practicar con la partida abierta dejaría a los demás colgados
 	if anfitrion:
 		estado.text = "Jugadores: %d/%d" % [Red.ids.size(), Red.MAX_JUGADORES]

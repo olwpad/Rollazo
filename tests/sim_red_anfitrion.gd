@@ -9,7 +9,7 @@ var t_carrera := -1.0
 var id_cliente := 0
 var vistos_dos := false
 var x_cliente_inicial := INF
-var x_cliente_min := INF
+var x_cliente_max := -INF
 var t_salida := -1.0
 var fallos: Array[String] = []
 
@@ -42,11 +42,11 @@ func _process(delta: float) -> bool:
 	if cliente != null:
 		if x_cliente_inicial == INF:
 			x_cliente_inicial = cliente.global_position.x
-		x_cliente_min = minf(x_cliente_min, cliente.global_position.x)
+		x_cliente_max = maxf(x_cliente_max, cliente.global_position.x)
 	if vistos_dos and jugadores != null and cliente == null:
 		if t_salida < 0.0:
 			t_salida = espera
-			if x_cliente_min > x_cliente_inicial - 100.0:
+			if x_cliente_max < x_cliente_inicial + 100.0:
 				fallos.append("el anfitrión no movió el moco del cliente con su entrada")
 		if current_scene.hud.tabla.get_child_count() == 1:
 			_fin("")  # el cliente se fue, su moco desapareció y la ronda terminó con 1 fila

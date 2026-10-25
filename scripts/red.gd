@@ -12,6 +12,9 @@ const RECORRIDO := "res://scenes/recorrido_prueba.tscn"
 var ids: Array[int] = []  # ids conectados, incluido el anfitrión (1). Solo fiable en el anfitrión.
 
 
+var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
+
+
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_al_conectar)
 	multiplayer.peer_disconnected.connect(_al_desconectar)
@@ -71,5 +74,6 @@ func _al_desconectar(id: int) -> void:
 
 func _al_caer_anfitrion(motivo: String = "El anfitrión se ha ido") -> void:
 	salir()
+	ultimo_motivo = motivo  # la escena del menú aún no existe: se lo dejamos guardado
 	desconectado.emit(motivo)
 	get_tree().change_scene_to_file("res://scenes/menu.tscn")

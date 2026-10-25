@@ -4,7 +4,7 @@ extends SceneTree
 var espera := 0.0
 var t_carrera := -1.0
 var x_inicial := INF
-var x_min := INF
+var x_max := -INF
 var unido := false
 var fallos: Array[String] = []
 
@@ -18,17 +18,17 @@ func _process(delta: float) -> bool:
 	if t_carrera < 0.0 and jugadores != null:
 		t_carrera = espera
 	var mio: Node2D = jugadores.get_node_or_null(str(root.get_node("Red").multiplayer.get_unique_id())) if jugadores else null
-	# Mantiene A (izquierda) 0.6 s: el anfitrión debe mover este moco y el Sync traer la posición.
+	# Mantiene D (derecha; a la izquierda está el moco del anfitrión) 0.6 s: el anfitrión debe mover este moco y el Sync traer la posición.
 	if mio != null and t_carrera >= 0.0 and x_inicial == INF and espera - t_carrera > 0.5:
 		x_inicial = mio.global_position.x
-		Input.action_press("izquierda")
+		Input.action_press("derecha")
 	if x_inicial != INF and mio != null:
-		x_min = minf(x_min, mio.global_position.x)
+		x_max = maxf(x_max, mio.global_position.x)
 	if x_inicial != INF and espera - t_carrera > 0.9:
-		Input.action_release("izquierda")
+		Input.action_release("derecha")
 	if t_carrera >= 0.0 and espera - t_carrera > 2.0:
-		if x_min > x_inicial - 80.0:
-			fallos.append("mi moco no se movió a la izquierda (x %.0f, mínimo %.0f)" % [x_inicial, x_min])
+		if x_max < x_inicial + 80.0:
+			fallos.append("mi moco no se movió a la derecha (x %.0f, máximo %.0f)" % [x_inicial, x_max])
 		if jugadores == null or jugadores.get_child_count() != 2:
 			fallos.append("el cliente no ve 2 mocos")
 		var camaras := current_scene.find_children("*", "Camera2D", true, false)

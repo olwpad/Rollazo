@@ -44,3 +44,18 @@ offset_right = 150.0
 offset_bottom = 160.0
 alignment = 1
 theme_override_constants/separation = 4
+
+[node name="Menu" type="Button" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -150.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 60.0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.227, 0.208, 0.314, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 28
+text = "MENÚ (Esc)"
+flat = true
