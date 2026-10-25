@@ -339,10 +339,11 @@ func _al_tocar_burbuja(cuerpo: Node2D, burbuja: Area2D) -> void:
 	burbuja_cogida.rpc(burbuja.name)
 
 
-# Aro de fuego: lo decide el anfitrión, como todo lo que toca a los mocos.
-func _al_tocar_aro(cuerpo: Node2D, aro: Area2D) -> void:
+# Aro de fuego: te quemas y vuelves al último control, como al caer. Lo decide el anfitrión.
+func _al_tocar_aro(cuerpo: Node2D, _aro: Area2D) -> void:
 	if cuerpo is Jugador and multiplayer.is_server() and not cuerpo.congelado:
-		(cuerpo as Jugador).quemarse(aro.global_position)
+		(cuerpo as Jugador).quemarse()
+		_volver_al_control(cuerpo)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -365,6 +366,10 @@ func _al_caer(cuerpo: Node2D) -> void:
 		cuerpo.reaparecer.call_deferred(Vector2($Meta.position.x, -4000.0))  # fuera de en medio
 		espectador.rpc(cuerpo.id_dueno())
 		return
+	_volver_al_control(cuerpo)
+
+
+func _volver_al_control(cuerpo: Node2D) -> void:
 	var punto: Vector2 = ultimos_controles.get(cuerpo.name, $Inicio.global_position)
 	cuerpo.reaparecer.call_deferred(punto, true)  # no mover cuerpos dentro de una señal de física
 
