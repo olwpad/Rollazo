@@ -85,12 +85,12 @@ static func _aros(semilla: int, m: Dictionary) -> Array:
 	for i in range(1, camino.size()):
 		var a: Vector2 = camino[i - 1]
 		var b: Vector2 = camino[i]
-		var pos := Vector2((a.x + b.x) / 2.0, maxf(a.y, b.y) + 200.0)
-		var libre: bool = m.piezas.all(func(p: Dictionary) -> bool: return pos.distance_to(p.pos) > 160.0) 				and m.burbujas.all(func(q: Dictionary) -> bool: return pos.distance_to(q.pos) > 130.0)
+		var pos := Vector2((a.x + b.x) / 2.0, maxf(a.y, b.y) + 260.0)  # en la bajada del arco: o lo cruzas por el centro o vas por encima
+		var libre: bool = m.piezas.all(func(p: Dictionary) -> bool: return pos.distance_to(p.pos) > 200.0) 				and m.burbujas.all(func(q: Dictionary) -> bool: return pos.distance_to(q.pos) > 130.0)
 		if libre and pos.x > INICIO_FIN + 400.0 and pos.x < m.meta.x - 300.0:
 			huecos.append(pos)
 	var aros := []
-	for k in mini(3, huecos.size()):
+	for k in mini(2, huecos.size()):
 		var pos: Vector2 = huecos.pop_at(rng.randi_range(0, huecos.size() - 1))
 		aros.append({"pos": pos, "mov": "quieto" if rng.randf() < 0.5 else "sube"})
 	return aros

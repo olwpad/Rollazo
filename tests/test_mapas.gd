@@ -42,7 +42,7 @@ func test_aros_en_el_hueco_entre_techos() -> void:
 			comprobar(a.pos.x > Generador.INICIO_FIN + 400.0 and a.pos.x < m.meta.x - 300.0, "semilla %d: aro lejos de salida y meta" % semilla)
 			comprobar(a.mov in ["quieto", "sube"], "movimiento conocido")
 			for p: Dictionary in m.piezas:
-				comprobar(a.pos.distance_to(p.pos) > 150.0, "semilla %d: aro %s pegado a %s" % [semilla, a.pos, p.nombre])
+				comprobar(a.pos.distance_to(p.pos) > 190.0, "semilla %d: aro %s pegado a %s" % [semilla, a.pos, p.nombre])
 	comprobar(Generador.generar(4).piezas == Generador.generar(4).piezas, "los aros no cambian el resto del mapa")
 
 
