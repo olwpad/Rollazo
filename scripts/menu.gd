@@ -85,8 +85,9 @@ func _actualizar() -> void:
 	$Columpio.visible = not en_sala  # en la sala, los únicos mocos son los jugadores
 	$Pie.visible = not online
 	$Salir.visible = online
-	$Sala.position = Vector2(190, 490) if en_sala else Vector2(740, 560)
-	$Sala.separacion = 205.0 if en_sala else 135.0
+	$Sala.position = Vector2(265, 390) if en_sala else Vector2(740, 560)
+	$Sala.separacion = 250.0 if en_sala else 135.0
+	$Sala.tarjetas = en_sala
 	var solo_yo: Array[int] = [1]
 	$Sala.mostrar(Red.ids if online else solo_yo, multiplayer.get_unique_id(), Red.listos)
 	if not en_sala:

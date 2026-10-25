@@ -1,9 +1,13 @@
-# La azotea del menú con 4 huecos: cuando alguien se une, su moco cae de un salto con su
-# color; los huecos libres son un charco con la silueta punteada del moco que falta.
-# Encima de quien está listo, un sello "¡LISTO!". Así ves quién ha entrado antes de empezar.
+# Los 4 huecos de jugador, en dos formas:
+# - En el menú principal: la azotea pequeña; cuando alguien entra, su moco cae de un salto
+#   con su color, y los huecos libres son un charco.
+# - Dentro de una partida (tarjetas = true): una tarjeta de papel por jugador con su moco,
+#   su nombre y su estado; sello "¡LISTO!" para quien está listo y hueco punteado si falta gente.
 extends Node2D
 
 const FUENTE := preload("res://assets/fuentes/Bangers-Regular.ttf")
+const TARJETA := Vector2(200, 240)
+const CREMA := Color("fffaf4")
 
 var separacion := 135.0:  # el menú la ensancha en la sala online
 	set(v):
@@ -11,7 +15,13 @@ var separacion := 135.0:  # el menú la ensancha en la sala online
 		for i in huecos.size():
 			huecos[i].nodo.position = Vector2(i * separacion, 0)
 		queue_redraw()
-var huecos: Array[Dictionary] = []  # {nodo, moco: MocoVisual, nombre: Label, sello: Label, ocupado: bool}
+var tarjetas := false:
+	set(v):
+		tarjetas = v
+		for h in huecos:
+			h.nombre.add_theme_color_override("font_color", Acuarela.CIRUELA if v else CREMA)
+		queue_redraw()
+var huecos: Array[Dictionary] = []  # {nodo, moco: MocoVisual, nombre, estado, sello: Label, ocupado: bool}
 
 
 func _ready() -> void:
@@ -25,17 +35,18 @@ func _ready() -> void:
 		moco.color = Jugador.COLORES[i]
 		moco.visible = false
 		grande.add_child(moco)
-		var nombre := _etiqueta(Vector2(-90, 40), 22, Color("fffaf4"))
-		var sello := _etiqueta(Vector2(-90, -120), 30, Acuarela.MENTA)
+		var nombre := _etiqueta(Vector2(-90, 40), 22, CREMA)
+		var estado := _etiqueta(Vector2(-90, 72), 18, Acuarela.AZOTEA)
+		var sello := _etiqueta(Vector2(-90, 74), 30, Acuarela.MENTA)
 		sello.text = "¡LISTO!"
 		sello.pivot_offset = sello.size / 2.0
 		sello.rotation = -0.18  # torcido, como un sello puesto a mano
 		sello.visible = false
 		hueco.add_child(grande)
-		hueco.add_child(nombre)
-		hueco.add_child(sello)
+		for l in [nombre, estado, sello]:
+			hueco.add_child(l)
 		add_child(hueco)
-		huecos.append({"nodo": hueco, "moco": moco, "nombre": nombre, "sello": sello, "ocupado": false})
+		huecos.append({"nodo": hueco, "moco": moco, "nombre": nombre, "estado": estado, "sello": sello, "ocupado": false})
 	var solo_yo: Array[int] = [1]
 	mostrar(solo_yo, 1)
 
@@ -61,17 +72,20 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 		h.moco.visible = ocupado
 		h.ocupado = ocupado
 		if not ocupado:
-			h.nombre.text = "ESPERANDO UN MOCO"
+			h.nombre.text = "HUECO LIBRE" if tarjetas else "ESPERANDO…"
 		elif ids[i] == mi_id:
 			h.nombre.text = "TÚ"
 		else:
 			h.nombre.text = "JUGADOR %d" % (i + 1)
 		h.nombre.modulate.a = 1.0 if ocupado else 0.6
-		var listo: bool = ocupado and listos.get(ids[i], false)
+		var listo: bool = tarjetas and ocupado and listos.get(ids[i], false)
 		if listo and not h.sello.visible:  # el sello cae de golpe y se asienta
 			h.sello.scale = Vector2(1.8, 1.8)
 			create_tween().tween_property(h.sello, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		h.sello.visible = listo
+		h.estado.text = ""
+		if tarjetas and ocupado and not listo:
+			h.estado.text = "ANFITRIÓN" if ids[i] == 1 else "PENSÁNDOSELO…"
 	queue_redraw()
 
 
@@ -81,6 +95,10 @@ func ocupados() -> int:
 
 func etiqueta(i: int) -> String:
 	return huecos[i].nombre.text
+
+
+func estado(i: int) -> String:
+	return huecos[i].estado.text
 
 
 func sello_visible(i: int) -> bool:
@@ -96,18 +114,30 @@ func _caer(moco: MocoVisual) -> void:
 
 
 func _draw() -> void:
+	if tarjetas:
+		_dibujar_tarjetas()
+		return
 	var izq := -separacion * 0.8
-	var ancho := separacion * 4.45
-	var azotea := PackedVector2Array([Vector2(izq, 22), Vector2(izq + ancho, 14), Vector2(izq + ancho, 400), Vector2(izq, 400)])
+	var azotea := PackedVector2Array([Vector2(izq, 22), Vector2(izq + separacion * 4.45, 14), Vector2(izq + separacion * 4.45, 400), Vector2(izq, 400)])
 	Acuarela.pintar(self, azotea, Acuarela.AZOTEA, 11)
 	for i in huecos.size():
-		if not huecos[i].ocupado:  # charco del color que tendrá quien entre, y su silueta punteada
-			var x := i * separacion
+		if not huecos[i].ocupado:  # charco del color que tendrá quien entre
 			var charco := PackedVector2Array()
 			for k in 14:
 				var a := TAU * k / 14
-				charco.append(Vector2(x + cos(a) * 30.0, 22.0 + sin(a) * 8.0))
+				charco.append(Vector2(i * separacion + cos(a) * 30.0, 22.0 + sin(a) * 8.0))
 			draw_colored_polygon(Tinta.irregular(charco, i, 2.0, 8.0), Color(Jugador.COLORES[i], 0.45))
-			for k in 16:
-				if k % 2 == 0:
-					draw_arc(Vector2(x, 22 - MocoVisual.RADIO * 1.6), MocoVisual.RADIO * 1.6, TAU * k / 16, TAU * (k + 1) / 16, 4, Color(1, 0.98, 0.957, 0.6), 2.5)
+
+
+# Una tarjeta de papel por hueco, cada una un poco torcida; la libre, solo el borde punteado.
+func _dibujar_tarjetas() -> void:
+	for i in huecos.size():
+		draw_set_transform(Vector2(i * separacion, 5),[-0.03, 0.025, -0.015, 0.03][i], Vector2.ONE)
+		var r := Rect2(-TARJETA / 2.0, TARJETA)
+		if huecos[i].ocupado:
+			draw_rect(r, Color(CREMA, 0.95))
+		else:
+			var esquinas := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
+			for k in 4:
+				draw_dashed_line(esquinas[k], esquinas[k + 1], Color(CREMA, 0.8), 3.0, 12.0)
+	draw_set_transform(Vector2.ZERO)

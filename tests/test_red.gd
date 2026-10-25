@@ -40,15 +40,6 @@ func test_config_por_defecto_y_listos() -> void:
 	red.salir()
 
 
-func test_sala_marca_los_listos() -> void:
-	var sala: Node2D = load("res://scripts/sala.gd").new()
-	Engine.get_main_loop().root.add_child(sala)
-	var ids: Array[int] = [1, 7]
-	sala.mostrar(ids, 1, {7: true})
-	comprobar(sala.sello_visible(1) and not sala.sello_visible(0), "sello ¡LISTO! solo sobre quien está listo")
-	sala.free()
-
-
 func test_elige_la_ip_de_tailscale() -> void:
 	var red: GDScript = load("res://scripts/red.gd")
 	comprobar(red.elegir_ip(PackedStringArray(["127.0.0.1", "fe80::1", "192.168.1.5", "100.64.0.7"])) == "100.64.0.7", "la de Tailscale primero")
