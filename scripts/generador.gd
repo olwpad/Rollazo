@@ -11,24 +11,45 @@ extends RefCounted
 const NOMBRE := "LA AZOTEA"  # el nombre que sale en las postales
 const LARGO := 7600.0  # a partir de aquí se pone la meta
 const SUELO_Y := 690.0  # centro de los descansos (la parte de arriba queda en y=670)
+const FORMAS := ["horizontal", "torre", "bajada", "montaña", "hibrido"]
 const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 px)
 
 
 # Devuelve un Dictionary con:
 #   piezas: [{nombre, pos, poly, enganchable}], controles: [Vector2], meta: Vector2,
-#   caida_x, caida_ancho, camino: [Vector2] (techos principales, para los tests),
+#   forma, inicio, limites: Rect2, meta_tam, caida_y, caida_x, caida_ancho, camino: [Vector2] (techos principales, para los tests),
 #   salidas_descanso: [Vector2] (borde de cada descanso, para los tests)
-static func generar(semilla: int) -> Dictionary:
+static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
 	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": []}
-	var x := INICIO_FIN
+	m.forma = "horizontal"  # shortcut: solo hay tramo horizontal, cualquier otra forma cae aquí
+	m.inicio = Vector2(200, 640)
+	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0))
+	var x := _tramo_horizontal(m, rng, Vector2(INICIO_FIN, SUELO_Y), LARGO - INICIO_FIN).x
+	_quitar_estorbos(m)
+	var suelo_meta := Vector2(x + 450.0, 720.0)  # el borde queda a 100 px del último techo
+	_pieza(m, "SueloMeta", suelo_meta, _caja(700.0, 80.0), false)
+	m.meta = suelo_meta + Vector2(150.0, -120.0)
+	m.caida_x = m.meta.x / 2.0  # de x=-2000 a 2000 más allá de la meta
+	m.caida_ancho = m.meta.x + 4000.0
+	m.caida_y = 1300.0
+	m.meta_tam = Vector2(220, 1600)
+	m.limites = Rect2(0, 0, m.meta.x + 600.0, 1300.0)
+	m.aros = _aros(semilla, m)
+	return m
+
+
+# El bucle de techos y descansos, desde el borde `desde` del suelo anterior y a lo largo de
+# `largo` px en x. Devuelve el borde donde acaba.
+static func _tramo_horizontal(m: Dictionary, rng: RandomNumberGenerator, desde: Vector2, largo: float) -> Vector2:
+	var x := desde.x
+	var hasta := desde.x + largo
 	var desde_descanso := 0
 	var desde_burbuja := 0  # techos sin burbuja: a los 3, sale una seguro
 	var recien_descanso := true  # el suelo de salida cuenta como descanso
-	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0))
-	while x < LARGO:
-		if desde_descanso >= 3 and x < LARGO - 1200.0 and (desde_descanso >= 4 or rng.randf() < 0.5):  # al final, tras un descanso no quedaría techo
+	while x < hasta:
+		if desde_descanso >= 3 and x < hasta - 1200.0 and (desde_descanso >= 4 or rng.randf() < 0.5):  # al final, tras un descanso no quedaría techo
 			var ancho := rng.randf_range(220.0, 300.0)
 			var centro := x + rng.randf_range(220.0, 280.0)
 			_pieza(m, "Descanso", Vector2(centro, SUELO_Y), _caja(ancho, 40.0), false)
@@ -65,14 +86,7 @@ static func generar(semilla: int) -> Dictionary:
 		x = pos.x
 		desde_descanso += 1
 		recien_descanso = false
-	_quitar_estorbos(m)
-	var suelo_meta := Vector2(x + 450.0, 720.0)  # el borde queda a 100 px del último techo
-	_pieza(m, "SueloMeta", suelo_meta, _caja(700.0, 80.0), false)
-	m.meta = suelo_meta + Vector2(150.0, -120.0)
-	m.caida_x = m.meta.x / 2.0  # de x=-2000 a 2000 más allá de la meta
-	m.caida_ancho = m.meta.x + 4000.0
-	m.aros = _aros(semilla, m)
-	return m
+	return Vector2(x, desde.y)
 
 
 # Aros de fuego en el hueco entre dos techos, por donde pasa el vuelo. Van con su propio

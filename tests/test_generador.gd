@@ -2,15 +2,15 @@ extends Caso
 
 
 func test_misma_semilla_mismo_mapa() -> void:
-	var a := Generador.generar(42)
-	var b := Generador.generar(42)
+	var a := Generador.generar(42, "horizontal")
+	var b := Generador.generar(42, "horizontal")
 	comprobar(var_to_str(a) == var_to_str(b), "los 4 PCs construyen lo mismo")
-	comprobar(var_to_str(a) != var_to_str(Generador.generar(43)), "otra semilla, otro mapa")
+	comprobar(var_to_str(a) != var_to_str(Generador.generar(43, "horizontal")), "otra semilla, otro mapa")
 
 
 func test_largo_con_controles_y_caida() -> void:
 	for semilla in 20:
-		var m := Generador.generar(semilla)
+		var m := Generador.generar(semilla, "horizontal")
 		comprobar(m.meta.x >= 7500.0, "largo (semilla %d, meta %.0f)" % [semilla, m.meta.x])
 		comprobar(m.controles.size() >= 2, "puntos de control (semilla %d)" % semilla)
 		comprobar(m.caida_x - m.caida_ancho / 2.0 < 0.0 and m.caida_x + m.caida_ancho / 2.0 > m.meta.x + 500.0, "la caída cubre todo (semilla %d)" % semilla)
@@ -18,7 +18,7 @@ func test_largo_con_controles_y_caida() -> void:
 
 func test_no_todo_son_rectangulos() -> void:
 	var raros := 0
-	for p in Generador.generar(7).piezas:
+	for p in Generador.generar(7, "horizontal").piezas:
 		var poly: PackedVector2Array = p.poly
 		if poly.size() != 4 or not is_zero_approx(poly[0].y - poly[1].y):
 			raros += 1
@@ -29,7 +29,7 @@ func test_no_todo_son_rectangulos() -> void:
 # y desde cada descanso se alcanza el techo siguiente con el papel.
 func test_siempre_alcanzable() -> void:
 	for semilla in 50:
-		var m := Generador.generar(semilla)
+		var m := Generador.generar(semilla, "horizontal")
 		var camino: Array = m.camino
 		for i in range(1, camino.size()):
 			var d: Vector2 = camino[i] - camino[i - 1]
@@ -54,7 +54,7 @@ func _alto(p: Dictionary) -> float:
 # El bot se estrellaba en los embudos: el pilar debe dejar pasar un columpio normal.
 func test_embudos_pasables() -> void:
 	for semilla in 60:
-		var m := Generador.generar(semilla)
+		var m := Generador.generar(semilla, "horizontal")
 		for pilar in _piezas(m, "Pilar"):
 			var techo: Vector2 = m.camino.reduce(func(a: Vector2, c: Vector2) -> Vector2: return c if absf(c.x - pilar.pos.x) < absf(a.x - pilar.pos.x) else a)
 			comprobar(_alto(pilar) - techo.y >= 230.0, "semilla %d: hueco del embudo %.0f px" % [semilla, _alto(pilar) - techo.y])
@@ -63,7 +63,7 @@ func test_embudos_pasables() -> void:
 
 func test_sin_bloques_encima_de_descansos_ni_atajos_tras_el_ultimo_techo() -> void:
 	for semilla in 60:
-		var m := Generador.generar(semilla)
+		var m := Generador.generar(semilla, "horizontal")
 		for b in _piezas(m, "Bloque"):
 			for d in _piezas(m, "Descanso"):
 				var encima: bool = absf(b.pos.x - d.pos.x) < 220.0 and d.pos.y - b.pos.y < 250.0
@@ -74,7 +74,17 @@ func test_sin_bloques_encima_de_descansos_ni_atajos_tras_el_ultimo_techo() -> vo
 
 func test_suelo_de_meta_cerca_del_ultimo_techo() -> void:
 	for semilla in 60:
-		var m := Generador.generar(semilla)
+		var m := Generador.generar(semilla, "horizontal")
 		var suelo: Dictionary = _piezas(m, "SueloMeta")[0]
 		var borde: float = suelo.pos.x - 350.0
 		comprobar(borde - m.camino.back().x <= 150.0, "semilla %d: hueco hasta el suelo de meta %.0f px" % [semilla, borde - m.camino.back().x])
+
+
+func test_campos_nuevos_del_mapa() -> void:
+	var m := Generador.generar(3, "horizontal")
+	comprobar(m.forma == "horizontal", "forma")
+	comprobar(m.inicio == Vector2(200, 640), "salida como hasta ahora")
+	comprobar(m.caida_y >= 1200.0, "caída por debajo de todo")
+	for p in m.piezas:
+		comprobar(m.limites.grow(1.0).has_point(p.pos), "pieza %s dentro de los límites" % p.nombre)
+	comprobar(m.limites.has_point(m.meta), "meta dentro")
