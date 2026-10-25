@@ -12,8 +12,9 @@ func _process(_d: float) -> bool:
 	f += 1
 	if f == 1:
 		var red: Node = root.get_node("Red")
-		red.semilla = 6  # sale bajada, con sierras
+		red.semilla = 6
 		nivel = load("res://scenes/recorrido_prueba.tscn").instantiate()
+		nivel.forma_forzada = "bajada"  # siempre con sierras
 		root.add_child(nivel)
 	elif f == 10:
 		yo = nivel.get_node("Jugadores/1")
