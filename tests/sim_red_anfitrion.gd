@@ -32,6 +32,8 @@ func _process(delta: float) -> bool:
 	var jugadores := current_scene.get_node_or_null("Jugadores") if current_scene else null
 	if not vistos_dos and espera - t_carrera > 1.5:
 		vistos_dos = true
+		if not red.multiplayer.refuse_new_connections:
+			fallos.append("con la carrera empezada no debería entrar nadie más")
 		if jugadores == null or jugadores.get_node_or_null("1") == null or jugadores.get_node_or_null(str(id_cliente)) == null:
 			fallos.append("el anfitrión no ve los 2 mocos")
 		else:  # el anfitrión llega a la meta; falta el cliente

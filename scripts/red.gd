@@ -41,6 +41,7 @@ func unirse(ip: String, puerto: int = PUERTO) -> Error:
 func salir() -> void:
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	multiplayer.refuse_new_connections = false
 	ids.clear()
 	jugadores_cambiaron.emit()
 
@@ -52,6 +53,8 @@ func es_online() -> bool:
 # Solo el anfitrión la llama; "call_local" hace que también se ejecute en su propio PC.
 @rpc("authority", "call_local", "reliable")
 func empezar_carrera() -> void:
+	if multiplayer.is_server():
+		multiplayer.refuse_new_connections = true  # quien llegue tarde no tendría moco
 	get_tree().change_scene_to_file(RECORRIDO)
 
 
