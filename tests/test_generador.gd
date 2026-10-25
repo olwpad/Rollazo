@@ -183,7 +183,9 @@ func test_montana_e_hibridos_se_pueden_recorrer() -> void:
 			for i in range(1, camino.size()):
 				var d: Vector2 = camino[i] - camino[i - 1]
 				recorrido += d.length()
-				comprobar(d.length() <= 680.0, "%s %d: paso %d de %s a %s" % [forma, semilla, i, camino[i - 1], camino[i]])
+				# O se llega andando: hay un descanso más adelante desde el que se alcanza (una torre que empieza por la derecha)
+				var desde_descanso: bool = m.salidas_descanso.any(func(b: Vector2) -> bool: return b.x > camino[i - 1].x and b.distance_to(camino[i]) <= PapelRope.LARGO_MAX - 20.0)
+				comprobar(d.length() <= 680.0 or desde_descanso, "%s %d: paso %d de %s a %s" % [forma, semilla, i, camino[i - 1], camino[i]])
 			var salidas: Array = m.salidas_descanso
 			for k in salidas.size() - 1:  # el último descanso puede ser el de arriba de una torre final
 				var borde: Vector2 = salidas[k]
@@ -258,3 +260,15 @@ func test_formas_con_pesos() -> void:
 	comprobar(cuenta.get("torre", 0) >= 60 and cuenta.get("torre", 0) <= 140, "torre ~10 %%: %d de 1000" % cuenta.get("torre", 0))
 	comprobar(cuenta.get("horizontal", 0) >= 250 and cuenta.get("horizontal", 0) <= 350, "horizontal ~30 %%: %d de 1000" % cuenta.get("horizontal", 0))
 	print("    formas en 1000 semillas: ", cuenta)
+
+
+# Las torres ya no salen todas iguales: cambian de tamaño y de número de salientes.
+func test_torres_distintas() -> void:
+	var tamanos := {}
+	var salientes := {}
+	for semilla in 30:
+		var m := Generador.generar(semilla, "torre")
+		tamanos[m.limites.size.round()] = true
+		salientes[m.camino.size()] = true
+	comprobar(tamanos.size() >= 3, "tamaños de torre distintos: %d" % tamanos.size())
+	comprobar(salientes.size() >= 3, "número de salientes distintos: %d" % salientes.size())

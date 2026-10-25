@@ -14,13 +14,18 @@ const SUELO_Y := 690.0  # centro de los descansos (la parte de arriba queda en y
 const FORMAS := ["horizontal", "torre", "bajada", "montaña", "hibrido"]
 const PESOS_FORMA := {"horizontal": 30, "bajada": 25, "hibrido": 20, "montaña": 15, "torre": 10}  # en %
 const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 px)
-# Torre. Con estas medidas dos salientes seguidos quedan a <= 372 px (el papel llega a 420)
+# Torre. Cada torre sortea su anchura y lo que sube cada saliente, con dos salientes seguidos
+# siempre a <= SALIENTE_ALCANCE (el papel llega a 420)
 const TORRE_ALTO := 2400.0  # lo que sube el pozo desde el suelo
-const POZO_ANCHO := 440.0  # hueco entre las dos paredes
+const TORRE_ALTO_VARIA := Vector2(1.0, 1.3)  # la torre sola: por cuánto se multiplica TORRE_ALTO
+const POZO_ANCHO := Vector2(420.0, 460.0)  # hueco entre las dos paredes (mín, máx)
 const PARED_ANCHO := 60.0
 const SALIENTE_ANCHO := Vector2(140.0, 170.0)  # (mín, máx)
-const SALIENTE_SUBIDA := Vector2(180.0, 220.0)  # de un saliente al siguiente, en el otro lado
+const SALIENTE_SUBIDA := Vector2(180.0, 240.0)  # lo que sube cada saliente sobre el anterior, en el otro lado; con menos, el descanso de arriba queda pegado al último
+const SUBIDA_JUEGO := 20.0  # cuánto se aparta cada uno de esa media
+const SALIENTE_ALCANCE := 372.0
 const DESCANSO_TORRE_ANCHO := 180.0
+const DESCANSO_FINAL_IZQ := 260.0  # el de arriba empieza a esto de la pared izquierda: en un pozo ancho el salto final no crece
 # Bajada. Se sale BAJADA_ALTO px más arriba que en horizontal y se acaba a la altura de siempre
 const BAJADA_ALTO := 1600.0
 const ESCALON_X := Vector2(500.0, 600.0)  # de un techo al siguiente (mín, máx)
@@ -95,7 +100,7 @@ static func forma_de(semilla: int) -> String:
 static func _tramos(forma: String, rng: RandomNumberGenerator) -> Array:
 	match forma:
 		"torre":
-			return [["torre", TORRE_ALTO]]
+			return [["torre", TORRE_ALTO * rng.randf_range(TORRE_ALTO_VARIA.x, TORRE_ALTO_VARIA.y)]]
 		"bajada":
 			return [["bajada", BAJADA_ALTO]]
 		"montaña":  # se sube por un lado del muro y se baja por el otro
@@ -237,11 +242,18 @@ static func _tramo_bajada(m: Dictionary, rng: RandomNumberGenerator, desde: Vect
 # se sale por el último descanso, arriba a la derecha. Devuelve el borde de ese descanso.
 static func _tramo_torre(m: Dictionary, rng: RandomNumberGenerator, desde: Vector2, alto: float) -> Vector2:
 	var izq := desde.x + PARED_ANCHO
-	var der := izq + POZO_ANCHO
+	var pozo := rng.randf_range(POZO_ANCHO.x, POZO_ANCHO.y)
+	var der := izq + pozo
+	# Cuanto más ancho el pozo, menos sube cada saliente: si no, no llegaría el papel
+	var sube_max := minf(SALIENTE_SUBIDA.y, sqrt(SALIENTE_ALCANCE ** 2 - (pozo - SALIENTE_ANCHO.x) ** 2))
+	var sube := rng.randf_range(SALIENTE_SUBIDA.x, sube_max)
 	var tope := desde.y - alto
-	_pieza(m, "SueloPozo", Vector2((desde.x + der + PARED_ANCHO) / 2.0, desde.y), _caja(der + PARED_ANCHO - desde.x, 40.0), false)
-	var y := desde.y - 20.0 - rng.randf_range(300.0, 340.0)  # el primero, a tiro desde el suelo
-	var lado := 0  # 0 = izquierda (al alcance desde el suelo de salida), 1 = derecha
+	# 10 px más bajo que un descanso: así queda a ras del suelo de salida (y=680) y no hay escalón al entrar andando
+	_pieza(m, "SueloPozo", Vector2((desde.x + der + PARED_ANCHO) / 2.0, desde.y + 10.0), _caja(der + PARED_ANCHO - desde.x, 40.0), false)
+	var y := desde.y - 20.0 - rng.randf_range(SUELO_BAJO_TECHO.x, SUELO_BAJO_TECHO.y)  # el primero, a tiro desde el suelo
+	var lado := rng.randi_range(0, 1)  # 0 = izquierda, 1 = derecha; desde el suelo del pozo se llega a los dos
+	if lado == 1:  # el suelo de antes sigue por el del pozo: su borde de verdad es la pared derecha
+		m.salidas_descanso[-1] = Vector2(der, desde.y - 20.0)
 	var desde_descanso := 0
 	while true:
 		var ancho := rng.randf_range(SALIENTE_ANCHO.x, SALIENTE_ANCHO.y)
@@ -250,17 +262,17 @@ static func _tramo_torre(m: Dictionary, rng: RandomNumberGenerator, desde: Vecto
 		m.camino.append(pos)
 		desde_descanso += 1
 		lado = 1 - lado
-		y -= rng.randf_range(SALIENTE_SUBIDA.x, SALIENTE_SUBIDA.y)
+		y -= rng.randf_range(maxf(sube - SUBIDA_JUEGO, SALIENTE_SUBIDA.x), minf(sube + SUBIDA_JUEGO, sube_max))
 		if pos.y < tope and lado == 1:  # el último a la izquierda: el descanso final va a la derecha
 			break
-		# Con TORRE_ALTO 2400 caben siempre 2 descansos más el final (3 controles)
+		# Con TORRE_ALTO caben siempre 2 descansos más el final (3 controles)
 		if desde_descanso >= 3 and y > tope + 200.0 and (desde_descanso >= 4 or rng.randf() < 0.5):
 			# Apoyado sobre el saliente de ese lado de debajo: si quedara hueco entre los dos, el bot (y un moco) se encajaba ahí
 			_descanso_torre(m, izq, der, lado, m.camino[-2].y - 40.0, DESCANSO_TORRE_ANCHO)
 			desde_descanso = 0
 	# El último tapa la pared derecha para salir andando hacia la meta
 	var centro_y: float = m.camino[-2].y - 40.0  # igual, sobre el último de la derecha; se sube desde el último saliente
-	_descanso_torre(m, izq, der + PARED_ANCHO, 1, centro_y, DESCANSO_TORRE_ANCHO + PARED_ANCHO)
+	_descanso_torre(m, izq, der + PARED_ANCHO, 1, centro_y, der + PARED_ANCHO - izq - DESCANSO_FINAL_IZQ)
 	m.salidas_descanso[-1] = Vector2(der + PARED_ANCHO, centro_y - 20.0)  # de este se sale andando por la derecha
 	_pieza(m, "Pared", Vector2(desde.x + PARED_ANCHO / 2.0, (tope - 400.0 + desde.y - 260.0) / 2.0), _caja(PARED_ANCHO, desde.y - 260.0 - tope + 400.0), false)  # abajo deja la entrada
 	_pieza(m, "Pared", Vector2(der + PARED_ANCHO / 2.0, (centro_y + 20.0 + desde.y) / 2.0), _caja(PARED_ANCHO, desde.y - centro_y - 20.0), false)
@@ -330,8 +342,8 @@ static func _sierras(semilla: int, m: Dictionary) -> Array:
 		var a: Vector2 = m.camino[i - 1]
 		var b: Vector2 = m.camino[i]
 		var pos := Vector2((a.x + b.x) / 2.0, maxf(a.y, b.y) + SIERRA_BAJO_TECHO)
-		# b.x - a.x > 300: un paso de torre va de pared a pared, casi en vertical
-		if b.x - a.x > 300.0 and libre.call(pos) and m.huecos_sierra.all(func(h: Vector2) -> bool: return pos.distance_to(h) > 200.0):
+		# Un paso de torre sube >= 150 px (en horizontal, como mucho 130): por ahí se trepa
+		if b.x - a.x > 300.0 and b.y - a.y > -140.0 and libre.call(pos) and m.huecos_sierra.all(func(h: Vector2) -> bool: return pos.distance_to(h) > 200.0):
 			llano.append(pos)
 	var sitios := []
 	for k in mini(3, bajada.size()):
