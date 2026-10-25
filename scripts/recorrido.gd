@@ -401,6 +401,7 @@ func _al_tocar_aro(cuerpo: Node2D, _aro: Area2D) -> void:
 func _al_tocar_sierra(cuerpo: Node2D, _sierra: Sierra) -> void:
 	if not (cuerpo is Jugador and multiplayer.is_server()) or cuerpo.congelado:
 		return
+	Sonidos.tocar("sierra", cuerpo.global_position)  # solo anfitrión: un "zing" extra, el resto llega por "rotura"
 	cuerpo.efecto.rpc("rotura", cuerpo.global_position)
 	if Red.es_online() and cuerpo.id_dueno() in clasificacion.llegadas:
 		_mandar_a_mirar(cuerpo as Jugador)
@@ -417,6 +418,8 @@ func burbuja_cogida(nombre_burbuja: String) -> void:
 
 func _al_pasar_control(cuerpo: Node2D, control: Area2D) -> void:
 	if cuerpo is Jugador and multiplayer.is_server():
+		if ultimos_controles.get(cuerpo.name) != control.global_position:  # solo al estrenarlo
+			Sonidos.tocar("control", control.global_position)
 		ultimos_controles[cuerpo.name] = control.global_position
 
 

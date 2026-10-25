@@ -22,6 +22,7 @@ func cuenta_atras(segundos: float) -> void:
 		return
 	var texto := str(ceili(segundos))
 	if texto != cuenta.text and segundos <= 5.0:
+		Sonidos.tocar("cuenta")
 		cuenta.scale = Vector2(1.4, 1.4)
 		create_tween().tween_property(cuenta, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	cuenta.text = texto

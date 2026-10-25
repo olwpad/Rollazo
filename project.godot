@@ -19,6 +19,7 @@ config/features=PackedStringArray("4.7")
 Perfil="*res://scripts/perfil.gd"
 Red="*res://scripts/red.gd"
 Musica="*res://scripts/musica.gd"
+Sonidos="*res://scripts/sonidos.gd"
 
 [display]
 
