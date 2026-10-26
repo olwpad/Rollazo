@@ -114,7 +114,7 @@ func anotar_torneo(gane: bool) -> Array:
 	return todas.filter(func(c: String) -> bool: return desbloqueado(c) and not c in antes)
 
 
-# clave: "color" (índice), "pelo" o "sombrero". Lo que tiene candado no se pone.
+# clave: "color" (índice), "pelo", "sombrero", "cara" o "ropa". Lo que tiene candado no se pone.
 func poner(clave: String, valor: Variant) -> bool:
 	var prueba := aspecto.duplicate()
 	prueba[clave] = valor

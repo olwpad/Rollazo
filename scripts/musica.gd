@@ -2,13 +2,12 @@
 # escenas, así la canción no se corta al pasar del menú a la carrera.
 extends Node
 
+signal cambio_silencio(callada: bool)  # el icono y el deslizador del menú se repintan con esto
+
 const CANCIONES := {
 	"menu": "res://assets/musica/menu.ogg",
 	"carrera": "res://assets/musica/carrera.ogg",
 }
-
-signal cambio_silencio(callada: bool)  # el icono y el deslizador del menú se repintan con esto
-
 const VOLUMEN := -8.0  # de fondo: que no tape los efectos ni la charla por Discord
 
 var reproductor := AudioStreamPlayer.new()

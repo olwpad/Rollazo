@@ -1,6 +1,7 @@
 # "TU MOCO": tu moco de pie en la azotea y, al lado, flechas ‹ › para un famoso ya montado o pieza a pieza
 # (sombrero, pelo, cara, ropa y color).
 # Lo que tiene candado se puede ver puesto, pero solo se guarda lo desbloqueado.
+# Pantalla de UI construida por código (no hay .tscn de las filas); lee y guarda en el autoload Perfil.
 extends Control
 
 signal cerrado
@@ -25,27 +26,7 @@ func _ready() -> void:
 	grande.add_child(moco)
 	add_child(grande)
 	for i in FILAS.size():
-		var fila := Control.new()
-		fila.name = FILAS[i]
-		fila.position = Vector2(CARTA_X, ARRIBA + i * PASO)
-		fila.size = CARTA
-		add_child(fila)
-		_etiqueta(fila, "Titulo", FILAS[i].to_upper(), 16, Acuarela.AZOTEA, Vector2(0, 4))
-		_etiqueta(fila, "Valor", "", 24 if FILAS[i] == "Famoso" else 26, Acuarela.CIRUELA, Vector2(0, 26))
-		_etiqueta(fila, "Requisito", "", 17, Acuarela.CIRUELA, Vector2(14, CARTA.y + 2))  # ciruela: se lee también sobre el sol
-		for flecha in [["Menos", "‹", 8.0, -1], ["Mas", "›", CARTA.x - 52.0, 1]]:
-			var b := Button.new()
-			b.name = flecha[0]
-			b.text = flecha[1]
-			b.flat = true
-			b.focus_mode = Control.FOCUS_NONE
-			b.position = Vector2(flecha[2], 0)
-			b.size = Vector2(44, 66)
-			b.add_theme_font_size_override("font_size", 54)
-			for estado in ["font_color", "font_hover_color", "font_pressed_color"]:
-				b.add_theme_color_override(estado, Acuarela.ROSA.darkened(0.15 if estado == "font_hover_color" else 0.0))
-			b.pressed.connect(_mover.bind(FILAS[i], flecha[3]))
-			fila.add_child(b)
+		_crear_fila(i)
 	var listo := Button.new()
 	listo.name = "Listo"
 	listo.text = "‹ LISTO"
@@ -55,6 +36,31 @@ func _ready() -> void:
 	listo.pressed.connect(_cerrar)
 	add_child(listo)
 	visible = false
+
+
+# Una fila del menú: título, valor, requisito y flechas ‹ ›.
+func _crear_fila(i: int) -> void:
+	var fila := Control.new()
+	fila.name = FILAS[i]
+	fila.position = Vector2(CARTA_X, ARRIBA + i * PASO)
+	fila.size = CARTA
+	add_child(fila)
+	_etiqueta(fila, "Titulo", FILAS[i].to_upper(), 16, Acuarela.AZOTEA, Vector2(0, 4))
+	_etiqueta(fila, "Valor", "", 24 if FILAS[i] == "Famoso" else 26, Acuarela.CIRUELA, Vector2(0, 26))
+	_etiqueta(fila, "Requisito", "", 17, Acuarela.CIRUELA, Vector2(14, CARTA.y + 2))  # ciruela: se lee también sobre el sol
+	for flecha in [["Menos", "‹", 8.0, -1], ["Mas", "›", CARTA.x - 52.0, 1]]:
+		var b := Button.new()
+		b.name = flecha[0]
+		b.text = flecha[1]
+		b.flat = true
+		b.focus_mode = Control.FOCUS_NONE
+		b.position = Vector2(flecha[2], 0)
+		b.size = Vector2(44, 66)
+		b.add_theme_font_size_override("font_size", 54)
+		for estado in ["font_color", "font_hover_color", "font_pressed_color"]:
+			b.add_theme_color_override(estado, Acuarela.ROSA.darkened(0.15 if estado == "font_hover_color" else 0.0))
+		b.pressed.connect(_mover.bind(FILAS[i], flecha[3]))
+		fila.add_child(b)
 
 
 func abrir() -> void:
