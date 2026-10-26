@@ -1,4 +1,6 @@
-# Cronómetro en pantalla. CanvasLayer = se dibuja encima del juego, sin moverse con la cámara.
+# Interfaz en pantalla: cronómetro, cuenta atrás, poder, titulares, postal, marcador y podio.
+# Es un CanvasLayer (se dibuja encima del juego, sin moverse con la cámara). recorrido.gd le pide
+# cosas con sus funciones; aquí no hay lógica de juego.
 extends CanvasLayer
 
 @onready var tiempo: Label = $Tiempo

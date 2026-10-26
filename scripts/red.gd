@@ -1,5 +1,6 @@
-# Autoload "Red": crear partida, unirse y avisar de cambios. Es como un singleton de Java:
-# Godot crea un único nodo Red al arrancar y cualquier script puede usarlo por su nombre.
+# Autoload "Red": crear partida, unirse, config de la partida, listos y aspectos de los jugadores.
+# Es como un singleton de Java: Godot crea un único nodo Red al arrancar y cualquier script
+# puede usarlo por su nombre. El anfitrión (id 1) manda; los clientes reciben copias por @rpc.
 extends Node
 
 signal jugadores_cambiaron
@@ -11,13 +12,11 @@ const MAX_JUGADORES := 4
 const RECORRIDO := "res://scenes/recorrido_prueba.tscn"
 const MENU := "res://scenes/menu.tscn"
 const RONDAS := [3, 5, 7, 10]
+const CONFIG_INICIAL := {"rondas": 5, "poderes": true, "mapas": Temas.LISTA, "aros": false}  # aros de fuego quitados de momento: no convencieron
 
 var ids: Array[int] = []  # ids conectados, incluido el anfitrión (1). Solo fiable en el anfitrión.
-
-
 var semilla := 0  # del mapa de la carrera; la elige el anfitrión
 var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
-const CONFIG_INICIAL := {"rondas": 5, "poderes": true, "mapas": Temas.LISTA, "aros": false}  # aros de fuego quitados de momento: no convencieron
 var config := CONFIG_INICIAL.duplicate(true)  # la elige el anfitrión y la ven todos
 var aspectos := {}  # id -> {color, pelo, sombrero}: cómo va vestido cada moco
 var listos := {}  # id -> true; el anfitrión no hace falta, es quien pulsa empezar
@@ -29,6 +28,9 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(_al_caer_anfitrion)
 	multiplayer.connected_to_server.connect(func(): _mi_aspecto.rpc_id(1, Perfil.aspecto))
 	multiplayer.connection_failed.connect(func(): _al_caer_anfitrion("No se pudo conectar"))
+
+
+# --- Conexión ---
 
 
 func crear_partida(puerto: int = PUERTO) -> Error:
@@ -79,6 +81,9 @@ func es_online() -> bool:
 	return not multiplayer.multiplayer_peer is OfflineMultiplayerPeer
 
 
+# --- Empezar y terminar la carrera ---
+
+
 # Solo el anfitrión la llama; "call_local" hace que también se ejecute en su propio PC.
 @rpc("authority", "call_local", "reliable")
 func empezar_carrera(p_semilla: int) -> void:
@@ -95,6 +100,9 @@ func volver_a_sala() -> void:
 	if multiplayer.is_server():
 		multiplayer.refuse_new_connections = false  # entre torneos puede entrar alguien nuevo
 	get_tree().change_scene_to_file(MENU)
+
+
+# --- Configuración y listos de la sala ---
 
 
 func todos_listos() -> bool:
@@ -147,6 +155,9 @@ func _config(p_config: Dictionary, p_listos: Dictionary) -> void:
 	config_cambiada.emit()
 
 
+# --- Altas y bajas de jugadores ---
+
+
 func _al_conectar(id: int) -> void:
 	if multiplayer.is_server():
 		ids.append(id)
@@ -176,6 +187,9 @@ func _al_caer_anfitrion(motivo: String = "El anfitrión se ha ido") -> void:
 	ultimo_motivo = motivo  # la escena del menú aún no existe: se lo dejamos guardado
 	desconectado.emit(motivo)
 	get_tree().change_scene_to_file("res://scenes/menu.tscn")
+
+
+# --- Aspectos y colores ---
 
 
 # Cada cliente, al entrar, dice cómo va vestido; el anfitrión se lo cuenta a todos.

@@ -30,8 +30,11 @@ var tarjetas := false:
 		if capacidad != null:
 			capacidad.visible = not v
 		queue_redraw()
-var capacidad: Label = null
+var capacidad: Label = null  # el texto "HASTA 4 JUGADORES" del menú
 var huecos: Array[Dictionary] = []  # {nodo, grande, moco: MocoVisual, nombre, estado, sello: Label, ocupado, listo: bool}
+
+
+# --- Montaje ---
 
 
 func _ready() -> void:
@@ -96,6 +99,9 @@ func _etiqueta(pos: Vector2, tam: int, color: Color) -> Label:
 	return l
 
 
+# --- Qué se enseña ---
+
+
 # ids en el orden de la partida (el mismo que da los colores en la carrera).
 func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 	for i in huecos.size():
@@ -142,6 +148,9 @@ func estado(i: int) -> String:
 
 func sello_visible(i: int) -> bool:
 	return huecos[i].sello.visible
+
+
+# --- Dibujo ---
 
 
 # Cae desde arriba, rebota contra la azotea y se aplasta al tocarla.
