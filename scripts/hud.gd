@@ -15,6 +15,12 @@ func mostrar(t: float, mejor: float, con_mejor := true) -> void:
 	tiempo.text = "%s   mejor %s" % [formatear(t), formatear(mejor)] if con_mejor else formatear(t)
 
 
+# La barra de arriba: [[color, fraccion, es_el_mio], ...]; vacía = se esconde (postal, resultados).
+func progreso(puntos: Array) -> void:
+	$Progreso.visible = not puntos.is_empty()
+	$Progreso.poner(puntos)
+
+
 # Segundos que quedan tras llegar el primero; negativo = no hay cuenta. Late en los últimos 5.
 func cuenta_atras(segundos: float) -> void:
 	var cuenta: Label = $Cuenta

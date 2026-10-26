@@ -196,7 +196,7 @@ func test_montana_e_hibridos_se_pueden_recorrer() -> void:
 				comprobar(alcanza, "%s %d: desde el descanso en %s no se alcanza ningún techo" % [forma, semilla, borde])
 			comprobar(m.caida_y > m.limites.end.y, "%s %d: la franja que mata está bajo todo" % [forma, semilla])
 			comprobar(m.controles.size() >= 2, "%s %d: controles" % [forma, semilla])
-			comprobar(recorrido > 3000.0 and recorrido < 11000.0, "%s %d: largo como un mapa horizontal (%.0f)" % [forma, semilla, recorrido])
+			comprobar(recorrido > 3000.0 and recorrido < 11000.0 * Generador.MAS_LARGO, "%s %d: largo como un mapa horizontal (%.0f)" % [forma, semilla, recorrido])
 			for p in m.piezas:
 				comprobar(m.limites.has_point(p.pos), "%s %d: pieza %s dentro de los límites" % [forma, semilla, p.nombre])
 			comprobar(m.limites.has_point(m.meta) and m.limites.has_point(m.inicio), "meta y salida dentro")
@@ -331,3 +331,18 @@ func test_pozo_con_sierras_sin_tapar_el_camino() -> void:
 			var der := maxf(s.pos.x, s.pos.x + s.riel.x) + Sierra.RADIO
 			comprobar(der - izq <= 0.75 * r.size.x, "pozo %d: la sierra %s tapa el pozo" % [semilla, s.pos])
 	comprobar(con_sierras >= 20, "la mayoría de pozos llevan sierras (%d de 40)" % con_sierras)
+
+
+# La barra de progreso: 0 en la salida, 1 en la meta, y cada control más adelante que el anterior.
+func test_progreso_va_de_salida_a_meta() -> void:
+	for forma: String in Generador.FORMAS:
+		for semilla in 10:
+			var m := Generador.generar(semilla, forma)
+			var ruta := PackedVector2Array([m.inicio] + m.controles + [m.meta])
+			comprobar(BarraProgreso.fraccion(ruta, m.inicio) == 0.0 and BarraProgreso.fraccion(ruta, m.meta) == 1.0,
+					"%s %d: salida y meta" % [forma, semilla])
+			var antes := 0.0
+			for c: Vector2 in m.controles:
+				var f := BarraProgreso.fraccion(ruta, c)
+				comprobar(f >= antes, "%s %d: control %s va hacia atrás (%.2f < %.2f)" % [forma, semilla, c, f, antes])
+				antes = f

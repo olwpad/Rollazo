@@ -35,6 +35,7 @@ const BAJADA_ALTO := 1600.0
 const SUELO_BAJO_TECHO := Vector2(300.0, 340.0)  # de la parte de arriba de un suelo al techo a tiro (como en horizontal)
 const SIERRA_BAJO_TECHO := 260.0  # el hueco va en la parte baja del arco, como los aros
 const EMPALME_ANCHO := 250.0  # el descanso entre dos tramos
+const MAS_LARGO := 1.4  # todos los tramos x1.4: con las medidas de antes los mapas se hacían cortos
 # Cada mapa sortea dentro de estos rangos: así dos de la misma forma no se parecen
 const HORIZONTAL_LARGO := Vector2(0.75, 1.25)  # por cuánto se multiplica LARGO - INICIO_FIN
 const BAJADA_VARIA := Vector2(0.8, 1.4)  # por cuánto se multiplica BAJADA_ALTO
@@ -61,7 +62,7 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": [], "pozos": []}
 	m.forma = forma if forma in FORMAS else "horizontal"
 	m.huecos_sierra = []
-	var tramos := _tramos(m.forma, rng)
+	var tramos := _tramos(m.forma, rng).map(func(t: Array) -> Array: return [t[0], t[1] * MAS_LARGO])
 	var arriba: float = tramos[0][1] if tramos[0][0] in ["bajada", "pozo"] else 0.0
 	m.inicio = Vector2(200, 640 - arriba)
 	m.salidas_descanso.append(Vector2(INICIO_FIN, SUELO_Y - 20.0 - arriba))

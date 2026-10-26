@@ -98,6 +98,7 @@ func construir(semilla: int) -> void:
 	$Inicio.position = mapa.inicio
 	$SueloInicio.position = mapa.inicio + Vector2(100, 80)
 	$Meta.position = mapa.meta
+	hud.get_node("Progreso").ruta = PackedVector2Array([mapa.inicio] + mapa.controles + [mapa.meta])
 	$Meta/Forma.shape.size = mapa.meta_tam  # formas locales a la escena: no se cuelan en otro nivel
 	$Caida.position = Vector2(mapa.caida_x, mapa.caida_y)
 	$Caida/Forma.shape.size.x = mapa.caida_ancho
@@ -331,6 +332,7 @@ func _physics_process(delta: float) -> void:
 		hud.ocultar_ayuda()  # ya sabe lanzar el papel
 	if mio != null:
 		hud.poder(mio.poder, mio.poder_restante, Poderes.DURACION.get(mio.poder, 1.0))
+	hud.progreso([] if en_postal or en_resultados else _puntos_progreso(mio))
 	if Red.es_online() and multiplayer.is_server():  # en una torre se cae sobre un saliente, no a la Caida
 		for j in jugadores():
 			var id := j.id_dueno()
@@ -345,6 +347,18 @@ func _physics_process(delta: float) -> void:
 		desde_primero += delta
 		if clasificacion.todos_llegaron(Red.ids) or desde_primero >= ESPERA_TRAS_PRIMERO:
 			_terminar_ronda()
+
+
+# Un punto por moco en la barra; el mío el último para que se pinte encima.
+func _puntos_progreso(mio: Jugador) -> Array:
+	var ruta: PackedVector2Array = hud.get_node("Progreso").ruta
+	var puntos := []
+	for j in jugadores():
+		if j != mio:
+			puntos.append([colores.get(j.id_dueno(), Color.WHITE), BarraProgreso.fraccion(ruta, j.global_position), false])
+	if mio != null:
+		puntos.append([colores.get(mio.id_dueno(), Color.WHITE), BarraProgreso.fraccion(ruta, mio.global_position), true])
+	return puntos
 
 
 func _process(_delta: float) -> void:
