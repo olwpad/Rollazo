@@ -1,10 +1,14 @@
 # Dónde ponen los temas sus enganchables que se mueven (barcos, lianas, ropa, globos). Todo sale
 # de la semilla y del mapa, sin tocar el generador; si la zona que recorrería choca con el
 # mapa, ese elemento no se pone (mejor uno menos que uno que tape el camino).
+# Funciones static que devuelven listas de Dictionary; recorrido.gd crea los nodos con ellas.
 class_name Moviles
 extends RefCounted
 
 const VELOCIDAD_GLOBO := 70.0  # px/s: despacio, para engancharse con calma
+
+
+# --- Utilidades comunes ---
 
 
 # true si en `zona` hay una pieza del mapa, un control, una burbuja, un aro, una sierra, la salida o la meta
@@ -29,6 +33,9 @@ static func _rng(semilla: int, n: int) -> RandomNumberGenerator:
 
 static func superficie_y(m: Dictionary) -> float:
 	return maxf(m.caida_y - 300.0, m.limites.end.y)  # la misma que usa recorrido para pintar las olas
+
+
+# --- Un sitio por tipo de enganchable móvil (cada uno con su propio azar: hash(semilla, n)) ---
 
 
 # Barcos que van y vienen por el agua: {pos (en la línea de agua), riel (cuánto recorren), fase}.
@@ -89,6 +96,9 @@ static func globos(m: Dictionary, semilla: int) -> Array:
 				salida.append(g)
 				break
 	return salida
+
+
+# --- Dibujo compartido por los móviles ---
 
 
 # Mancha de acuarela dentro de un _draw: base opaca y capas translúcidas, como las piezas del mapa

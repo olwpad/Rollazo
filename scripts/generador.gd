@@ -5,6 +5,10 @@
 # Reglas para que siempre se pueda pasar: los techos del camino van a 520-640 px uno del
 # otro y a una altura que el papel alcanza; tras cada descanso, el techo siguiente queda a
 # tiro desde el suelo. Lo demás (atajos, bloques, embudos) es extra.
+#
+# Todo son funciones static que rellenan un Dictionary `m` (el mapa): no hay nodos aquí,
+# recorrido.gd lo convierte en escena. OJO: el orden de las llamadas a rng es parte del
+# formato (todos los PCs deben sortear igual); no reordenar ni añadir sorteos sin avisar.
 class_name Generador
 extends RefCounted
 
@@ -99,6 +103,9 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 	return m
 
 
+# --- Elección de forma y tramos ---
+
+
 # La forma que toca a esta semilla. Con su propio azar: añadir o quitar formas no cambia el interior de cada mapa.
 static func forma_de(semilla: int) -> String:
 	var elige := RandomNumberGenerator.new()
@@ -146,6 +153,9 @@ static func _empalme(m: Dictionary, tipo: String, fin: Vector2) -> Vector2:
 	return Vector2(centro.x + EMPALME_ANCHO / 2.0, fin.y)
 
 
+# --- Burbujas y empalmes entre tramos ---
+
+
 # Burbujas de poder en el vuelo entre dos techos seguidos, desde el techo `desde_i` del camino,
 # para los tramos que no las ponen solos. Por encima del hueco de la sierra, nunca dentro de una pieza.
 static func _burbujas_vuelo(m: Dictionary, rng: RandomNumberGenerator, desde_i: int) -> void:
@@ -166,6 +176,9 @@ static func _tipo_burbuja(m: Dictionary, rng: RandomNumberGenerator) -> String:
 	if not m.burbujas.is_empty():
 		tipos.erase(m.burbujas.back().tipo)
 	return tipos[rng.randi_range(0, tipos.size() - 1)]
+
+
+# --- Tramos por forma: horizontal, bajada, torre y pozo ---
 
 
 # El bucle de techos y descansos, desde el borde `desde` del suelo anterior y a lo largo de
@@ -357,6 +370,10 @@ static func _tramo_pozo(m: Dictionary, rng: RandomNumberGenerator, desde: Vector
 	return Vector2(der + PARED_ANCHO, fondo)
 
 
+# --- Extras con su propio azar: límites, aros y sierras ---
+# (cada uno usa hash(semilla, n) para que añadirlos o quitarlos no mueva el resto del mapa)
+
+
 # La caja que lo contiene todo, con margen; por abajo menos, para que la caída siga en y=1300.
 static func _limites(m: Dictionary) -> Rect2:
 	var caja := Rect2(m.inicio, Vector2.ZERO).expand(m.meta)
@@ -433,6 +450,9 @@ static func _sierras(semilla: int, m: Dictionary) -> Array:
 				riel = Vector2.ZERO
 		sierras.append({"pos": pos, "riel": riel, "fase": rng.randf(), "color": rng.randi_range(0, Sierra.COLORES.size() - 1)})
 	return sierras
+
+
+# --- Piezas sueltas: techos, estorbos y formas básicas ---
 
 
 # Distancia de `pos` al borde de la pieza `p`; 0 si está dentro (una pared es larga: su centro no basta).

@@ -20,58 +20,96 @@ func _ready() -> void:
 	rng.seed = hash(tema + capa)
 	var d: Dictionary = Temas.DATOS[tema]
 	match [tema, capa]:
-		["azotea", "lejos"]:  # nubes que pasan
-			for i in 5:
-				_cosas.append({"pos": Vector2(i * 480.0 + rng.randf_range(0, 200), rng.randf_range(-40, 220)), "vel": rng.randf_range(8, 16),
-						"capas": Acuarela.capas(_nube(rng), i)})
-		["noche", "lejos"]:  # estrellas y farolillos que suben
-			for i in 40:
-				_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(-300, 250)), "fase": rng.randf() * TAU, "tipo": "estrella"})
-			for i in 12:
-				_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(0, 900)), "vel": rng.randf_range(14, 26), "fase": rng.randf() * TAU, "tipo": "farolillo"})
+		["azotea", "lejos"]:
+			_lejos_azotea(rng, d)
+		["noche", "lejos"]:
+			_lejos_noche(rng, d)
 		["cueva", "lejos"]:
-			_formas.append([_dientes(rng, -700.0, 40.0, 220.0, true), d.lejos])  # estalactitas
-			_formas.append([_dientes(rng, 1700.0, 900.0, 520.0, false), d.lejos])  # rocas del fondo
-			for i in 25:  # chispas que suben de la lava
-				_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(0, 900)), "vel": rng.randf_range(20, 45), "fase": rng.randf() * TAU})
+			_lejos_cueva(rng, d)
 		["cueva", "cerca"]:
-			_formas.append([_dientes(rng, -700.0, -40.0, 120.0, true), d.cerca])
-			_formas.append([_dientes(rng, 1900.0, 1000.0, 700.0, false), d.cerca])
-		["mar", "lejos"]:  # mar abierto hasta el horizonte, islas y el faro
-			_formas.append([PackedVector2Array([Vector2(-40, 600), Vector2(ANCHO + 40, 600), Vector2(ANCHO + 40, 1800), Vector2(-40, 1800)]), Color("a8dccf")])
-			for k in 3:
-				var x := k * 800.0 + rng.randf_range(0, 300)
-				_formas.append([PackedVector2Array([Vector2(x, 610), Vector2(x + 60, 510 - k * 20), Vector2(x + 180, 470), Vector2(x + 300, 530), Vector2(x + 380, 610)]), d.lejos.darkened(0.08)])
-			_formas.append([PackedVector2Array([Vector2(1500, 610), Vector2(1512, 350), Vector2(1548, 350), Vector2(1560, 610)]), Color("fffaf4")])  # faro
-			_formas.append([PackedVector2Array([Vector2(1508, 410), Vector2(1552, 410), Vector2(1550, 440), Vector2(1510, 440)]), Acuarela.ROSA])
-			for i in 30:  # brillos sobre el agua
-				_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(640, 1000)), "fase": rng.randf() * TAU, "tipo": "brillo"})
-			for i in 6:  # gaviotas
-				_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(-100, 250)), "vel": rng.randf_range(30, 60), "fase": rng.randf() * TAU, "tipo": "gaviota"})
-		["mar", "cerca"]:  # postes del muelle asomando
-			for i in 10:
-				var x := i * 240.0 + rng.randf_range(0, 80)
-				_formas.append([PackedVector2Array([Vector2(x, 1800), Vector2(x, 880 + rng.randf_range(0, 120)), Vector2(x + 26, 880), Vector2(x + 26, 1800)]), d.cerca])
-		["jungla", "lejos"]:  # troncos finos y torcidos, copas arriba, matas abajo y hojas enormes que se mecen
-			for i in 6:
-				var x := i * 400.0 + rng.randf_range(0, 150)
-				var curva := rng.randf_range(-60, 60)
-				_formas.append([PackedVector2Array([Vector2(x, 1800), Vector2(x + curva, 500), Vector2(x + 14, -400), Vector2(x + 40, -400),
-						Vector2(x + curva + 30, 500), Vector2(x + 46, 1800)]), d.lejos.lightened(0.1)])
-			_formas.append([_dientes(rng, -800.0, -120.0, 200.0, true), d.lejos])
-			_formas.append([_dientes(rng, 1700.0, 950.0, 260.0, false), d.lejos])
-			for i in 14:
-				_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(-200, 700)), "fase": rng.randf() * TAU,
-						"giro": rng.randf_range(-PI, PI), "largo": rng.randf_range(110, 200), "color": d.lejos})
-		["jungla", "cerca"]:  # lianas con flores
-			for i in 9:
-				_cosas.append({"pos": Vector2(i * 270.0 + rng.randf_range(0, 120), -500), "largo": rng.randf_range(500, 850), "fase": rng.randf() * TAU})
+			_cerca_cueva(rng, d)
+		["mar", "lejos"]:
+			_lejos_mar(rng, d)
+		["mar", "cerca"]:
+			_cerca_mar(rng, d)
+		["jungla", "lejos"]:
+			_lejos_jungla(rng, d)
+		["jungla", "cerca"]:
+			_cerca_jungla(rng, d)
 		["cueva", "superficie"], ["mar", "superficie"]:
-			for i in 40:  # burbujas de lava o espuma
-				_cosas.append({"x": rng.randf_range(desde_x, hasta_x), "fase": rng.randf() * TAU})
+			_superficie(rng)
 	for f in _formas:  # a acuarela una vez; si el temblor cruza un pico fino, esa capa va sin temblor
 		f.append(Acuarela.capas(f[0], hash(f[0])).map(func(c: PackedVector2Array) -> PackedVector2Array:
 			return c if not Geometry2D.triangulate_polygon(c).is_empty() else f[0]))
+
+
+# --- Formas y cosas de cada tema y capa (se llaman desde _ready; el orden de rng cuenta) ---
+
+func _lejos_azotea(rng: RandomNumberGenerator, _d: Dictionary) -> void:  # nubes que pasan
+	for i in 5:
+		_cosas.append({"pos": Vector2(i * 480.0 + rng.randf_range(0, 200), rng.randf_range(-40, 220)), "vel": rng.randf_range(8, 16),
+				"capas": Acuarela.capas(_nube(rng), i)})
+
+
+func _lejos_noche(rng: RandomNumberGenerator, _d: Dictionary) -> void:  # estrellas y farolillos que suben
+	for i in 40:
+		_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(-300, 250)), "fase": rng.randf() * TAU, "tipo": "estrella"})
+	for i in 12:
+		_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(0, 900)), "vel": rng.randf_range(14, 26), "fase": rng.randf() * TAU, "tipo": "farolillo"})
+
+
+func _lejos_cueva(rng: RandomNumberGenerator, d: Dictionary) -> void:
+	_formas.append([_dientes(rng, -700.0, 40.0, 220.0, true), d.lejos])  # estalactitas
+	_formas.append([_dientes(rng, 1700.0, 900.0, 520.0, false), d.lejos])  # rocas del fondo
+	for i in 25:  # chispas que suben de la lava
+		_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(0, 900)), "vel": rng.randf_range(20, 45), "fase": rng.randf() * TAU})
+
+
+func _cerca_cueva(rng: RandomNumberGenerator, d: Dictionary) -> void:
+	_formas.append([_dientes(rng, -700.0, -40.0, 120.0, true), d.cerca])
+	_formas.append([_dientes(rng, 1900.0, 1000.0, 700.0, false), d.cerca])
+
+
+func _lejos_mar(rng: RandomNumberGenerator, d: Dictionary) -> void:  # mar abierto hasta el horizonte, islas y el faro
+	_formas.append([PackedVector2Array([Vector2(-40, 600), Vector2(ANCHO + 40, 600), Vector2(ANCHO + 40, 1800), Vector2(-40, 1800)]), Color("a8dccf")])
+	for k in 3:
+		var x := k * 800.0 + rng.randf_range(0, 300)
+		_formas.append([PackedVector2Array([Vector2(x, 610), Vector2(x + 60, 510 - k * 20), Vector2(x + 180, 470), Vector2(x + 300, 530), Vector2(x + 380, 610)]), d.lejos.darkened(0.08)])
+	_formas.append([PackedVector2Array([Vector2(1500, 610), Vector2(1512, 350), Vector2(1548, 350), Vector2(1560, 610)]), Color("fffaf4")])  # faro
+	_formas.append([PackedVector2Array([Vector2(1508, 410), Vector2(1552, 410), Vector2(1550, 440), Vector2(1510, 440)]), Acuarela.ROSA])
+	for i in 30:  # brillos sobre el agua
+		_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(640, 1000)), "fase": rng.randf() * TAU, "tipo": "brillo"})
+	for i in 6:  # gaviotas
+		_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(-100, 250)), "vel": rng.randf_range(30, 60), "fase": rng.randf() * TAU, "tipo": "gaviota"})
+
+
+func _cerca_mar(rng: RandomNumberGenerator, d: Dictionary) -> void:  # postes del muelle asomando
+	for i in 10:
+		var x := i * 240.0 + rng.randf_range(0, 80)
+		_formas.append([PackedVector2Array([Vector2(x, 1800), Vector2(x, 880 + rng.randf_range(0, 120)), Vector2(x + 26, 880), Vector2(x + 26, 1800)]), d.cerca])
+
+
+func _lejos_jungla(rng: RandomNumberGenerator, d: Dictionary) -> void:  # troncos finos y torcidos, copas arriba, matas abajo y hojas enormes que se mecen
+	for i in 6:
+		var x := i * 400.0 + rng.randf_range(0, 150)
+		var curva := rng.randf_range(-60, 60)
+		_formas.append([PackedVector2Array([Vector2(x, 1800), Vector2(x + curva, 500), Vector2(x + 14, -400), Vector2(x + 40, -400),
+				Vector2(x + curva + 30, 500), Vector2(x + 46, 1800)]), d.lejos.lightened(0.1)])
+	_formas.append([_dientes(rng, -800.0, -120.0, 200.0, true), d.lejos])
+	_formas.append([_dientes(rng, 1700.0, 950.0, 260.0, false), d.lejos])
+	for i in 14:
+		_cosas.append({"pos": Vector2(rng.randf_range(0, ANCHO), rng.randf_range(-200, 700)), "fase": rng.randf() * TAU,
+				"giro": rng.randf_range(-PI, PI), "largo": rng.randf_range(110, 200), "color": d.lejos})
+
+
+func _cerca_jungla(rng: RandomNumberGenerator, _d: Dictionary) -> void:  # lianas con flores
+	for i in 9:
+		_cosas.append({"pos": Vector2(i * 270.0 + rng.randf_range(0, 120), -500), "largo": rng.randf_range(500, 850), "fase": rng.randf() * TAU})
+
+
+func _superficie(rng: RandomNumberGenerator) -> void:  # burbujas de lava o espuma
+	for i in 40:
+		_cosas.append({"x": rng.randf_range(desde_x, hasta_x), "fase": rng.randf() * TAU})
 
 
 func _process(_delta: float) -> void:
