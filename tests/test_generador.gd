@@ -260,8 +260,8 @@ func test_formas_con_pesos() -> void:
 		cuenta[f] = cuenta.get(f, 0) + 1
 		if semilla < 20:
 			comprobar(Generador.generar(semilla).forma == f, "generar usa forma_de (semilla %d)" % semilla)
-	comprobar(cuenta.get("torre", 0) >= 60 and cuenta.get("torre", 0) <= 140, "torre ~10 %%: %d de 1000" % cuenta.get("torre", 0))
-	comprobar(cuenta.get("horizontal", 0) >= 250 and cuenta.get("horizontal", 0) <= 350, "horizontal ~30 %%: %d de 1000" % cuenta.get("horizontal", 0))
+	comprobar(cuenta.get("torre", 0) >= 20 and cuenta.get("torre", 0) <= 70, "torre ~4 %%: %d de 1000" % cuenta.get("torre", 0))
+	comprobar(cuenta.get("horizontal", 0) >= 280 and cuenta.get("horizontal", 0) <= 380, "horizontal ~33 %%: %d de 1000" % cuenta.get("horizontal", 0))
 	print("    formas en 1000 semillas: ", cuenta)
 
 

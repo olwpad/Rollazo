@@ -16,7 +16,7 @@ const NOMBRE := "LA AZOTEA"  # el nombre que sale en las postales
 const LARGO := 7600.0  # a partir de aquí se pone la meta
 const SUELO_Y := 690.0  # centro de los descansos (la parte de arriba queda en y=670)
 const FORMAS := ["horizontal", "torre", "bajada", "montaña", "hibrido", "pozo"]
-const PESOS_FORMA := {"horizontal": 27, "bajada": 23, "hibrido": 18, "montaña": 14, "torre": 8, "pozo": 10}  # en %
+const PESOS_FORMA := {"horizontal": 33, "bajada": 25, "hibrido": 18, "montaña": 10, "torre": 4, "pozo": 10}  # en %, torre poco: subir cansa
 const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 px)
 # Torre. Cada torre sortea su anchura y lo que sube cada saliente, con dos salientes seguidos
 # siempre a <= SALIENTE_ALCANCE (el papel llega a 420)
@@ -129,7 +129,7 @@ static func _tramos(forma: String, rng: RandomNumberGenerator) -> Array:
 			var n := rng.randi_range(2, 3)
 			var tipos := []
 			for i in n:
-				tipos.append(["horizontal", "torre", "bajada", "pozo"][rng.randi_range(0, 3)])
+				tipos.append(["horizontal", "horizontal", "torre", "bajada", "bajada", "pozo", "pozo"][rng.randi_range(0, 6)])  # torre 1 de 7
 			if tipos.count("horizontal") == n:
 				tipos[rng.randi_range(0, n - 1)] = ["torre", "bajada", "pozo"][rng.randi_range(0, 2)]
 			for i in range(1, n):  # el pozo empieza donde acaba un suelo, no contra la pared de una torre
