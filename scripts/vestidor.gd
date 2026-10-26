@@ -35,6 +35,24 @@ func _ready() -> void:
 	listo.add_theme_font_size_override("font_size", 34)
 	listo.pressed.connect(_cerrar)
 	add_child(listo)
+	var nombre := LineEdit.new()  # bajo el moco, como la etiqueta con tu nombre
+	nombre.name = "Nombre"
+	nombre.placeholder_text = "ESCRIBE TU NOMBRE"
+	nombre.max_length = Perfil.LARGO_NOMBRE
+	nombre.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nombre.position = Vector2(310, 630)
+	nombre.size = Vector2(320, 56)
+	nombre.add_theme_font_size_override("font_size", 30)
+	var papel := StyleBoxFlat.new()  # papel crema, como las cartas de la derecha
+	papel.bg_color = Color(CREMA, 0.95)
+	papel.set_corner_radius_all(4)
+	for estilo in ["normal", "focus"]:
+		nombre.add_theme_stylebox_override(estilo, papel)
+	nombre.add_theme_color_override("font_color", Acuarela.CIRUELA)
+	nombre.add_theme_color_override("font_placeholder_color", Color(Acuarela.AZOTEA, 0.8))
+	nombre.add_theme_color_override("caret_color", Acuarela.CIRUELA)
+	nombre.text_changed.connect(Perfil.poner_nombre)
+	add_child(nombre)
 	visible = false
 
 
@@ -78,6 +96,7 @@ func _desde_perfil() -> void:
 	for fila in PIEZAS:
 		_indices[fila] = _lista(fila).find(Perfil.aspecto[fila.to_lower()])
 	_indices.Color = Perfil.aspecto.color
+	$Nombre.text = Perfil.aspecto.get("nombre", "")
 	_indices.Famoso = _lista("Famoso").find(Perfil.look_puesto()) if Perfil.look_puesto() != "" else 0
 	_pintar()
 

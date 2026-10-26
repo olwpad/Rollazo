@@ -423,7 +423,7 @@ func crear_jugador(datos: Array) -> Node:
 	j.vestir(Red.aspecto_de(id))
 	colores[id] = j.get_node("Visual/Moco").color
 	j.aterrizado.connect(_al_aterrizar.bind(j))
-	nombres[id] = "JUGADOR %d" % (indice + 1)  # el mismo que en la sala
+	nombres[id] = Perfil.nombre_en(Red.aspecto_de(id), "JUGADOR %d" % (indice + 1))  # el mismo que en la sala
 	if id == multiplayer.get_unique_id():  # cada PC sigue con la cámara solo a su moco
 		var camara := Camera2D.new()
 		camara.set_script(CAMARA)

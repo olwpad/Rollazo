@@ -203,6 +203,18 @@ func _mi_aspecto(a: Variant) -> void:
 	jugadores_cambiaron.emit()
 
 
+# Tras cambiarte de ropa o de nombre en la sala: el anfitrión lo apunta y se lo cuenta a todos.
+func avisar_aspecto() -> void:
+	if not es_online():
+		return
+	if multiplayer.is_server():
+		aspectos[1] = Perfil.aspecto.duplicate()
+		_aspectos.rpc(aspectos)
+		jugadores_cambiaron.emit()
+	else:
+		_mi_aspecto.rpc_id(1, Perfil.aspecto)
+
+
 @rpc("authority", "call_remote", "reliable")
 func _aspectos(nuevos: Dictionary) -> void:
 	aspectos = nuevos

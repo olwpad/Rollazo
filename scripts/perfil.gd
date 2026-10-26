@@ -31,6 +31,7 @@ var partidas_para := {"afro": 4, "vaquero": 5, "melena": 6,
 		"cafetera": 18, "rulos": 19, "cepillo": 20, "ciborg": 20, "oca": 21, "rulos_cortos": 22,
 		"reloj": 23, "mascara_roja": 24, "mascara_negra": 25}
 const TORNEOS_PARA := {"estrella": 1}  # las gafas de estrella, solo ganando
+const LARGO_NOMBRE := 12  # cabe en el cartel de la sala
 const POR_DEFECTO := {"color": 0, "pelo": "calvo", "sombrero": "nada", "cara": "nada", "ropa": "nada"}
 const FILAS := {"pelo": PELOS, "sombrero": SOMBREROS, "cara": CARAS, "ropa": ROPAS}
 # Famosos ya montados: un clic y el moco va vestido entero. Nombres genéricos, sin apodos reales.
@@ -132,7 +133,19 @@ func valido(a: Variant) -> bool:
 	for fila in FILAS:
 		if not a.get(fila) in FILAS[fila]:
 			return false
-	return true
+	return not a.has("nombre") or (a.nombre is String and a.nombre.length() <= LARGO_NOMBRE)
+
+
+# El nombre se guarda en el aspecto: así viaja por la red con la ropa, sin nada aparte.
+func poner_nombre(texto: String) -> void:
+	aspecto.nombre = texto.strip_edges().to_upper().left(LARGO_NOMBRE)
+	guardar()
+
+
+# El nombre de un aspecto, o `si_no` si no se puso ninguno.
+static func nombre_en(a: Dictionary, si_no: String) -> String:
+	var n: String = a.get("nombre", "")
+	return si_no if n == "" else n
 
 
 func guardar() -> void:

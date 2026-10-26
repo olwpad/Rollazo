@@ -171,3 +171,17 @@ func test_vestidor_fila_de_famosos() -> void:
 	comprobar(v.moco.pelo == p.look(p.LOOKS.keys()[0]).pelo and v.get_node("Pelo/Valor").text == p.NOMBRES[v.moco.pelo], "y viste al moco y mueve las demás filas")
 	menu.free()
 	_devolver(p)
+
+
+func test_nombre_va_en_el_aspecto() -> void:
+	var antes: Dictionary = Perfil.aspecto.duplicate()
+	Perfil.poner_nombre("  pepito el del quinto  ")
+	comprobar(Perfil.aspecto.nombre == "PEPITO EL DE", "en mayúsculas, sin espacios y como mucho 12 letras")
+	comprobar(Perfil.valido(Perfil.aspecto), "un aspecto con nombre sigue siendo válido")
+	comprobar(Perfil.nombre_en(Perfil.aspecto, "JUGADOR 2") == "PEPITO EL DE", "se usa el nombre")
+	comprobar(Perfil.nombre_en(Perfil.POR_DEFECTO, "JUGADOR 2") == "JUGADOR 2", "sin nombre, el de siempre")
+	var largo: Dictionary = Perfil.POR_DEFECTO.duplicate()
+	largo.nombre = "X".repeat(40)
+	comprobar(not Perfil.valido(largo), "un nombre larguísimo de otro PC no vale")
+	Perfil.aspecto = antes
+	Perfil.guardar()

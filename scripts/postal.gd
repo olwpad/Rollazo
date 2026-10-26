@@ -73,4 +73,4 @@ func _miniatura(foto: Rect2, d: Dictionary) -> void:
 		for v: Vector2 in p.poly:
 			poly.append(origen + (p.pos + v) * escala)
 		if Array(poly).all(func(q: Vector2) -> bool: return foto.has_point(q)):  # lo que no cabe entero, fuera
-			Acuarela.pintar(self, poly, color, hash(p.nombre))
+			Moviles.mancha(self, poly, color, hash(p.nombre))  # piezas diminutas: menos temblor
