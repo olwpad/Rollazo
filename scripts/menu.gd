@@ -35,6 +35,7 @@ func _conectar_botones() -> void:
 	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
 	$Caja/TuMoco.pressed.connect(_vestir.bind(true))
+	$SalaUI/TuMoco.pressed.connect(_vestir.bind(true))  # también desde el lobby
 	$Vestidor.cerrado.connect(_vestir.bind(false))
 	$Salir.pressed.connect(_salir)
 	principal.pressed.connect(_pulsar_principal)
@@ -190,7 +191,7 @@ func _actualizar() -> void:
 	var faltan := []
 	for i in Red.ids.size():
 		if Red.ids[i] != 1 and not Red.listos.get(Red.ids[i], false):
-			faltan.append("JUGADOR %d" % (i + 1))  # el mismo nombre que en su tarjeta
+			faltan.append(Perfil.nombre_en(Red.aspecto_de(Red.ids[i]), "JUGADOR %d" % (i + 1)))  # el mismo nombre que en su tarjeta
 	var total := Red.ids.size()
 	if anfitrion:
 		principal.text = "¡A CORRER!" if faltan.is_empty() else "¡A CORRER! · %d/%d LISTOS" % [total - faltan.size(), total]
@@ -205,9 +206,10 @@ func _actualizar() -> void:
 
 # El vestidor ocupa la pantalla: fuera el menú, la azotea de adorno y el columpio mientras tanto.
 func _vestir(si: bool) -> void:
-	for nodo in [$Caja, $Sala, $Columpio, $Pie, $Nota]:
+	for nodo in [$Caja, $Sala, $Columpio, $Pie, $Nota, $SalaUI, $Salir]:
 		nodo.visible = not si
 	if si:
 		$Vestidor.abrir()
 	else:
+		Red.avisar_aspecto()  # en el lobby, los demás te ven cambiado
 		_actualizar()  # el moco «TÚ» de la azotea sale ya vestido

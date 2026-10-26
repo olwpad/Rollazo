@@ -120,7 +120,7 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 		elif ids[i] == mi_id:
 			h.nombre.text = "TÚ"
 		else:
-			h.nombre.text = "JUGADOR %d" % (i + 1)
+			h.nombre.text = Perfil.nombre_en(aspecto, "JUGADOR %d" % (i + 1))
 		h.nombre.modulate.a = 1.0 if ocupado else 0.6
 		var listo: bool = tarjetas and ocupado and listos.get(ids[i], false)
 		if listo and not h.sello.visible:  # el sello cae de golpe y se asienta
