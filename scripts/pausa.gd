@@ -20,6 +20,9 @@ func _exit_tree() -> void:
 	get_tree().paused = false  # salir al menú o volver a la sala nunca deja el juego congelado
 
 
+# --- Entrada local ---
+
+
 func _unhandled_input(evento: InputEvent) -> void:
 	if evento.is_action_pressed("pausa"):
 		if Red.es_online():
@@ -41,6 +44,9 @@ func alternar_local() -> void:
 func pedir() -> void:
 	if multiplayer.is_server():
 		pedir_de(maxi(multiplayer.get_remote_sender_id(), 1))  # 0 = me lo pido yo mismo
+
+
+# --- Red: el anfitrión decide y avisa a todos ---
 
 
 # Solo el anfitrión decide.

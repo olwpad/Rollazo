@@ -1,5 +1,6 @@
-# Lógica del recorrido: un moco por jugador, cronómetro, puntos de control, caída al vacío,
-# meta y reinicio. Las áreas solo las decide el anfitrión.
+# Lógica de la escena de carrera: un moco por jugador, cronómetro, puntos de control, caída al
+# vacío, meta, rondas y espectador. Es el "controlador" del nivel: construye el mapa que dicta
+# la semilla y el anfitrión (servidor) decide todo; los demás PCs solo reciben los @rpc.
 extends Node2D
 
 const ESCENA_JUGADOR := preload("res://scenes/jugador.tscn")
@@ -13,27 +14,34 @@ const SEGUNDOS_POSTAL := 2.5  # la postal de "RONDA N" con los mocos quietos
 const SEGUNDOS_MAPA_NUEVO := 3.0  # solo: tras llegar, el tiempo a la vista antes del mapa siguiente
 const SEGUNDOS_FINAL := 8.0  # el ganador del torneo antes de volver a la sala
 
-var ronda := 1  # en todos los PCs
+# --- Estado de la ronda (igual en todos los PCs) ---
+var ronda := 1
 var semilla_actual := 0
 var tema := "azotea"  # el mapa de esta ronda (Temas): paleta, fondo y si hay aros
 var nombres := {}  # id -> "JUGADOR N", fijo desde que sale su moco
 var llegados: Array[int] = []  # quién ha cruzado la meta esta ronda, en todos los PCs
 var espectadores: Array[int] = []  # llegaron y se cayeron: miran hasta el final de la ronda
 var marcador_filas := []  # [[id, victorias, segundos totales], ...] ya ordenado; lo manda el anfitrión
-var camara_espectador: Camera2D = null
-var objetivo_espectador := 0  # a quién mira; uno más que los que juegan = el mapa entero
 var tiempo := 0.0
 var mejor := INF
 var corriendo := true  # el cronómetro de este PC: se para al llegar su moco
 var reloj_ronda := 0.0  # mueve las sierras: sigue aunque llegue el moco local, igual en todos los PCs
 var en_postal := false
-var _serial_mapa := 0  # cada reinicio lo sube: un cambio de mapa pendiente de antes ya no vale
-var ultimos_controles := {}  # id de jugador -> último punto de control
-var clasificacion := Clasificacion.new()  # solo la usa el anfitrión
-var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
 var en_resultados := false
 var colores := {}  # id -> color de su moco, en todos los PCs
 var cuenta := -1.0  # segundos que quedan tras llegar el primero (en todos los PCs)
+var _serial_mapa := 0  # cada reinicio lo sube: un cambio de mapa pendiente de antes ya no vale
+
+# --- Solo el anfitrión ---
+var ultimos_controles := {}  # id de jugador -> último punto de control
+var clasificacion := Clasificacion.new()
+var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
+
+# --- Espectador (moco que ya llegó) ---
+var camara_espectador: Camera2D = null
+var objetivo_espectador := 0  # a quién mira; uno más que los que juegan = el mapa entero
+
+# --- Mapa ---
 var piezas := Node2D.new()  # techos, descansos y obstáculos generados
 var limites := Rect2(0, 0, 8800, 1400)  # la caja del mapa de esta ronda (cámara del espectador)
 var forma_forzada := ""  # "" = la que toque por semilla; el bot probador la fija antes de añadir la escena
@@ -66,6 +74,9 @@ func _ready() -> void:
 	reiniciar()
 
 
+# --- Construcción del mapa ---
+
+
 # Monta el mapa de esta semilla. Todos los PCs lo llaman con la misma, así es idéntico.
 func construir(semilla: int) -> void:
 	for viejo in piezas.get_children() + $Controles.get_children():
@@ -74,6 +85,27 @@ func construir(semilla: int) -> void:
 	semilla_actual = semilla
 	tema = Temas.de_ronda(Red.config.mapas, Red.semilla, ronda)
 	var mapa := Generador.generar(semilla, forma_forzada)
+	_crear_piezas(mapa, semilla)
+	_crear_controles(mapa)
+	if Red.config.poderes:
+		_crear_burbujas(mapa, semilla)
+	if Red.config.aros and Temas.DATOS[tema].aros:
+		_crear_aros(mapa)
+	_crear_sierras(mapa)
+	_poner_vivos(mapa, semilla)
+	limites = mapa.limites
+	_poner_moviles(mapa, semilla)
+	$Inicio.position = mapa.inicio
+	$SueloInicio.position = mapa.inicio + Vector2(100, 80)
+	$Meta.position = mapa.meta
+	$Meta/Forma.shape.size = mapa.meta_tam  # formas locales a la escena: no se cuelan en otro nivel
+	$Caida.position = Vector2(mapa.caida_x, mapa.caida_y)
+	$Caida/Forma.shape.size.x = mapa.caida_ancho
+	_pintar_tema(mapa)
+
+
+# Suelos, techos y obstáculos: un cuerpo estático (colisión + dibujo de acuarela) por pieza.
+func _crear_piezas(mapa: Dictionary, semilla: int) -> void:
 	for i in mapa.piezas.size():
 		var p: Dictionary = mapa.piezas[i]
 		if p.nombre.begins_with("SueloSalida"):  # ya está el SueloInicio de la escena, que se mueve ahí abajo
@@ -92,6 +124,9 @@ func construir(semilla: int) -> void:
 		cuerpo.add_child(dibujo)
 		piezas.add_child(cuerpo)
 		_estilo_acuarela(dibujo, semilla + i)
+
+
+func _crear_controles(mapa: Dictionary) -> void:
 	for pos: Vector2 in mapa.controles:
 		var control := Area2D.new()
 		control.position = pos
@@ -102,26 +137,33 @@ func construir(semilla: int) -> void:
 		control.add_child(caja)
 		control.body_entered.connect(_al_pasar_control.bind(control))
 		$Controles.add_child(control)
-	if Red.config.poderes:
-		for i in mapa.burbujas.size():
-			var b := Area2D.new()
-			b.set_script(BURBUJA)
-			b.name = "Burbuja%d" % i
-			b.position = mapa.burbujas[i].pos
-			b.set("tipo", mapa.burbujas[i].tipo)  # set(): Area2D no sabe que el script tiene `tipo`
-			b.set("semilla", semilla)
-			b.set("indice", i)
-			b.body_entered.connect(_al_tocar_burbuja.bind(b))
-			piezas.add_child(b)  # con las piezas: se borran solas al cambiar de mapa
-	if Red.config.aros and Temas.DATOS[tema].aros:
-		for i in mapa.aros.size():
-			var a := Area2D.new()
-			a.set_script(ARO)
-			a.name = "Aro%d" % i
-			a.position = mapa.aros[i].pos
-			a.set("mov", mapa.aros[i].mov)
-			a.body_entered.connect(_al_tocar_aro.bind(a))
-			piezas.add_child(a)
+
+
+func _crear_burbujas(mapa: Dictionary, semilla: int) -> void:
+	for i in mapa.burbujas.size():
+		var b := Area2D.new()
+		b.set_script(BURBUJA)
+		b.name = "Burbuja%d" % i
+		b.position = mapa.burbujas[i].pos
+		b.set("tipo", mapa.burbujas[i].tipo)  # set(): Area2D no sabe que el script tiene `tipo`
+		b.set("semilla", semilla)
+		b.set("indice", i)
+		b.body_entered.connect(_al_tocar_burbuja.bind(b))
+		piezas.add_child(b)  # con las piezas: se borran solas al cambiar de mapa
+
+
+func _crear_aros(mapa: Dictionary) -> void:
+	for i in mapa.aros.size():
+		var a := Area2D.new()
+		a.set_script(ARO)
+		a.name = "Aro%d" % i
+		a.position = mapa.aros[i].pos
+		a.set("mov", mapa.aros[i].mov)
+		a.body_entered.connect(_al_tocar_aro.bind(a))
+		piezas.add_child(a)
+
+
+func _crear_sierras(mapa: Dictionary) -> void:
 	for i in mapa.sierras.size():
 		var s := Sierra.new()
 		s.name = "Sierra%d" % i
@@ -132,16 +174,6 @@ func construir(semilla: int) -> void:
 		s.nivel = self
 		s.body_entered.connect(_al_tocar_sierra.bind(s))
 		piezas.add_child(s)
-	_poner_vivos(mapa, semilla)
-	limites = mapa.limites
-	_poner_moviles(mapa, semilla)
-	$Inicio.position = mapa.inicio
-	$SueloInicio.position = mapa.inicio + Vector2(100, 80)
-	$Meta.position = mapa.meta
-	$Meta/Forma.shape.size = mapa.meta_tam  # formas locales a la escena: no se cuelan en otro nivel
-	$Caida.position = Vector2(mapa.caida_x, mapa.caida_y)
-	$Caida/Forma.shape.size.x = mapa.caida_ancho
-	_pintar_tema(mapa)
 
 
 # Peligros propios de cada tema (marea, estalactitas, palomas, guirnaldas y techos que se apagan).
@@ -282,6 +314,9 @@ func _estilo_acuarela(dibujo: Polygon2D, i: int, forzado := Color.TRANSPARENT) -
 	dibujo.color = Color.TRANSPARENT
 
 
+# --- Cada frame y entrada ---
+
+
 func _physics_process(delta: float) -> void:
 	if corriendo:
 		tiempo += delta
@@ -349,6 +384,9 @@ func _jugando() -> Array[Jugador]:
 	return lista
 
 
+# --- Jugadores y marcador ---
+
+
 func nombre(id: int) -> String:
 	return "TÚ" if id == multiplayer.get_unique_id() else nombres.get(id, "JUGADOR")
 
@@ -396,6 +434,9 @@ func _quitar_desconectados() -> void:
 	for j in jugadores():
 		if not j.id_dueno() in Red.ids:
 			j.queue_free()  # el Spawner lo borra también en los demás PCs
+
+
+# --- Ronda: reinicio y postal ---
 
 
 func reiniciar() -> void:
@@ -447,6 +488,9 @@ func _congelar(si: bool) -> void:
 	if multiplayer.is_server():
 		for j in jugadores():
 			j.congelado = si
+
+
+# --- Peligros, burbujas y caídas (los decide el anfitrión) ---
 
 
 # El anfitrión decide quién la coge; todos la quitan a la vez.
@@ -535,6 +579,9 @@ func _al_caer(cuerpo: Node2D) -> void:
 	_volver_al_control(cuerpo)
 
 
+# --- Espectador ---
+
+
 # Un moco que ya llegó deja de jugar: quieto, fuera de en medio y su PC pasa a espectador.
 func _mandar_a_mirar(cuerpo: Jugador) -> void:
 	cuerpo.congelado = true
@@ -574,6 +621,9 @@ func _dejar_de_mirar() -> void:
 		for c in mio.get_children():
 			if c is Camera2D:
 				c.make_current()
+
+
+# --- Meta, resultados y torneo ---
 
 
 # El anfitrión apunta el puesto y avisa a todos; cada PC para su cronómetro si es su moco.
@@ -686,6 +736,9 @@ func nueva_ronda(semilla: int, numero: int) -> void:
 	ronda = numero
 	construir(semilla)
 	reiniciar()
+
+
+# --- Salir ---
 
 
 # Si sale el anfitrión, los demás vuelven solos al menú (Red avisa de que se ha ido).

@@ -17,6 +17,20 @@ func _ready() -> void:
 	ip.text = cfg.get_value("red", "ultima_ip", "")
 	ip.text_changed.connect(_al_escribir_ip)
 	_al_escribir_ip(ip.text)
+	_conectar_botones()
+	_montar_selector_de_mapas()
+	Red.jugadores_cambiaron.connect(_actualizar)
+	Red.config_cambiada.connect(_actualizar)
+	Red.desconectado.connect(func(motivo): estado.text = motivo)
+	_actualizar()
+	if Red.ultimo_motivo != "":
+		estado.text = Red.ultimo_motivo
+		Red.ultimo_motivo = ""
+
+
+# --- Montaje (solo en _ready) ---
+
+func _conectar_botones() -> void:
 	$Caja/Crear.pressed.connect(_crear)
 	$Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Caja/Solo.pressed.connect(_practicar)
@@ -31,6 +45,10 @@ func _ready() -> void:
 	$Config/Papel/Caja/Pegatinas/Rondas.pressed.connect(func():  # 3 → 5 → 7 → 10 → 3
 		Red.poner_rondas(Red.RONDAS[(Red.RONDAS.find(Red.config.rondas) + 1) % Red.RONDAS.size()]))
 	$Config/Papel/Caja/Pegatinas/Aros.visible = false  # aros quitados de momento (ver red.gd)
+
+
+# Una postal por mapa, más el botón "PONER TODOS" en el hueco que queda.
+func _montar_selector_de_mapas() -> void:
 	for t in Temas.LISTA:  # una postal por mapa; tocarla lo quita o lo pone
 		var mapa := Postal.new()
 		mapa.name = t
@@ -49,14 +67,9 @@ func _ready() -> void:
 	todos.add_theme_font_size_override("font_size", 30)
 	todos.pressed.connect(func(): Red.poner_mapas(Temas.LISTA))
 	$Config/Papel/Caja/Mapas.add_child(todos)
-	Red.jugadores_cambiaron.connect(_actualizar)
-	Red.config_cambiada.connect(_actualizar)
-	Red.desconectado.connect(func(motivo): estado.text = motivo)
-	_actualizar()
-	if Red.ultimo_motivo != "":
-		estado.text = Red.ultimo_motivo
-		Red.ultimo_motivo = ""
 
+
+# --- Botones del menú ---
 
 func _practicar() -> void:
 	Red.semilla = randi()  # cada práctica, un mapa distinto
@@ -112,6 +125,9 @@ func _salir() -> void:
 	estado.text = ""
 	config.visible = false
 	_actualizar()
+
+
+# --- Sala: entrada y repintado ---
 
 
 func _unhandled_input(evento: InputEvent) -> void:
