@@ -1,4 +1,5 @@
 # Efectos físicos del jugador (sin texto): salpicadura de moco, goteo, estela y temblor de pantalla.
+# Es hijo de cada Jugador (nodo Efectos) y reacciona a su señal efecto_red, que llega a todos los PCs.
 extends Node2D
 
 const VELOCIDAD_ESTELA := 800.0
@@ -20,6 +21,10 @@ func _ready() -> void:
 	jugador.efecto_red.connect(_al_efecto)
 	# jugador.gd tiene class_name y no puede nombrar autoloads en los sims: el sonido se pide desde aquí
 	jugador.papel_lanzado.connect(func(): Sonidos.tocar("lanzar", jugador.global_position))  # el del anfitrión; el de un cliente suena en su PC al pulsar
+	_configurar_humo()
+
+
+func _configurar_humo() -> void:
 	humo.name = "Humo"
 	humo.emitting = false
 	humo.one_shot = true

@@ -1,4 +1,6 @@
 # El moco: se dibuja con código. Tiembla, se estira hacia donde va y tiene los ojos desiguales.
+# Es hijo del Jugador ($Visual/Moco): el Jugador le pone color, velocidad y aspecto (vestir).
+# Las piezas de pelo/sombrero/cara son datos (COSAS); _draw las recorre en orden.
 class_name MocoVisual
 extends Node2D
 
@@ -56,6 +58,7 @@ const DETRAS := {
 	"melena": [[[[-22, -12], [-16, -26], [0, -31], [16, -26], [22, -12], [25, 8], [25, 20], [19, 27], [-19, 27], [-25, 20], [-25, 8]], Color("ab754c")]],
 	"rizos": [[[[-20, -14], [-14, -26], [0, -30], [14, -26], [20, -14], [24, 0], [22, 10], [26, 20], [18, 26], [-18, 26], [-26, 20], [-22, 10], [-24, 0]], Color("ddb66b")]],
 }
+
 # Puntos del contorno. Estática y pura para poder testearla sin abrir el juego.
 static func forma(n: int, t: float, vel: Vector2) -> PackedVector2Array:
 	var estiron := clampf(vel.length() / 1500.0, 0.0, 0.6)
@@ -126,6 +129,18 @@ func _draw() -> void:
 	_ojo(Vector2(-6, -4), 9.0, mira)
 	_ojo(Vector2(9, -7), 5.5, mira)
 	draw_arc(Vector2(2, 8), 6.0, 0.3, PI - 0.3, 8, Acuarela.CIRUELA, 3.0)
+	_mascara_heroe(cuerpo)
+	_trazos_de_cara()
+	for cosa: String in [pelo, cara, sombrero]:  # la cara encima del pelo: las gafas no quedan tapadas
+		if cosa == "barba" or cosa == "corbata":
+			continue  # ya pintadas (la barba bajo la boca, la corbata con la ropa)
+		for pieza: Array in COSAS.get(cosa, []):
+			_cosa(pieza[0], pieza[1], foto)
+	_detalles_encima()
+
+
+# Máscara de héroe genérica (roja con traje azul, o negra con marcas) sobre el cuerpo.
+func _mascara_heroe(cuerpo: PackedVector2Array) -> void:
 	if cara in ["mascara_roja", "mascara_negra"]:  # máscara de héroe genérica: sin telarañas ni arañas
 		var mascara := PackedVector2Array()
 		for q in cuerpo:
@@ -144,6 +159,10 @@ func _draw() -> void:
 			for xy in ojo:
 				o.append(Vector2(xy[0], xy[1]))
 			draw_colored_polygon(o, CREMA)
+
+
+# Gafas y bigotes que no son un polígono relleno (se pintan antes que las piezas de COSAS).
+func _trazos_de_cara() -> void:
 	match cara:  # lo que no es un polígono relleno
 		"redondas":
 			for ojo in [[Vector2(-6, -4), 11.0], [Vector2(9, -7), 7.5]]:
@@ -162,19 +181,16 @@ func _draw() -> void:
 		"rizado":  # bigote fino con las puntas muy hacia arriba, por fuera de los ojos
 			draw_polyline(PackedVector2Array([Vector2(1, 5), Vector2(-6, 5), Vector2(-13, 3), Vector2(-17, -3), Vector2(-18, -13)]), C, 2.5)
 			draw_polyline(PackedVector2Array([Vector2(3, 5), Vector2(9, 4), Vector2(14, 1), Vector2(16, -6), Vector2(16, -15)]), C, 2.5)
-	for cosa: String in [pelo, cara, sombrero]:  # la cara encima del pelo: las gafas no quedan tapadas
-		if cosa == "barba" or cosa == "corbata":
-			continue  # ya pintadas (la barba bajo la boca, la corbata con la ropa)
-		for pieza: Array in COSAS.get(cosa, []):
-			_cosa(pieza[0], pieza[1], foto)
+
+
+# Brillos, adornos y detalles que van por encima de pelo, cara y sombrero.
+func _detalles_encima() -> void:
 	match cara:  # brillos encima de las gafas
 		"estrella":
 			draw_line(Vector2(-12, -9), Vector2(-6, -10), Color(1, 1, 1, 0.5), 2.0)
 		"ciborg":  # el ojo pequeño es el de cíborg
 			draw_circle(Vector2(9, -7), 6.0, Color("ff4a3a", 0.35))
 			draw_circle(Vector2(9, -7), 3.0, Color("ff4a3a"))
-		"bigotito":
-			pass
 	match pelo:
 		"tupe", "tupe_rubio", "engominado":  # brillo de gomina
 			draw_line(Vector2(-4, -27), Vector2(9, -32), Color(1, 1, 1, 0.45), 2.5)

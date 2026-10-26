@@ -1,5 +1,7 @@
 # El muñeco. CharacterBody2D es un cuerpo que movemos nosotros (no lo empuja la física
 # por su cuenta), así controlamos exactamente cómo se siente el columpio.
+# Solo el anfitrión simula (_physics_process); los clientes mandan su entrada por RPC y
+# reciben posición/estado por el MultiplayerSynchronizer (variables públicas de abajo).
 class_name Jugador
 extends CharacterBody2D
 
@@ -15,6 +17,8 @@ const RADIO_CORTE := 50.0  # a esta distancia del papel de otro, puedes cortarlo
 const DIST_AGARRE := 60.0
 const LARGO_AGARRE := 45.0  # largo del hilo de moco con el que te cuelgas de otro
 const PESO_POR_CARGA := 0.5  # cada moco colgado de ti suma media gravedad
+const DIST_PUNETAZO := 70.0
+const FUERZA_PUNETAZO := 950.0
 const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a")]  # menta, rosa, lavanda, melocotón
 
 # Valores iniciales: se ajustan jugando desde el Inspector del editor.
@@ -44,10 +48,8 @@ var carga := 0  # cuántos están agarrados a mí
 var congelado := false  # quieto: durante la postal de la ronda o ya de espectador (solo en el anfitrión)
 var poder := ""  # el que lleva ahora ("" = ninguno); el Sync lo copia a todos para el brillo y el HUD
 var poder_restante := 0.0
+var _poder_dibujado := ""  # último poder pintado, para redibujar solo al cambiar
 var _golpeados := {}  # puñetazo: a quién le pegué y cuándo, para no pegarle cada frame
-
-const DIST_PUNETAZO := 70.0
-const FUERZA_PUNETAZO := 950.0
 
 const EVENTOS := ["lanzar", "saltar", "cortar", "agarrar"]
 var _remoto := {"soltar": true, "apunta": Vector2.ZERO, "eje_x": 0.0, "eje_largo": 0.0}
@@ -66,12 +68,12 @@ func _ready() -> void:
 		add_child(mira)
 
 
-# Color del moco y de todo lo que suelta (gotas, salpicadura, estela).
 # Pelo, sombrero, cara y ropa del perfil (el color va aparte: en la partida puede cambiar si se repite).
 func vestir(aspecto: Dictionary) -> void:
 	$Visual/Moco.vestir(aspecto)
 
 
+# Color del moco y de todo lo que suelta (gotas, salpicadura, estela).
 func pintar(color: Color) -> void:
 	$Visual/Moco.color = color
 	$Efectos/Salpicadura.color = color
@@ -148,6 +150,18 @@ func _physics_process(delta: float) -> void:
 	_seguir_ancla()
 	if poder == "punetazo":
 		golpear_cercanos()
+	_aplicar_acciones(e)
+	_aplicar_movimiento(e, delta)
+	_mover_y_aterrizar()
+	_aplicar_cuerda(delta)
+	_aplicar_hilo_agarre()
+	_publicar_papel()
+
+
+# --- Física: un frame del anfitrión, por pasos ---
+
+# Eventos y botones: cortar, agarrar, saltar (suelta el agarre), lanzar/soltar el papel.
+func _aplicar_acciones(e: Dictionary) -> void:
 	if e.cortar:
 		_cortar_cercanos()
 	if e.agarrar:
@@ -165,6 +179,9 @@ func _physics_process(delta: float) -> void:
 			velocity *= impulso_soltar
 		papel = null
 
+
+# Gravedad, salto, pared y control en suelo/aire; al final, el largo de la cuerda.
+func _aplicar_movimiento(e: Dictionary, delta: float) -> void:
 	var en_pared := poder == "pared" and is_on_wall() and papel == null
 	if en_pared and e.saltar:  # despegarse: salto hacia fuera de la pared
 		velocity = get_wall_normal() * 450.0 + Vector2(0, -fuerza_de_salto())
@@ -181,6 +198,9 @@ func _physics_process(delta: float) -> void:
 	if papel != null:
 		papel.cambiar_largo(e.eje_largo * velocidad_encoger * delta)
 
+
+# move_and_slide + choque con otros mocos + aviso de aterrizaje.
+func _mover_y_aterrizar() -> void:
 	var caida := velocity.y
 	var estaba_en_aire := not is_on_floor()
 	var antes := velocity  # move_and_slide recorta la parte que va contra el otro moco
@@ -192,24 +212,33 @@ func _physics_process(delta: float) -> void:
 			aterrizaje_fuerte.emit()
 			efecto.rpc("aterrizaje", global_position + Vector2(0, 18))
 
-	if papel != null:
-		var r := Pendulo.restringir(global_position, velocity, papel.ancla, papel.largo)
-		_mover_deslizando(r[0] - global_position)  # con colisión, para no atravesar paredes
-		velocity = r[1]
-		_tiempo_enganchado += delta
-		papel.gastar(delta, Pendulo.tension(r[2]))
-		if papel.roto:
-			papel = null
-			papel_roto.emit()
-			efecto.rpc("rotura", (global_position + papel_ancla) / 2.0)
+
+# Columpio: la cuerda restringe la posición (péndulo) y gasta aguante según la tensión.
+func _aplicar_cuerda(delta: float) -> void:
+	if papel == null:
+		return
+	var r := Pendulo.restringir(global_position, velocity, papel.ancla, papel.largo)
+	_mover_deslizando(r[0] - global_position)  # con colisión, para no atravesar paredes
+	velocity = r[1]
+	_tiempo_enganchado += delta
+	papel.gastar(delta, Pendulo.tension(r[2]))
+	if papel.roto:
+		papel = null
+		papel_roto.emit()
+		efecto.rpc("rotura", (global_position + papel_ancla) / 2.0)
+
+
+# El hilo de moco con el que cuelgo de otro funciona como una cuerda de largo fijo.
+func _aplicar_hilo_agarre() -> void:
 	if agarrado_a != null and not is_instance_valid(agarrado_a):
 		agarrado_a = null  # se desconectó
 	if agarrado_a != null:
 		var r := Pendulo.restringir(global_position, velocity, agarrado_a.global_position, LARGO_AGARRE)
 		_mover_deslizando(r[0] - global_position)
 		velocity = r[1]
-	_publicar_papel()
 
+
+# --- Poderes ---
 
 # Al coger una burbuja (solo en el anfitrión). Congelar no se lo queda: para a los demás.
 func dar_poder(tipo: String) -> void:
@@ -389,9 +418,6 @@ func _lanzar_papel(objetivo: Vector2) -> void:
 		papel = PapelRope.new(punto, global_position.distance_to(punto), segundos_aguante)
 		papel_lanzado.emit()
 		efecto.rpc("enganche", punto)
-
-
-var _poder_dibujado := ""
 
 
 # Brillo del color del poder alrededor del moco: así se ve qué lleva cada uno.
