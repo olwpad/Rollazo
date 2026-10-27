@@ -94,6 +94,11 @@ func construir(semilla: int) -> void:
 		_crear_aros(mapa)
 	_crear_sierras(mapa)
 	_crear_nubes(mapa)
+	for v: Ventilador in Ventilador.nuevos(semilla, mapa, self):
+		piezas.add_child(v)
+	for t: Trampolin in Trampolin.nuevos(semilla, mapa, self):
+		t.body_entered.connect(_al_tocar_trampolin.bind(t))
+		piezas.add_child(t)
 	_poner_vivos(mapa, semilla)
 	limites = mapa.limites
 	_poner_moviles(mapa, semilla)
@@ -562,6 +567,22 @@ func _al_tocar_nube(cuerpo: Node2D) -> void:
 		_mandar_a_mirar(cuerpo as Jugador)
 		return
 	_volver_al_control(cuerpo)
+
+
+# Trampolín: quien entra cayendo sale disparado hacia arriba. Lo decide el anfitrión.
+func _al_tocar_trampolin(cuerpo: Node2D, trampolin: Trampolin) -> void:
+	if not (cuerpo is Jugador and multiplayer.is_server()) or cuerpo.congelado or cuerpo.velocity.y <= 0.0:
+		return
+	cuerpo.velocity.y = Trampolin.velocidad_rebote(cuerpo.velocity.y)
+	cuerpo.efecto.rpc("boing", cuerpo.global_position)
+	trampolin_rebota.rpc(trampolin.name)
+
+
+@rpc("authority", "call_local", "reliable")
+func trampolin_rebota(nombre_trampolin: String) -> void:
+	var t := piezas.get_node_or_null(nombre_trampolin) as Trampolin
+	if t != null:
+		t.rebotar()
 
 
 # Estalactita cayendo: igual que la sierra pero sin el "zing". Solo la ve caer el área (monitoring).
