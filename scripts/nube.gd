@@ -5,6 +5,7 @@ class_name Nube
 extends Area2D
 
 const COLOR := Color("8f86b8")
+const CHISPA := Color("f5d38a")
 
 var poly := PackedVector2Array()  # en coordenadas globales (la nube se queda en el origen)
 var tipo := "techo"
@@ -27,16 +28,35 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	var t := Time.get_ticks_msec() / 1000.0
 	_nubes.position = Vector2(sin(t * 0.5 + _caja.position.x) * 8.0, sin(t * 0.8 + _caja.position.x * 0.01) * 5.0)
+	if tipo == "techo":
+		queue_redraw()  # las chispas parpadean
 
 
 func _draw() -> void:
-	# Calima: solo la franja de abajo en el cielo (la columna llega muy arriba)
-	var alto := minf(_caja.size.y, 120.0)
-	draw_rect(Rect2(_caja.position.x, _caja.end.y - alto, _caja.size.x, alto), Color(COLOR, 0.16))
+	if tipo == "cielo":  # calima solo en la franja de abajo (la columna llega muy arriba)
+		var alto := minf(_caja.size.y, 120.0)
+		draw_rect(Rect2(_caja.position.x, _caja.end.y - alto, _caja.size.x, alto), Color(COLOR, 0.1))
+		return
+	# Techo: chispitas amarillas que saltan de vez en cuando entre las nubecitas
+	var t := Time.get_ticks_msec() / 1000.0
+	var n := maxi(1, int(_caja.size.x / 45.0))
+	for i in n:
+		if sin(t * 2.3 + i * 1.7 + _caja.position.x) < 0.93:
+			continue
+		var x := _caja.position.x + (i + 0.5) * _caja.size.x / n
+		var y := _caja.end.y - 24.0
+		draw_polyline(PackedVector2Array([Vector2(x - 3, y - 14), Vector2(x + 4, y - 6), Vector2(x - 2, y - 4), Vector2(x + 3, y + 4)]), CHISPA, 2.5)
 
 
 func _dibujar_nubes() -> void:
-	var y := _caja.end.y - 10.0 if tipo == "cielo" else _caja.position.y - 8.0  # cielo: colgando del borde de abajo
+	if tipo == "techo":  # nubecitas bajas pegadas a la cara de arriba: avisan sin tapar el mapa
+		var m := maxi(1, int(_caja.size.x / 45.0))
+		for i in m:
+			var x := _caja.position.x + (i + 0.5) * _caja.size.x / m
+			var rx := 18.0 + 5.0 * ((i * 7 + int(_caja.position.x)) % 3)
+			Moviles.mancha(_nubes, Transform2D(0.0, Vector2(x, _caja.end.y - 14.0 - (i % 2) * 5.0)) * Moviles.elipse(rx, rx * 0.5), Color(COLOR, 0.8), i + int(_caja.position.x))
+		return
+	var y := _caja.end.y - 10.0  # cielo: colgando del borde de abajo
 	var n := maxi(1, int(_caja.size.x / 90.0))
 	for i in n:
 		var x := _caja.position.x + (i + 0.5) * _caja.size.x / n
