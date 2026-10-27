@@ -46,6 +46,14 @@ func test_elige_la_ip_de_tailscale() -> void:
 	comprobar(red.elegir_ip(PackedStringArray(["127.0.0.1", "192.168.1.5"])) == "192.168.1.5", "si no, la de la red de casa")
 
 
+func test_codigo_de_sala_se_normaliza() -> void:
+	var red: GDScript = load("res://scripts/red.gd")
+	comprobar(red.normalizar_codigo(" ka-pu9 ") == "KAPU", "mayúsculas y fuera lo que no es del alfabeto")
+	comprobar(red.normalizar_codigo("ILO") == "", "sin I, L ni O")
+	comprobar(red.normalizar_codigo("abcdefg") == "ABCD", "máximo 4")
+	comprobar(red.codigo_valido("KAPU") and not red.codigo_valido("KAP") and not red.codigo_valido("kapu") and not red.codigo_valido("KAPL"), "válido: 4 letras del alfabeto en mayúsculas")
+
+
 func test_sala_del_anfitrion() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.crear_partida(7797)
@@ -85,8 +93,12 @@ func test_contador_de_listos_y_quien_falta() -> void:
 	menu._actualizar()
 	comprobar(menu.get_node("SalaUI/Principal").text == "¡A CORRER! · 2/3 LISTOS", "cuenta al anfitrión: " + menu.get_node("SalaUI/Principal").text)
 	comprobar(menu.get_node("SalaUI/Estado").text == "FALTA: JUGADOR 3", "quién falta: " + menu.get_node("SalaUI/Estado").text)
-	menu.get_node("SalaUI/Ip/Fila/Copiar").pressed.emit()
-	comprobar(menu.get_node("SalaUI/Ip/Fila/Copiar").text == "¡COPIADA!", "copiar avisa")
+	comprobar(menu.get_node("SalaUI/Codigo/Fila/Valor").text == "CREANDO SALA…", "sin código aún, se dice")
+	red.codigo_sala = "KAPU"
+	menu._actualizar()
+	comprobar(menu.get_node("SalaUI/Codigo/Fila/Valor").text == "KAPU", "se enseña el código")
+	menu.get_node("SalaUI/Codigo/Fila/Copiar").pressed.emit()
+	comprobar(menu.get_node("SalaUI/Codigo/Fila/Copiar").text == "¡COPIADA!", "copiar avisa")
 	menu.free()
 	red.salir()
 
