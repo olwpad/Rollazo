@@ -1,6 +1,6 @@
 # Los 6 huecos de jugador, en dos formas:
-# - En el menú principal: la azotea con los 6 mocos de adorno (los libres botan) y un único
-#   texto "HASTA 6 JUGADORES": aún no hay partida, así que nadie "espera".
+# - En el menú principal: la azotea con tu moco y 3 de adorno (los libres botan; con 6 quedaba
+#   abarrotado) y un único texto "HASTA 6 JUGADORES": aún no hay partida, así que nadie "espera".
 # - Dentro de una partida (tarjetas = true): la misma azotea, ya de lado a lado, con cada moco de
 #   pie botando junto a su cartel clavado (nombre, estado o sello "¡LISTO!"); el hueco libre es un
 #   cartel punteado con "+". Así el inicio y la sala parecen el mismo sitio.
@@ -15,9 +15,10 @@ const CREMA := Color("fffaf4")
 const GRADA := [Vector2(-330, 0), Vector2(0, 0), Vector2(330, 0), Vector2(-190, -122), Vector2(140, -122), Vector2(470, -122)]  # el 1 (anfitrión) delante a la izquierda
 const ESCALA_ATRAS := 0.75
 const ATRAS_Y := -106.0  # donde pisa la grada de atrás (la de delante, en 22)
+const ADORNOS := 4  # mocos en la azotea del menú: el tuyo y 3 libres
 const TILT := [-0.035, 0.025, -0.015, 0.03, -0.025, 0.02]  # carteles torcidos, a mano
 
-var separacion := 100.0:  # solo en el menú: lo que separa a los 6 mocos de adorno
+var separacion := 135.0:  # solo en el menú: lo que separa a los mocos de adorno
 	set(v):
 		separacion = v
 		_colocar()
@@ -79,14 +80,15 @@ func _ready() -> void:
 func _colocar() -> void:
 	for i in huecos.size():
 		huecos[i].nodo.position = GRADA[i] if tarjetas else Vector2(i * separacion, 0)
+		huecos[i].nodo.visible = tarjetas or i < ADORNOS
 		huecos[i].nodo.scale = Vector2.ONE * (ESCALA_ATRAS if tarjetas and i >= 3 else 1.0)
 
 
-# Debajo de los 5 mocos libres, a la altura del "TÚ".
+# Debajo de los 3 mocos libres, a la altura del "TÚ".
 func _colocar_capacidad() -> void:
 	if capacidad != null:
 		capacidad.position = Vector2(separacion - 90.0, 40.0)
-		capacidad.size = Vector2(separacion * 4.0 + 180.0, 36.0)
+		capacidad.size = Vector2(separacion * (ADORNOS - 2) + 180.0, 36.0)
 
 
 func _process(_delta: float) -> void:
@@ -122,7 +124,7 @@ func mostrar(ids: Array[int], mi_id: int, listos := {}) -> void:
 		var ocupado := i < ids.size()
 		if ocupado and not h.ocupado:
 			_caer(h.moco)
-		h.moco.visible = ocupado or not tarjetas  # en el menú, los 6 de adorno
+		h.moco.visible = ocupado or not tarjetas  # en el menú, los de adorno
 		h.ocupado = ocupado
 		var aspecto: Dictionary = Red.aspecto_de(ids[i]) if ocupado else Perfil.POR_DEFECTO
 		h.moco.color = Red.color_de(ids[i]) if ocupado else Jugador.COLORES[i]

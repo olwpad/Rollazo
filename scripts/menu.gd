@@ -170,7 +170,7 @@ func _actualizar() -> void:
 	$Pie.visible = not online  # en la sala, abajo a la izquierda va SALIR
 	$Nota.visible = not online
 	$Salir.visible = online
-	$Sala.position = Vector2(580, 493) if en_sala else Vector2(690, 560)
+	$Sala.position = Vector2(580, 493) if en_sala else Vector2(740, 560)
 	if en_sala:  # sobre la azotea morada, el texto claro
 		$Salir.add_theme_color_override("font_color", Color("fffaf4"))
 	else:

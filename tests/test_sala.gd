@@ -16,14 +16,16 @@ func test_sala_con_seis_huecos_y_tu_solo_sin_red() -> void:
 	menu.free()
 
 
-func test_menu_con_seis_mocos_y_hasta_6_jugadores() -> void:
+func test_menu_con_cuatro_mocos_y_hasta_6_jugadores() -> void:
 	var menu := _menu()
 	var sala = menu.get_node("Sala")
-	comprobar(sala.huecos.all(func(h: Dictionary) -> bool: return h.moco.visible), "los 6 mocos en la azotea, de adorno")
+	var vistos: Array = sala.huecos.filter(func(h: Dictionary) -> bool: return h.nodo.visible and h.moco.visible)
+	comprobar(vistos.size() == 4, "en el menú, tu moco y 3 de adorno: %d" % vistos.size())
 	comprobar(sala.etiqueta(0) == "TÚ" and sala.etiqueta(1) == "", "solo el tuyo lleva nombre")
 	comprobar(sala.get_node("Capacidad").visible and sala.get_node("Capacidad").text == "HASTA 6 JUGADORES", "un único texto")
 	sala.tarjetas = true
 	comprobar(not sala.get_node("Capacidad").visible, "en la sala de la partida, tarjetas como antes")
+	comprobar(sala.huecos.all(func(h: Dictionary) -> bool: return h.nodo.visible), "en la sala, los 6 huecos")
 	menu.free()
 
 
