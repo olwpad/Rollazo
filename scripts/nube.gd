@@ -22,8 +22,8 @@ func _ready() -> void:
 	_caja = Rect2(poly[0], Vector2.ZERO)
 	for v in poly:
 		_caja = _caja.expand(v)
-	# Solo se dibujan algunas: el resto fulmina igual, sin avisar (trol)
-	_visible = hash(int(_caja.position.x / 10.0)) % 3 == 0
+	# Los techos avisan siempre; del cielo solo se ven algunas (quien vuela tan alto ya hace trampa)
+	_visible = tipo == "techo" or hash(int(_caja.position.x / 10.0)) % 3 == 0
 	_nubes.draw.connect(_dibujar_nubes)
 	add_child(_nubes)
 
