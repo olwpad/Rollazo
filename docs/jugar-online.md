@@ -1,6 +1,6 @@
 # Rollazo: manual para jugar con los amigos
 
-Rollazo es una carrera de hasta **4 mocos** que se columpian con papel higiénico por los
+Rollazo es una carrera de hasta **6 mocos** que se columpian con papel higiénico por los
 tejados de una ciudad. Puedes cortar el papel de los demás, agarrarte a ellos y chocar.
 Cada ronda es un mapa nuevo y gana quien sume más puntos.
 

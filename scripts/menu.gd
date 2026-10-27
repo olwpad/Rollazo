@@ -164,6 +164,7 @@ func _actualizar() -> void:
 	$SalaUI.visible = en_sala
 	# El columpio sigue en la sala (inicio y sala son la misma azotea), entre el código y la nota.
 	$Columpio.position = Vector2(600, 40) if en_sala else Vector2(760, 60)
+	$Columpio.largo = 160.0 if en_sala else 230.0  # en la sala, corto: que no baje hasta los carteles de la grada
 	$Pie.visible = not online  # en la sala, abajo a la izquierda va SALIR
 	$Nota.visible = not online
 	$Salir.visible = online
