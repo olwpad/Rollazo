@@ -97,6 +97,10 @@ func construir(semilla: int) -> void:
 	for t: Trampolin in Trampolin.nuevos(semilla, mapa, self):
 		t.body_entered.connect(_al_tocar_trampolin.bind(t))
 		piezas.add_child(t)
+	for p: Puerta in Puerta.nuevas(semilla, mapa, self):
+		p.color = Temas.DATOS[tema].suelo
+		p.mordio.connect(_al_morder)
+		piezas.add_child(p)
 	_poner_vivos(mapa, semilla)
 	limites = mapa.limites
 	_poner_moviles(mapa, semilla)
@@ -537,6 +541,14 @@ func _al_tocar_sierra(cuerpo: Node2D, _sierra: Sierra) -> void:
 	if not (cuerpo is Jugador and multiplayer.is_server()) or cuerpo.congelado:
 		return
 	cuerpo.efecto.rpc("sierra", cuerpo.global_position)  # el "zing" extra, además de la "rotura"
+	_golpe_y_vuelta(cuerpo)
+
+
+# Mandíbula: quien se queda en el hueco al cerrarse se lleva el ñam. Lo decide el anfitrión.
+func _al_morder(cuerpo: Node2D) -> void:
+	if cuerpo.congelado:
+		return
+	cuerpo.efecto.rpc("ñam", cuerpo.global_position)
 	_golpe_y_vuelta(cuerpo)
 
 
