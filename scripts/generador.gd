@@ -16,7 +16,7 @@ const NOMBRE := "LA AZOTEA"  # el nombre que sale en las postales
 const LARGO := 7600.0  # a partir de aquí se pone la meta
 const SUELO_Y := 690.0  # centro de los descansos (la parte de arriba queda en y=670)
 const FORMAS := ["horizontal", "torre", "bajada", "montaña", "hibrido", "pozo"]
-const PESOS_FORMA := {"horizontal": 27, "bajada": 23, "hibrido": 18, "montaña": 14, "torre": 8, "pozo": 10}  # en %
+const PESOS_FORMA := {"horizontal": 33, "bajada": 25, "hibrido": 18, "montaña": 10, "torre": 4, "pozo": 10}  # en %, torre poco: subir cansa
 const INICIO_FIN := 650.0  # donde acaba el suelo de salida (caben 4 mocos a 90 px)
 # Torre. Cada torre sortea su anchura y lo que sube cada saliente, con dos salientes seguidos
 # siempre a <= SALIENTE_ALCANCE (el papel llega a 420)
@@ -53,13 +53,14 @@ const ESTRELLON := 1400.0  # velocidad vertical (px/s) con la que el fondo del p
 #   piezas: [{nombre, pos, poly, enganchable}], controles: [Vector2], meta: Vector2,
 #   forma, inicio, limites: Rect2, meta_tam, caida_y, caida_x, caida_ancho, camino: [Vector2] (techos principales, para los tests),
 #   salidas_descanso: [Vector2] (borde de cada descanso, para los tests),
-#   sierras: [{pos, riel: Vector2 (ZERO = quieta), fase, color}]
+#   sierras: [{pos, riel: Vector2 (ZERO = quieta), fase, color}],
+#   tramos: [{tipo, i0, i1}] (los techos del camino i0..i1-1 son de ese tramo)
 static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
 	if forma == "":
 		forma = forma_de(semilla)
-	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": [], "pozos": []}
+	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": [], "pozos": [], "tramos": []}
 	m.forma = forma if forma in FORMAS else "horizontal"
 	m.huecos_sierra = []
 	var tramos := _tramos(m.forma, rng).map(func(t: Array) -> Array: return [t[0], t[1] * MAS_LARGO])
@@ -81,6 +82,7 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 			fin = _tramo_bajada(m, rng, desde, tramos[i][1])
 		else:
 			fin = _tramo_horizontal(m, rng, desde, tramos[i][1])
+		m.tramos.append({"tipo": tipo, "i0": antes, "i1": m.camino.size()})
 		if tipo != "horizontal":  # el horizontal ya las pone
 			_burbujas_vuelo(m, rng, antes)
 		if i < tramos.size() - 1:
@@ -129,7 +131,7 @@ static func _tramos(forma: String, rng: RandomNumberGenerator) -> Array:
 			var n := rng.randi_range(2, 3)
 			var tipos := []
 			for i in n:
-				tipos.append(["horizontal", "torre", "bajada", "pozo"][rng.randi_range(0, 3)])
+				tipos.append(["horizontal", "horizontal", "torre", "bajada", "bajada", "pozo", "pozo"][rng.randi_range(0, 6)])  # torre 1 de 7
 			if tipos.count("horizontal") == n:
 				tipos[rng.randi_range(0, n - 1)] = ["torre", "bajada", "pozo"][rng.randi_range(0, 2)]
 			for i in range(1, n):  # el pozo empieza donde acaba un suelo, no contra la pared de una torre
@@ -451,6 +453,27 @@ static func _sierras(semilla: int, m: Dictionary) -> Array:
 				riel = Vector2.ZERO
 		sierras.append({"pos": pos, "riel": riel, "fase": rng.randf(), "color": rng.randi_range(0, Sierra.COLORES.size() - 1)})
 	return sierras
+
+
+# Los techos (piezas) de un techo del camino: dos si está roto.
+static func techos_en(m: Dictionary, c: Vector2) -> Array:
+	return m.piezas.filter(func(p: Dictionary) -> bool:
+		return p.enganchable and p.nombre.begins_with("Techo") and absf(p.pos.x - c.x) < 170.0 and absf(p.pos.y - c.y) < 40.0)
+
+
+static func poly_global(p: Dictionary) -> PackedVector2Array:
+	var r := PackedVector2Array()
+	for v: Vector2 in p.poly:
+		r.append(p.pos + v)
+	return r
+
+
+static func caja_de(p: Dictionary) -> Rect2:
+	var poly := poly_global(p)
+	var caja := Rect2(poly[0], Vector2.ZERO)
+	for v in poly:
+		caja = caja.expand(v)
+	return caja
 
 
 # --- Piezas sueltas: techos, estorbos y formas básicas ---

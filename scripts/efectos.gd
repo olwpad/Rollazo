@@ -7,7 +7,7 @@ const ESTELA_PUNTOS := 10
 # Qué suena con cada efecto: este señal llega a todos los PCs, así cada uno oye lo que ve.
 const SONIDOS := {"enganche": "enganchar", "agarrado": "enganchar", "aterrizaje": "salpicar", "choque": "salpicar",
 	"reaparecer": "salpicar", "fuego": "salpicar", "cortado": "soltar", "rotura": "soltar", "corte": "soltar",
-	"meta": "meta", "poder": "poder", "sierra": "sierra", "control": "control"}
+	"meta": "meta", "poder": "poder", "sierra": "sierra", "control": "control", "boing": "boing", "ñam": "ñam"}
 
 @onready var jugador: Jugador = get_parent()
 @onready var estela: Line2D = $Estela

@@ -92,6 +92,17 @@ func construir(semilla: int) -> void:
 	if Red.config.aros and Temas.DATOS[tema].aros:
 		_crear_aros(mapa)
 	_crear_sierras(mapa)
+	for v: Ventilador in Ventilador.nuevos(semilla, mapa, self):
+		piezas.add_child(v)
+	for t: Trampolin in Trampolin.nuevos(semilla, mapa, self):
+		t.body_entered.connect(_al_tocar_trampolin.bind(t))
+		piezas.add_child(t)
+	mapa.zonas_puerta = []  # columnas de las puertas: los móviles del tema no las cruzan (Moviles.ocupado)
+	for p: Puerta in Puerta.nuevas(semilla, mapa, self):
+		p.color = Temas.DATOS[tema].suelo
+		p.mordio.connect(_al_morder)
+		piezas.add_child(p)
+		mapa.zonas_puerta.append(Rect2(p.position.x - Puerta.ANCHO / 2.0 - 40.0, p.arriba_y, Puerta.ANCHO + 80.0, p.abajo_y - p.arriba_y))
 	_poner_vivos(mapa, semilla)
 	limites = mapa.limites
 	_poner_moviles(mapa, semilla)
@@ -177,8 +188,11 @@ func _crear_sierras(mapa: Dictionary) -> void:
 		piezas.add_child(s)
 
 
-# Peligros propios de cada tema (marea, estalactitas, palomas, guirnaldas y techos que se apagan).
+# Peligros de cada tema (aves en todos; marea, estalactitas, guirnaldas y techos que se apagan).
 func _poner_vivos(mapa: Dictionary, semilla: int) -> void:
+	for p: Paloma in Paloma.nuevas(semilla, mapa, self, tema):  # aves en todos los temas, cada una la suya
+		p.body_entered.connect(_al_tocar_paloma.bind(p))
+		piezas.add_child(p)
 	match tema:
 		"mar":
 			var marea := Marea.nueva(semilla, mapa, self)
@@ -188,15 +202,15 @@ func _poner_vivos(mapa: Dictionary, semilla: int) -> void:
 			for e: Estalactita in Estalactita.nuevas(semilla, mapa, self):
 				e.body_entered.connect(_al_tocar_estalactita)
 				piezas.add_child(e)
-		"azotea":
-			for p: Paloma in Paloma.nuevas(semilla, mapa, self):
-				p.body_entered.connect(_al_tocar_paloma.bind(p))
-				piezas.add_child(p)
 		"noche":
 			for g in Guirnalda.nuevas(semilla, mapa, self):
 				piezas.add_child(g)
 			for a in Apagon.nuevos(semilla, mapa, self, piezas):
 				piezas.add_child(a)
+	# Techos agrietados, en todos los temas (en la noche, sin los que ya se apagan)
+	var apagan := Apagon.indices(semilla, mapa.camino.size()) if tema == "noche" else []
+	for ag in Agrietado.nuevos(semilla, mapa, self, piezas, apagan):
+		piezas.add_child(ag)
 
 
 # Lo que se mueve y se puede agarrar de cada tema (Moviles decide dónde); con las piezas, se borra con ellas.
@@ -532,6 +546,30 @@ func _al_tocar_sierra(cuerpo: Node2D, _sierra: Sierra) -> void:
 	_golpe_y_vuelta(cuerpo)
 
 
+# Mandíbula: quien se queda en el hueco al cerrarse se lleva el ñam. Lo decide el anfitrión.
+func _al_morder(cuerpo: Node2D) -> void:
+	if cuerpo.congelado:
+		return
+	cuerpo.efecto.rpc("ñam", cuerpo.global_position)
+	_golpe_y_vuelta(cuerpo)
+
+
+# Trampolín: quien entra cayendo sale disparado hacia arriba. Lo decide el anfitrión.
+func _al_tocar_trampolin(cuerpo: Node2D, trampolin: Trampolin) -> void:
+	if not (cuerpo is Jugador and multiplayer.is_server()) or cuerpo.congelado or cuerpo.velocity.y <= 0.0:
+		return
+	cuerpo.velocity.y = Trampolin.velocidad_rebote(cuerpo.velocity.y)
+	cuerpo.efecto.rpc("boing", cuerpo.global_position)
+	trampolin_rebota.rpc(trampolin.name)
+
+
+@rpc("authority", "call_local", "reliable")
+func trampolin_rebota(nombre_trampolin: String) -> void:
+	var t := piezas.get_node_or_null(nombre_trampolin) as Trampolin
+	if t != null:
+		t.rebotar()
+
+
 # Estalactita cayendo: igual que la sierra pero sin el "zing". Solo la ve caer el área (monitoring).
 func _al_tocar_estalactita(cuerpo: Node2D) -> void:
 	if cuerpo is Jugador and multiplayer.is_server() and not cuerpo.congelado:
@@ -550,6 +588,14 @@ func _golpe_y_vuelta(cuerpo: Node2D) -> void:
 		_mandar_a_mirar(cuerpo as Jugador)
 		return
 	_volver_al_control(cuerpo)  # con el efecto "reaparecer": la salpicadura
+
+
+# Un techo agrietado tiembla, cae o vuelve (Agrietado.Estado): el anfitrión lo decide y todos lo ven igual.
+@rpc("authority", "call_local", "reliable")
+func techo_estado(nombre_techo: String, estado: int) -> void:
+	var a := piezas.get_node_or_null(nombre_techo) as Agrietado
+	if a != null:
+		a.aplicar(estado)
 
 
 @rpc("authority", "call_local", "reliable")

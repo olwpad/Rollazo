@@ -36,8 +36,11 @@ func test_todo_libre_menos_lo_que_lleva_candado() -> void:
 			comprobar(p.NOMBRES.has(cosa), cosa + " tiene nombre para el vestidor")
 	var nuevo := Node.new()
 	nuevo.set_script(load("res://scripts/perfil.gd"))  # uno recién estrenado, sin partidas
-	for cosa in ["afro", "pasta", "sonrisa", "siete", "amarilla", "traje", "boina_roja", "tupe_rubio", "rizos", "cinta", "raya", "rulos", "cepillo", "rulos_cortos", "oca", "ciborg", "mascara_roja", "mascara_negra", "cafetera", "reloj"]:
-		comprobar(not nuevo.desbloqueado(cosa), cosa + " (famoso) empieza con candado")
+	var cerradas := []  # solo 3 premios: las dos máscaras y las gafas de estrella
+	for fila in [nuevo.PELOS, nuevo.SOMBREROS, nuevo.CARAS, nuevo.ROPAS]:
+		cerradas += fila.filter(func(c: String) -> bool: return not nuevo.desbloqueado(c))
+	cerradas.sort()
+	comprobar(cerradas == ["estrella", "mascara_negra", "mascara_roja"], "solo 3 cosas con candado: %s" % [cerradas])
 	comprobar(nuevo.requisito("estrella") == "GANA UN TORNEO", "las gafas de estrella se ganan ganando")
 	nuevo.free()
 	p = _perfil()
@@ -150,9 +153,9 @@ func test_famosos_predefinidos() -> void:
 	for nombre in ["EL REY DEL ROCK", "EL CÓMICO MUDO", "EL 10 ZURDO"]:
 		comprobar(nombre in nuevo.LOOKS and nuevo.requisito_look(nombre) == "", nombre + " libre desde el principio")
 	comprobar(nuevo.LOOKS.size() >= 20, "un famoso por personaje: %d" % nuevo.LOOKS.size())
-	comprobar(nuevo.requisito_look("EL MAGNATE") != "", "los demás con candado")
+	comprobar(nuevo.requisito_look("EL MAGNATE") == "" and nuevo.requisito_look("EL HÉROE ENMASCARADO") != "", "casi todos libres; los héroes con candado")
 	comprobar(nuevo.poner_look("EL CÓMICO MUDO") and nuevo.aspecto.sombrero == "bombin" and nuevo.aspecto.cara == "bigotito" and nuevo.aspecto.pelo == "calvo", "un clic y va vestido entero")
-	comprobar(not nuevo.poner_look("EL MAGNATE") and nuevo.aspecto.sombrero == "bombin", "con candado no se pone")
+	comprobar(not nuevo.poner_look("EL HÉROE ENMASCARADO") and nuevo.aspecto.sombrero == "bombin", "con candado no se pone")
 	comprobar(nuevo.look_puesto() == "EL CÓMICO MUDO", "sabe qué famoso llevas")
 	for nombre in nuevo.LOOKS:
 		comprobar(nuevo.valido(nuevo.look(nombre).merged({"color": 0})), nombre + " solo usa piezas que existen")
