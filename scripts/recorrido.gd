@@ -97,10 +97,12 @@ func construir(semilla: int) -> void:
 	for t: Trampolin in Trampolin.nuevos(semilla, mapa, self):
 		t.body_entered.connect(_al_tocar_trampolin.bind(t))
 		piezas.add_child(t)
+	mapa.zonas_puerta = []  # columnas de las puertas: los móviles del tema no las cruzan (Moviles.ocupado)
 	for p: Puerta in Puerta.nuevas(semilla, mapa, self):
 		p.color = Temas.DATOS[tema].suelo
 		p.mordio.connect(_al_morder)
 		piezas.add_child(p)
+		mapa.zonas_puerta.append(Rect2(p.position.x - Puerta.ANCHO / 2.0 - 40.0, p.arriba_y, Puerta.ANCHO + 80.0, p.abajo_y - p.arriba_y))
 	_poner_vivos(mapa, semilla)
 	limites = mapa.limites
 	_poner_moviles(mapa, semilla)

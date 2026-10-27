@@ -11,7 +11,7 @@ const VELOCIDAD_GLOBO := 70.0  # px/s: despacio, para engancharse con calma
 # --- Utilidades comunes ---
 
 
-# true si en `zona` hay una pieza del mapa, un control, una burbuja, un aro, una sierra, la salida o la meta
+# true si en `zona` hay una pieza del mapa, una puerta, un control, una burbuja, un aro, una sierra, la salida o la meta
 static func ocupado(m: Dictionary, zona: Rect2) -> bool:
 	for p: Dictionary in m.piezas:
 		var caja := Rect2(p.pos + p.poly[0], Vector2.ZERO)
@@ -19,6 +19,8 @@ static func ocupado(m: Dictionary, zona: Rect2) -> bool:
 			caja = caja.expand(p.pos + v)
 		if caja.intersects(zona):
 			return true
+	if m.get("zonas_puerta", []).any(func(r: Rect2) -> bool: return r.intersects(zona)):
+		return true
 	var puntos: Array = m.controles + [m.inicio, m.meta]
 	for lista: Array in [m.burbujas, m.aros, m.sierras]:
 		puntos += lista.map(func(o: Dictionary) -> Vector2: return o.pos)
