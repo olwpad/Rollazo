@@ -8,7 +8,7 @@
 extends Node2D
 
 const FUENTE := preload("res://assets/fuentes/Bangers-Regular.ttf")
-const CARTEL := Rect2(-95, -190, 190, 110)  # encima del palo, que llega a la azotea (y=22)
+const CARTEL := Rect2(-72, -160, 144, 80)  # encima del palo, que llega a la azotea (y=22); pequeño: que se vean los mocos
 const MOCO_X := 70.0  # en la sala, el moco va al lado de su cartel
 const CREMA := Color("fffaf4")
 
@@ -30,9 +30,12 @@ var tarjetas := false:
 		_colocar()
 		for h in huecos:
 			h.nombre.add_theme_color_override("font_color", Acuarela.CIRUELA if v else CREMA)
-			h.nombre.position = Vector2(-90, -178) if v else Vector2(-90, 40)  # en el cartel o bajo el moco
-			h.estado.position = Vector2(-90, -136)
-			h.sello.position = Vector2(-90, -142)
+			h.nombre.position = Vector2(-90, -154) if v else Vector2(-90, 40)  # en el cartel o bajo el moco
+			h.nombre.add_theme_font_size_override("font_size", 18 if v else 22)
+			h.estado.position = Vector2(-90, -120)
+			h.estado.add_theme_font_size_override("font_size", 14)
+			h.sello.position = Vector2(-90, -126)
+			h.sello.add_theme_font_size_override("font_size", 24)
 			h.grande.position.x = MOCO_X if v else 0.0
 		if capacidad != null:
 			capacidad.visible = not v
@@ -209,7 +212,7 @@ func _dibujar_tarjetas() -> void:
 			var esquinas := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
 			for k in 4:
 				draw_dashed_line(esquinas[k], esquinas[k + 1], Color(CREMA, 0.9), 3.0, 12.0)
-			draw_string(FUENTE, Vector2(-40, -92), "+", HORIZONTAL_ALIGNMENT_CENTER, 80, 70, Color(Acuarela.CIRUELA, 0.35))
+			draw_string(FUENTE, Vector2(-40, -94), "+", HORIZONTAL_ALIGNMENT_CENTER, 80, 50, Color(Acuarela.CIRUELA, 0.35))
 		draw_set_transform(Vector2.ZERO)
 		if not huecos[i].ocupado:
 			draw_set_transform(pos + Vector2(MOCO_X, 24) * esc, 0.0, Vector2(esc, 0.3 * esc))  # sombra aplastada en el suelo
