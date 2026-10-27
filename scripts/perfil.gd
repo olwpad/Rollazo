@@ -22,14 +22,9 @@ const NOMBRES := {"calvo": "CALVO", "cresta": "CRESTA", "skrillex": "MEDIO RAPAD
 		"rulos": "RULOS NEGROS", "cepillo": "PELO CEPILLO", "rulos_cortos": "RULOS DE CANTERANO", "oca": "GORRO DE OCA",
 		"ciborg": "GAFAS DE CÍBORG", "mascara_roja": "MÁSCARA DE HÉROE", "mascara_negra": "MÁSCARA NEGRA Y ROJA",
 		"cafetera": "CAMISETA CAFETERA", "reloj": "CAMISETA CON RELOJ VERDE"}
-# Candados: partidas jugadas (ganes o pierdas). Lo que no sale aquí es libre.
-# Libres desde el principio: el rey del rock, el cómico mudo y el 10 zurdo (tupe, bombin, bigotito, corto, diez).
-var partidas_para := {"afro": 4, "vaquero": 5, "melena": 6,
-		"rizado": 7, "boina": 7, "diva": 8, "boina_roja": 9, "militar": 9, "redondas": 10, "tupe_rubio": 11,
-		"corbata": 11, "engominado": 13, "siete": 13, "rizos": 14,
-		"cinta": 15, "sonrisa": 15, "amarilla": 15, "pasta": 16, "raya": 17, "traje": 17,
-		"cafetera": 18, "rulos": 19, "cepillo": 20, "ciborg": 20, "oca": 21, "rulos_cortos": 22,
-		"reloj": 23, "mascara_roja": 24, "mascara_negra": 25}
+# Candados: partidas jugadas (ganes o pierdas). Lo que no sale aquí es libre: casi todo.
+# Solo quedan 3 premios: las dos máscaras de héroe (por partidas) y las gafas de estrella (ganando).
+var partidas_para := {"mascara_roja": 5, "mascara_negra": 10}
 const TORNEOS_PARA := {"estrella": 1}  # las gafas de estrella, solo ganando
 const LARGO_NOMBRE := 12  # cabe en el cartel de la sala
 const POR_DEFECTO := {"color": 0, "pelo": "calvo", "sombrero": "nada", "cara": "nada", "ropa": "nada"}
