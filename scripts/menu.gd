@@ -36,7 +36,7 @@ func _ready() -> void:
 func _conectar_botones() -> void:
 	$Caja/Multijugador.pressed.connect(_abrir_panel.bind("Multi"))
 	$Caja/Opciones.pressed.connect(_abrir_panel.bind("Opciones"))
-	$Multi/Papel/Caja/Crear.pressed.connect(_crear)
+	$Multi/Papel/Caja/FilaCrear/Crear.pressed.connect(_crear)
 	$Multi/Papel/Caja/Fila/Unirse.pressed.connect(_unirse)
 	$Multi/Papel/Caja/Volver.pressed.connect(_cerrar_panel)
 	$Opciones/Papel/Caja/Volver.pressed.connect(_cerrar_panel)
@@ -186,8 +186,8 @@ func _actualizar() -> void:
 	$Caja.visible = not en_sala
 	$SalaUI.visible = en_sala
 	# El columpio sigue en la sala (inicio y sala son la misma azotea), entre el código y la nota.
-	$Columpio.position = Vector2(600, 40) if en_sala else Vector2(760, 60)
-	$Columpio.largo = 160.0 if en_sala else 230.0  # en la sala, corto: que no baje hasta los carteles de la grada
+	$Columpio.position = Vector2(640, 30) if en_sala else Vector2(760, 60)
+	$Columpio.largo = 150.0 if en_sala else 230.0  # en la sala, corto: que no baje hasta los carteles de la grada
 	$Pie.visible = not online  # en la sala, abajo a la izquierda va SALIR
 	$Nota.visible = not online
 	$Salir.visible = online

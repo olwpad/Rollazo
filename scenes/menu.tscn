@@ -33,6 +33,30 @@ content_margin_right = 22.0
 content_margin_top = 12.0
 content_margin_bottom = 12.0
 
+[sub_resource type="StyleBoxFlat" id="hoja_multi"]
+bg_color = Color(1, 0.98, 0.957, 0.97)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 40.0
+content_margin_right = 52.0
+content_margin_top = 18.0
+content_margin_bottom = 18.0
+shadow_color = Color(0.227, 0.208, 0.314, 0.18)
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="casilla"]
+bg_color = Color(0.953, 0.933, 0.973, 1)
+border_width_bottom = 4
+border_color = Color(0.663, 0.608, 0.878, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+content_margin_left = 12.0
+content_margin_right = 12.0
+content_margin_top = 2.0
+content_margin_bottom = 2.0
+
 [sub_resource type="Theme" id="tema"]
 default_font = ExtResource("2")
 default_font_size = 40
@@ -148,7 +172,7 @@ text = "ROLLAZO"
 layout_mode = 0
 offset_left = 40.0
 offset_top = 100.0
-offset_right = 700.0
+offset_right = 440.0
 offset_bottom = 160.0
 rotation = -0.02
 
@@ -400,15 +424,16 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -340
-offset_top = -215
-offset_right = 340
-offset_bottom = 185
-rotation = 0.015
+offset_left = -330
+offset_top = -190
+offset_right = 330
+offset_bottom = 190
+rotation = -0.012
+theme_override_styles/panel = SubResource("hoja_multi")
 
 [node name="Caja" type="VBoxContainer" parent="Multi/Papel"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 14
 
 [node name="Titulo" type="Label" parent="Multi/Papel/Caja"]
 layout_mode = 2
@@ -416,15 +441,20 @@ theme_override_font_sizes/font_size = 54
 text = "MULTIJUGADOR"
 horizontal_alignment = 1
 
-[node name="PreguntaAnfitrion" type="Label" parent="Multi/Papel/Caja"]
+[node name="FilaCrear" type="HBoxContainer" parent="Multi/Papel/Caja"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
-theme_override_font_sizes/font_size = 30
-text = "¿ERES EL ANFITRIÓN?"
+theme_override_constants/separation = 16
 
-[node name="Crear" type="Button" parent="Multi/Papel/Caja"]
+[node name="PreguntaAnfitrion" type="Label" parent="Multi/Papel/Caja/FilaCrear"]
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
+theme_override_font_sizes/font_size = 32
+text = "¿ERES EL ANFITRIÓN?"
+vertical_alignment = 1
+
+[node name="Crear" type="Button" parent="Multi/Papel/Caja/FilaCrear"]
+layout_mode = 2
 focus_mode = 0
 text = "CREAR SALA"
 script = ExtResource("7")
@@ -433,31 +463,38 @@ principal = true
 [node name="PreguntaCodigo" type="Label" parent="Multi/Papel/Caja"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 32
 text = "¿TE HAN PASADO UN CÓDIGO?"
 
 [node name="Fila" type="HBoxContainer" parent="Multi/Papel/Caja"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
 [node name="Codigo" type="LineEdit" parent="Multi/Papel/Caja/Fila"]
-custom_minimum_size = Vector2(310, 0)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_colors/font_placeholder_color = Color(0.49, 0.455, 0.722, 0.85)
-theme_override_font_sizes/font_size = 40
+size_flags_horizontal = 3
+theme_override_colors/font_placeholder_color = Color(0.49, 0.455, 0.722, 0.6)
+theme_override_constants/minimum_character_width = 0
+theme_override_font_sizes/font_size = 44
+theme_override_styles/normal = SubResource("casilla")
+theme_override_styles/focus = SubResource("casilla")
 placeholder_text = "CÓDIGO"
 alignment = 1
 max_length = 4
 
 [node name="Unirse" type="Button" parent="Multi/Papel/Caja/Fila"]
 layout_mode = 2
+focus_mode = 0
 theme_override_colors/font_disabled_color = Color(0.227, 0.208, 0.314, 0.35)
-text = "Unirse"
+text = "UNIRSE"
 script = ExtResource("7")
 
 [node name="Estado" type="Label" parent="Multi/Papel/Caja"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.937, 0.561, 0.682, 1)
 theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="Volver" type="Button" parent="Multi/Papel/Caja"]

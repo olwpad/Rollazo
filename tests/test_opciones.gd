@@ -36,7 +36,7 @@ func test_panel_multijugador_se_abre_y_esc_lo_cierra() -> void:
 	comprobar(not multi.visible, "empieza cerrado")
 	menu.get_node("Caja/Multijugador").pressed.emit()
 	comprobar(multi.visible and not menu.get_node("Caja").visible, "se abre y esconde la lista")
-	comprobar(multi.get_node("Papel/Caja/Crear").text == "CREAR SALA" and multi.get_node("Papel/Caja/Fila/Codigo") != null \
+	comprobar(multi.get_node("Papel/Caja/FilaCrear/Crear").text == "CREAR SALA" and multi.get_node("Papel/Caja/Fila/Codigo") != null \
 			and multi.get_node("Papel/Caja/Fila/Unirse") != null, "crear, código y unirse")
 	Red.jugadores_cambiaron.emit()
 	comprobar(multi.visible and not menu.get_node("Caja").visible, "un aviso de la red no repinta el menú encima")
