@@ -3,8 +3,6 @@
 # Solo dibuja: el lanzamiento real lo sigue decidiendo el anfitrión.
 extends Node2D
 
-const AJUSTES := "user://ajustes.cfg"  # en Windows: %APPDATA%/Godot/app_userdata/Rollazo
-
 static var _activa: Variant = null  # null = aún sin leer del disco
 
 @onready var jugador: Jugador = get_parent()
@@ -14,17 +12,27 @@ static var _activa: Variant = null  # null = aún sin leer del disco
 static func activa() -> bool:
 	if _activa == null:
 		var cfg := ConfigFile.new()
-		cfg.load(AJUSTES)
+		cfg.load(_ruta())
 		_activa = cfg.get_value("juego", "mira", true)
 	return _activa
 
 
-static func alternar() -> void:
-	_activa = not activa()
+# Sin autoload (los sims con --script no los cargan) vale el archivo de verdad.
+static func _ruta() -> String:
+	var ajustes := (Engine.get_main_loop() as SceneTree).root.get_node_or_null("Ajustes")
+	return ajustes.ruta if ajustes != null else "user://ajustes.cfg"
+
+
+static func poner(si: bool) -> void:
+	_activa = si
 	var cfg := ConfigFile.new()
-	cfg.load(AJUSTES)
-	cfg.set_value("juego", "mira", _activa)
-	cfg.save(AJUSTES)
+	cfg.load(_ruta())
+	cfg.set_value("juego", "mira", si)
+	cfg.save(_ruta())
+
+
+static func alternar() -> void:
+	poner(not activa())
 
 
 func _unhandled_input(evento: InputEvent) -> void:

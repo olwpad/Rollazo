@@ -17,6 +17,7 @@ config/icon="res://assets/icono.svg"
 
 [autoload]
 
+Ajustes="*res://scripts/ajustes.gd"
 Perfil="*res://scripts/perfil.gd"
 Red="*res://scripts/red.gd"
 Musica="*res://scripts/musica.gd"

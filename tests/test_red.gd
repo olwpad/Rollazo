@@ -112,7 +112,7 @@ func test_boton_para_salir_de_la_sala() -> void:
 	menu._actualizar()
 	comprobar(menu.get_node("Salir").visible, "en la sala se puede volver atrás")
 	menu.get_node("Salir").pressed.emit()
-	comprobar(not red.es_online() and menu.get_node("Caja/Crear").visible, "vuelve al menú de antes")
+	comprobar(not red.es_online() and menu.get_node("Caja/Multijugador").visible, "vuelve al menú de antes")
 	menu.free()
 
 
@@ -122,6 +122,6 @@ func test_practicar_solo_oculto_en_partida_online() -> void:
 	var menu: Node = load("res://scenes/menu.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(menu)
 	comprobar(not menu.get_node("Caja/Solo").visible, "sin 'Practicar solo' mientras hay partida")
-	comprobar(not menu.get_node("Caja/Crear").visible and not menu.get_node("Caja/Fila").visible, "ni crear otra ni unirse a otra")
+	comprobar(not menu.get_node("Caja/Multijugador").visible and not menu.get_node("Caja/Opciones").visible, "ni multijugador ni opciones en medio de la partida")
 	menu.free()
 	red.salir()

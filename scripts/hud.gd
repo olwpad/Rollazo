@@ -7,6 +7,11 @@ extends CanvasLayer
 @onready var mensaje: Label = $Mensaje
 
 
+func _ready() -> void:
+	var ajustes := get_node_or_null("/root/Ajustes")  # los sims con --script no tienen autoloads
+	$Ayuda.visible = ajustes == null or ajustes.ayuda  # en Opciones se puede quitar para siempre
+
+
 static func formatear(t: float) -> String:
 	return "--.--" if t == INF else "%05.2f" % t
 

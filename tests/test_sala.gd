@@ -31,19 +31,19 @@ func test_menu_con_cuatro_mocos_y_hasta_6_jugadores() -> void:
 
 func test_codigo_vacio_y_se_recuerda() -> void:
 	var cfg := ConfigFile.new()
-	cfg.load("user://ajustes.cfg")
+	cfg.load(Ajustes.ruta)
 	var antes: String = cfg.get_value("red", "ultimo_codigo", "")  # el de verdad del jugador: se repone al final
 	cfg.set_value("red", "ultimo_codigo", "")
-	cfg.save("user://ajustes.cfg")
+	cfg.save(Ajustes.ruta)
 	var menu := _menu()
 	comprobar(menu.codigo.text == "" and menu.codigo.placeholder_text == "CÓDIGO", "vacío con texto guía")
-	comprobar(menu.get_node("Caja/Fila/Unirse").disabled, "sin código, UNIRSE apagado")
+	comprobar(menu.get_node("Multi/Papel/Caja/Fila/Unirse").disabled, "sin código, UNIRSE apagado")
 	menu.codigo.text = "kap"
 	menu.codigo.text_changed.emit(menu.codigo.text)
-	comprobar(menu.codigo.text == "KAP" and menu.get_node("Caja/Fila/Unirse").disabled, "mayúsculas y con 3 letras sigue apagado")
+	comprobar(menu.codigo.text == "KAP" and menu.get_node("Multi/Papel/Caja/Fila/Unirse").disabled, "mayúsculas y con 3 letras sigue apagado")
 	menu.codigo.text = "kapu"
 	menu.codigo.text_changed.emit(menu.codigo.text)
-	comprobar(not menu.get_node("Caja/Fila/Unirse").disabled, "con 4 letras se enciende")
+	comprobar(not menu.get_node("Multi/Papel/Caja/Fila/Unirse").disabled, "con 4 letras se enciende")
 	comprobar(not "ESC" in menu.get_node("Pie").text.to_upper(), "en el inicio Esc no hace nada: no se anuncia")
 	menu._unirse()
 	menu.free()
@@ -51,9 +51,9 @@ func test_codigo_vacio_y_se_recuerda() -> void:
 	menu = _menu()
 	comprobar(menu.codigo.text == "KAPU", "recuerda el último código")
 	menu.free()
-	cfg.load("user://ajustes.cfg")
+	cfg.load(Ajustes.ruta)
 	cfg.set_value("red", "ultimo_codigo", antes)
-	cfg.save("user://ajustes.cfg")
+	cfg.save(Ajustes.ruta)
 
 
 func test_mostrar_jugadores_que_entran() -> void:

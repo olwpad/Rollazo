@@ -18,8 +18,7 @@ var _actual := ""
 
 
 func _ready() -> void:
-	if get_tree().get_script() != null:  # tests y bots: no tocar los ajustes de verdad
-		ruta = "user://ajustes_pruebas.cfg"
+	ruta = Ajustes.ruta  # Ajustes ya decidió si es el archivo de verdad o el de pruebas
 	var cfg := ConfigFile.new()
 	cfg.load(ruta)
 	silenciada = cfg.get_value("sonido", "silenciada", false)

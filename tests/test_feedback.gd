@@ -103,6 +103,6 @@ func test_mira_se_puede_quitar_y_se_recuerda() -> void:
 	Mira.alternar()
 	comprobar(Mira.activa() != antes, "T la quita o la pone")
 	var cfg := ConfigFile.new()
-	cfg.load(Mira.AJUSTES)
+	cfg.load(Ajustes.ruta)
 	comprobar(cfg.get_value("juego", "mira", true) == Mira.activa(), "se guarda para la próxima vez")
 	Mira.alternar()  # dejarla como estaba
