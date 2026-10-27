@@ -3,7 +3,7 @@ extends Caso
 
 func test_colores_distintos() -> void:
 	var c: Array = Jugador.COLORES
-	comprobar(c.size() == 4, "4 colores")
+	comprobar(c.size() == 6, "6 colores")
 	for i in c.size():
 		for k in range(i + 1, c.size()):
 			comprobar(c[i] != c[k], "colores %d y %d distintos" % [i, k])

@@ -93,6 +93,16 @@ func test_colores_sin_repetir_en_la_partida() -> void:
 	comprobar(r[9] == 0, "los demás, el suyo")
 
 
+func test_seis_jugadores_seis_colores_distintos() -> void:
+	var red: Node = Engine.get_main_loop().root.get_node("Red")
+	var ids := [1, 2, 3, 4, 5, 6]
+	var r: Dictionary = red.sin_repetir(ids, {1: 0, 2: 0, 3: 0, 4: 7, 5: 7, 6: 0})  # todos piden el mismo
+	var vistos := {}
+	for id in ids:
+		vistos[r[id]] = true
+	comprobar(vistos.size() == 6, "6 colores distintos para 6 ids")
+
+
 func test_el_moco_lleva_lo_que_eligió() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	var p := _perfil()

@@ -14,7 +14,7 @@ func _ready() -> void:
 	papel.width = 5.0
 	papel.default_color = Acuarela.LAVANDA.darkened(0.25)
 	add_child(papel)
-	moco.color = Color("f5d38a")  # amarillo: ninguno de los 4 de la azotea lo lleva, así no parece repetido
+	moco.color = Color("f5d38a")  # amarillo: ninguno de los 6 de la azotea lo lleva, así no parece repetido
 	moco.scale = Vector2(1.3, 1.3)
 	add_child(moco)
 

@@ -9,7 +9,7 @@ signal config_cambiada  # rondas o listos: el menú se repinta
 signal sala_lista  # el servidor ya nos dio el código de la sala
 
 const PUERTO := 7777
-const MAX_JUGADORES := 4
+const MAX_JUGADORES := 6
 # Servidor de salas (ver servidor/). Pruebas y desarrollo local: variable de entorno ROLLAZO_SALAS.
 const SERVIDOR_SALAS := "wss://rollazo-salas.rollazo-salas.workers.dev"
 const ALFABETO := "ABCDEFGHJKMNPQRSTUVWXYZ"  # sin I, L ni O: se confunden con 1 y 0
@@ -61,7 +61,7 @@ func _process(delta: float) -> void:
 
 func crear_partida(puerto: int = PUERTO) -> Error:
 	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_server(puerto, MAX_JUGADORES - 1)  # el anfitrión ya es 1 de los 4
+	var err := peer.create_server(puerto, MAX_JUGADORES - 1)  # el anfitrión ya es 1 de los 6
 	if err != OK:
 		return err
 	multiplayer.multiplayer_peer = peer
