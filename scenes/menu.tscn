@@ -109,7 +109,7 @@ script = ExtResource("7")
 
 [node name="Crear" type="Button" parent="Caja"]
 layout_mode = 2
-text = "Crear partida"
+text = "Crear sala"
 script = ExtResource("7")
 
 [node name="TuMoco" type="Button" parent="Caja"]
@@ -121,11 +121,14 @@ script = ExtResource("7")
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="IP" type="LineEdit" parent="Caja/Fila"]
+[node name="Codigo" type="LineEdit" parent="Caja/Fila"]
 custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 theme_override_colors/font_placeholder_color = Color(0.49, 0.455, 0.722, 0.85)
-placeholder_text = "IP del anfitrión (100.x.x.x)"
+theme_override_font_sizes/font_size = 40
+placeholder_text = "CÓDIGO"
+alignment = 1
+max_length = 4
 
 [node name="Unirse" type="Button" parent="Caja/Fila"]
 layout_mode = 2
@@ -155,35 +158,35 @@ offset_bottom = 90.0
 theme_override_font_sizes/font_size = 60
 text = "ROLLAZO"
 
-[node name="Ip" type="PanelContainer" parent="SalaUI"]
+[node name="Codigo" type="PanelContainer" parent="SalaUI"]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 100.0
-offset_right = 470.0
+offset_right = 700.0
 offset_bottom = 160.0
 rotation = -0.02
 
-[node name="Fila" type="HBoxContainer" parent="SalaUI/Ip"]
+[node name="Fila" type="HBoxContainer" parent="SalaUI/Codigo"]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Texto" type="Label" parent="SalaUI/Ip/Fila"]
+[node name="Texto" type="Label" parent="SalaUI/Codigo/Fila"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.49, 0.455, 0.722, 1)
-theme_override_font_sizes/font_size = 26
-text = "TU IP"
+theme_override_font_sizes/font_size = 22
+text = "CÓDIGO DE LA SALA"
 vertical_alignment = 1
 
-[node name="Valor" type="Label" parent="SalaUI/Ip/Fila"]
+[node name="Valor" type="Label" parent="SalaUI/Codigo/Fila"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 34
-text = "100.0.0.0"
+theme_override_font_sizes/font_size = 48
+text = "CREANDO SALA…"
 vertical_alignment = 1
 
-[node name="Hueco" type="Control" parent="SalaUI/Ip/Fila"]
+[node name="Hueco" type="Control" parent="SalaUI/Codigo/Fila"]
 layout_mode = 2
 
-[node name="Copiar" type="Button" parent="SalaUI/Ip/Fila"]
+[node name="Copiar" type="Button" parent="SalaUI/Codigo/Fila"]
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 24
@@ -192,7 +195,7 @@ script = ExtResource("7")
 principal = true
 color_mancha = Color(0.424, 0.765, 0.69, 1)
 
-[node name="PistaIp" type="Label" parent="SalaUI"]
+[node name="PistaCodigo" type="Label" parent="SalaUI"]
 layout_mode = 0
 offset_left = 44.0
 offset_top = 168.0
@@ -200,7 +203,7 @@ offset_right = 760.0
 offset_bottom = 198.0
 theme_override_colors/font_color = Color(0.227, 0.208, 0.314, 0.75)
 theme_override_font_sizes/font_size = 20
-text = "PÁSALA A TUS AMIGOS: LA ESCRIBEN EN «UNIRSE»"
+text = "PÁSALO A TUS AMIGOS: LO ESCRIBEN EN «UNIRSE»"
 
 [node name="Notita" type="PanelContainer" parent="SalaUI"]
 layout_mode = 1

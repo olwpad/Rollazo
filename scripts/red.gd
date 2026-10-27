@@ -6,9 +6,17 @@ extends Node
 signal jugadores_cambiaron
 signal desconectado(motivo: String)
 signal config_cambiada  # rondas o listos: el menú se repinta
+signal sala_lista  # el servidor ya nos dio el código de la sala
 
 const PUERTO := 7777
 const MAX_JUGADORES := 4
+# Servidor de salas (ver servidor/). Pruebas y desarrollo local: variable de entorno ROLLAZO_SALAS.
+const SERVIDOR_SALAS := "wss://rollazo-salas.rollazo-salas.workers.dev"
+const ALFABETO := "ABCDEFGHJKMNPQRSTUVWXYZ"  # sin I, L ni O: se confunden con 1 y 0
+const LARGO_CODIGO := 4
+const ESPERA_RTC := 15.0  # segundos para que el amigo conecte; sin TURN, algunas redes no pueden
+# Solo STUN (sin TURN: no cuesta nada). Si las dos redes son muy cerradas, no conectarán.
+const ICE := {"iceServers": [{"urls": ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"]}]}
 const RECORRIDO := "res://scenes/recorrido_prueba.tscn"
 const MENU := "res://scenes/menu.tscn"
 const RONDAS := [3, 5, 7, 10]
@@ -20,14 +28,32 @@ var ultimo_motivo := ""  # por qué volvimos al menú; el menú nuevo lo enseña
 var config := CONFIG_INICIAL.duplicate(true)  # la elige el anfitrión y la ven todos
 var aspectos := {}  # id -> {color, pelo, sombrero}: cómo va vestido cada moco
 var listos := {}  # id -> true; el anfitrión no hace falta, es quien pulsa empezar
+var codigo_sala := ""  # "" hasta que el servidor de salas lo da (o si no es una sala)
+
+var _senal: Senal  # conexión con el servidor de salas; null si no hay sala
+var _rtc: WebRTCMultiplayerPeer  # null mientras un cliente espera su id
+var _conexiones := {}  # id -> WebRTCPeerConnection
+var _espera := -1.0  # cuenta atrás de un cliente que aún no ha conectado con el anfitrión
 
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_al_conectar)
 	multiplayer.peer_disconnected.connect(_al_desconectar)
 	multiplayer.server_disconnected.connect(_al_caer_anfitrion)
-	multiplayer.connected_to_server.connect(func(): _mi_aspecto.rpc_id(1, Perfil.aspecto))
+	multiplayer.connected_to_server.connect(func():
+		_espera = -1.0
+		_mi_aspecto.rpc_id(1, Perfil.aspecto))
 	multiplayer.connection_failed.connect(func(): _al_caer_anfitrion("No se pudo conectar"))
+
+
+func _process(delta: float) -> void:
+	var senal := _senal  # copia local: un fallo dentro de poll() hace salir(), que suelta _senal
+	if senal:
+		senal.poll()  # el WebRTCMultiplayerPeer lo sondea el propio multiplayer
+	if _espera >= 0.0:
+		_espera -= delta
+		if _espera < 0.0:
+			_fallo_sala("NO SE PUDO CONECTAR CON EL ANFITRIÓN")
 
 
 # --- Conexión ---
@@ -54,6 +80,13 @@ func unirse(ip: String, puerto: int = PUERTO) -> Error:
 
 
 func salir() -> void:
+	if _senal:
+		_senal.cerrar()
+		_senal = null
+	_rtc = null
+	_conexiones.clear()
+	codigo_sala = ""
+	_espera = -1.0
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	multiplayer.refuse_new_connections = false
@@ -78,7 +111,127 @@ func ip_propia() -> String:
 
 
 func es_online() -> bool:
-	return not multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+	return _senal != null or not multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+
+
+# --- Salas con código (WebRTC) ---
+# El servidor de salas solo presenta a los jugadores; la partida va directa entre PCs.
+# El anfitrión (id 1) crea la oferta cuando entra alguien; los clientes solo hablan con él.
+
+
+static func url_servidor() -> String:
+	var url := OS.get_environment("ROLLAZO_SALAS")
+	return url if url != "" else SERVIDOR_SALAS
+
+
+# Mayúsculas y solo letras del alfabeto, hasta 4: lo que se escribe en el campo del menú.
+static func normalizar_codigo(texto: String) -> String:
+	var r := ""
+	for c in texto.to_upper():
+		if c in ALFABETO and r.length() < LARGO_CODIGO:
+			r += c
+	return r
+
+
+static func codigo_valido(texto: String) -> bool:
+	return texto.length() == LARGO_CODIGO and normalizar_codigo(texto) == texto
+
+
+func crear_sala() -> Error:
+	var err := _abrir_senal("/sala/nueva")
+	if err != OK:
+		return err
+	_senal.sala.connect(func(codigo: String, _id: int):
+		codigo_sala = codigo
+		sala_lista.emit())
+	_rtc = WebRTCMultiplayerPeer.new()
+	_rtc.create_server()
+	multiplayer.multiplayer_peer = _rtc
+	ids = [1]
+	aspectos = {1: Perfil.aspecto.duplicate()}
+	jugadores_cambiaron.emit()
+	return OK
+
+
+func unirse_sala(codigo: String) -> Error:
+	if not codigo_valido(codigo):
+		return ERR_INVALID_PARAMETER
+	var err := _abrir_senal("/sala/" + codigo)
+	if err != OK:
+		return err
+	_senal.sala.connect(func(c: String, id: int):
+		codigo_sala = c
+		_rtc = WebRTCMultiplayerPeer.new()
+		_rtc.create_client(id)
+		multiplayer.multiplayer_peer = _rtc  # el anfitrión (1) ofrecerá en cuanto le avisen
+		_espera = ESPERA_RTC)
+	jugadores_cambiaron.emit()  # el menú ya muestra "conectando"
+	return OK
+
+
+func _abrir_senal(ruta: String) -> Error:
+	if _senal:
+		return ERR_ALREADY_IN_USE
+	_senal = Senal.new()
+	var err := _senal.conectar(url_servidor() + ruta)
+	if err != OK:
+		_senal = null
+		return err
+	_senal.entra.connect(_al_entrar_amigo)
+	_senal.sale.connect(_al_salir_amigo)
+	_senal.oferta.connect(_al_recibir_oferta)
+	_senal.respuesta.connect(func(de: int, sdp: String): _con(de).set_remote_description("answer", sdp))
+	_senal.candidato.connect(func(de: int, media: String, indice: int, nombre: String): _con(de).add_ice_candidate(media, indice, nombre))
+	_senal.error.connect(func(motivo: String): _fallo_sala("ESA SALA NO EXISTE" if motivo == "no_existe" else "LA SALA ESTÁ LLENA"))
+	_senal.sin_conexion.connect(_al_perder_servidor)
+	_senal.cerrada.connect(_al_caer_anfitrion)
+	return OK
+
+
+# Conexión WebRTC con el jugador `id`; se crea al primer uso (offer entrante o amigo que entra).
+func _con(id: int) -> WebRTCPeerConnection:
+	if _conexiones.has(id):
+		return _conexiones[id]
+	var c := WebRTCPeerConnection.new()
+	c.initialize(ICE)
+	c.session_description_created.connect(func(tipo: String, sdp: String):
+		c.set_local_description(tipo, sdp)
+		if _senal:
+			_senal.enviar({"tipo": "oferta" if tipo == "offer" else "respuesta", "a": id, "sdp": sdp}))
+	c.ice_candidate_created.connect(func(media: String, indice: int, nombre: String):
+		if _senal:
+			_senal.enviar({"tipo": "candidato", "a": id, "media": media, "indice": indice, "nombre": nombre}))
+	_rtc.add_peer(c, id)  # antes de ofrecer/responder: crea los canales de datos
+	_conexiones[id] = c
+	return c
+
+
+func _al_entrar_amigo(id: int) -> void:
+	if multiplayer.refuse_new_connections:
+		return  # carrera en marcha: igual que con ENet, quien llega tarde no entra
+	_con(id).create_offer()
+
+
+func _al_salir_amigo(id: int) -> void:
+	_conexiones.erase(id)
+	if _rtc and _rtc.has_peer(id):
+		_rtc.remove_peer(id)
+
+
+func _al_recibir_oferta(de: int, sdp: String) -> void:
+	if de == 1 and _rtc:
+		_con(1).set_remote_description("offer", sdp)  # Godot genera la respuesta solo
+
+
+# Mientras se monta la sala, un fallo la deshace y el menú lo cuenta. Ya dentro, el juego sigue (P2P).
+func _fallo_sala(motivo: String) -> void:
+	salir()
+	desconectado.emit(motivo)
+
+
+func _al_perder_servidor() -> void:
+	if _senal and (codigo_sala == "" or _rtc == null):
+		_fallo_sala("NO HAY CONEXIÓN CON EL SERVIDOR")
 
 
 # --- Empezar y terminar la carrera ---

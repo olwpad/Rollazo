@@ -1,10 +1,10 @@
-# Menú: practicar, crear partida o unirse por IP. Dentro de una partida, la sala: la azotea
-# con los mocos, tu IP, la notita con la partida y un único botón grande.
+# Menú: practicar, crear sala o unirse con un código. Dentro de una partida, la sala: la azotea
+# con los mocos, el código, la notita con la partida y un único botón grande.
 extends Control
 
 const AJUSTES := "user://ajustes.cfg"  # el mismo archivo que la mira
 
-@onready var ip: LineEdit = $Caja/Fila/IP
+@onready var codigo: LineEdit = $Caja/Fila/Codigo
 @onready var estado: Label = $Caja/Estado
 @onready var principal = $SalaUI/Principal  # sin tipo: es un boton_mancha (tiene progreso)
 @onready var config: Control = $Config
@@ -14,13 +14,14 @@ func _ready() -> void:
 	Musica.tocar("menu")
 	var cfg := ConfigFile.new()
 	cfg.load(AJUSTES)
-	ip.text = cfg.get_value("red", "ultima_ip", "")
-	ip.text_changed.connect(_al_escribir_ip)
-	_al_escribir_ip(ip.text)
+	codigo.text = Red.normalizar_codigo(cfg.get_value("red", "ultimo_codigo", ""))
+	codigo.text_changed.connect(_al_escribir_codigo)
+	_al_escribir_codigo(codigo.text)
 	_conectar_botones()
 	_montar_selector_de_mapas()
 	Red.jugadores_cambiaron.connect(_actualizar)
 	Red.config_cambiada.connect(_actualizar)
+	Red.sala_lista.connect(_actualizar)
 	Red.desconectado.connect(func(motivo): estado.text = motivo)
 	_actualizar()
 	if Red.ultimo_motivo != "":
@@ -39,7 +40,7 @@ func _conectar_botones() -> void:
 	$Vestidor.cerrado.connect(_vestir.bind(false))
 	$Salir.pressed.connect(_salir)
 	principal.pressed.connect(_pulsar_principal)
-	$SalaUI/Ip/Fila/Copiar.pressed.connect(_copiar_ip)
+	$SalaUI/Codigo/Fila/Copiar.pressed.connect(_copiar_codigo)
 	$SalaUI/Notita/Caja/Cambiar.pressed.connect(func(): config.visible = true)
 	$Config/Papel/Caja/Hecho.pressed.connect(func(): config.visible = false)
 	$Config/Papel/Caja/Pegatinas/Poderes.pressed.connect(func(): Red.poner_poderes(not Red.config.poderes))
@@ -77,9 +78,9 @@ func _practicar() -> void:
 	get_tree().change_scene_to_file(Red.RECORRIDO)
 
 
-func _copiar_ip() -> void:
-	DisplayServer.clipboard_set($SalaUI/Ip/Fila/Valor.text)
-	var boton: Button = $SalaUI/Ip/Fila/Copiar
+func _copiar_codigo() -> void:
+	DisplayServer.clipboard_set(Red.codigo_sala)
+	var boton: Button = $SalaUI/Codigo/Fila/Copiar
 	boton.text = "¡COPIADA!"
 	await get_tree().create_timer(1.5).timeout
 	if is_instance_valid(boton):
@@ -97,25 +98,29 @@ func _tocar_mapa(evento: InputEvent, t: String) -> void:
 
 
 func _crear() -> void:
-	var err := Red.crear_partida()
-	estado.text = "No se pudo crear (¿puerto ocupado?)" if err != OK else ""
+	var err := Red.crear_sala()
+	estado.text = "NO HAY CONEXIÓN CON EL SERVIDOR" if err != OK else ""
 	_actualizar()
 
 
-# Sin IP no hay a quién unirse: el botón se apaga en vez de decir "IP no válida".
-func _al_escribir_ip(texto: String) -> void:
-	$Caja/Fila/Unirse.disabled = texto.strip_edges() == ""
+# Solo mayúsculas y letras del alfabeto; sin 4 letras válidas, UNIRSE se apaga.
+func _al_escribir_codigo(texto: String) -> void:
+	var limpio := Red.normalizar_codigo(texto)
+	if limpio != texto:
+		codigo.text = limpio
+		codigo.caret_column = limpio.length()
+	$Caja/Fila/Unirse.disabled = not Red.codigo_valido(limpio)
 
 
 func _unirse() -> void:
-	var direccion := ip.text.strip_edges()
-	if Red.unirse(direccion) != OK:
-		estado.text = "IP no válida"
+	var sala := codigo.text
+	if Red.unirse_sala(sala) != OK:
+		estado.text = "NO HAY CONEXIÓN CON EL SERVIDOR"
 	else:
-		estado.text = "Conectando a %s…" % direccion
-		var cfg := ConfigFile.new()  # la próxima vez ya sale escrita
+		estado.text = "Conectando a %s…" % sala
+		var cfg := ConfigFile.new()  # la próxima vez ya sale escrito
 		cfg.load(AJUSTES)
-		cfg.set_value("red", "ultima_ip", direccion)
+		cfg.set_value("red", "ultimo_codigo", sala)
 		cfg.save(AJUSTES)
 	_actualizar()
 
@@ -157,7 +162,7 @@ func _actualizar() -> void:
 		opcion.visible = not online
 	$Caja.visible = not en_sala
 	$SalaUI.visible = en_sala
-	# El columpio sigue en la sala (inicio y sala son la misma azotea), entre la IP y la nota.
+	# El columpio sigue en la sala (inicio y sala son la misma azotea), entre el código y la nota.
 	$Columpio.position = Vector2(600, 40) if en_sala else Vector2(760, 60)
 	$Pie.visible = not online  # en la sala, abajo a la izquierda va SALIR
 	$Nota.visible = not online
@@ -174,8 +179,9 @@ func _actualizar() -> void:
 	if not en_sala:
 		config.visible = false
 		return
-	$SalaUI/Ip.visible = anfitrion  # los amigos ya la escribieron para entrar
-	$SalaUI/Ip/Fila/Valor.text = Red.ip_propia()
+	$SalaUI/Codigo.visible = anfitrion  # los amigos ya lo escribieron para entrar
+	$SalaUI/Codigo/Fila/Valor.text = Red.codigo_sala if Red.codigo_sala != "" else "CREANDO SALA…"
+	$SalaUI/Codigo/Fila/Copiar.disabled = Red.codigo_sala == ""
 	var mapas: Array = Red.config.mapas
 	$SalaUI/Notita/Caja/Resumen.text = "%d RONDAS · %s\n%s" % [Red.config.rondas,
 			Temas.DATOS[mapas[0]].nombre if mapas.size() == 1 else "%d MAPAS" % mapas.size(),
@@ -186,7 +192,7 @@ func _actualizar() -> void:
 		if mapa is Postal:
 			mapa.apagada = not mapa.name in mapas
 	$SalaUI/Notita/Caja/Cambiar.visible = anfitrion
-	$SalaUI/PistaIp.visible = anfitrion
+	$SalaUI/PistaCodigo.visible = anfitrion
 	# El anfitrión cuenta como listo: con 3 jugadores, "2/3", no "1/2".
 	var faltan := []
 	for i in Red.ids.size():

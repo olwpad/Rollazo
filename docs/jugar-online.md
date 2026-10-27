@@ -4,23 +4,19 @@ Rollazo es una carrera de hasta **4 mocos** que se columpian con papel higiénic
 tejados de una ciudad. Puedes cortar el papel de los demás, agarrarte a ellos y chocar.
 Cada ronda es un mapa nuevo y gana quien sume más puntos.
 
-Para jugar online, un PC hace de **anfitrión** (el que crea la partida) y los demás se
-**unen** a él. Como no estamos en la misma casa, usamos **Tailscale**: crea una red privada
-entre nuestros PCs por internet. Es gratis y no hace falta tocar el router.
+Para jugar online, uno **crea una sala** y le sale un **código de 4 letras**. Los demás
+escriben ese código y entran. No hace falta instalar nada más ni saber ninguna IP.
 
 ---
 
 ## 1. Preparación (solo la primera vez, cada uno)
 
-1. **Tailscale.** Descárgalo en https://tailscale.com/download, instálalo y entra con tu cuenta
-   de Google, Microsoft o GitHub.
-2. **Estar en la misma red.** El anfitrión entra en https://login.tailscale.com/admin/users,
-   pulsa **Invite users** y manda el enlace a cada amigo. Cada amigo lo abre y acepta.
-3. **El juego.** Copia `Rollazo.exe` en tu PC (te lo pasa el anfitrión por Drive, WeTransfer…).
-   No se instala: se abre con doble clic.
-   - Si Windows avisa de que es una app desconocida: **Más información → Ejecutar de todas formas**.
-4. **Firewall (solo el anfitrión).** La primera vez que pulse **Crear partida**, Windows
-   pregunta si permite el acceso: marca **Redes privadas** y pulsa **Permitir**.
+1. **Descarga el zip** de la última versión en https://github.com/olwpad/Rollazo/releases
+   (o te lo pasa un amigo).
+2. **Descomprímelo** en una carpeta. Dentro hay `Rollazo.exe` y un `.dll`: tienen que estar
+   **juntos** en la misma carpeta, si no el online no funciona.
+3. Ábrelo con doble clic. Si Windows avisa de que es una app desconocida:
+   **Más información → Ejecutar de todas formas**.
 
 ---
 
@@ -31,50 +27,34 @@ entre nuestros PCs por internet. Es gratis y no hace falta tocar el router.
 | Elemento | Para qué sirve |
 |---|---|
 | **Practicar solo** | Juegas tú solo en un mapa aleatorio, para aprender. **R** repite el mismo mapa. |
-| **Crear partida** | Te conviertes en el **anfitrión**: los demás se unen a ti. |
-| **Casilla de IP** (pone `127.0.0.1`) | Aquí escribe el amigo la IP del anfitrión. Haz clic en ella, borra lo que hay y pega la IP. |
-| **Unirse** | Te conecta a la IP que hay en la casilla. |
-| **Azotea de la derecha** | Los 4 huecos de la partida. Cuando alguien entra, su moco cae de un salto con su color. |
-| **Abajo** | Cuántos mocos hay (por ejemplo `2/4 MOCOS`) y los atajos de teclado. |
-
-> `127.0.0.1` significa "este mismo PC". Solo sirve para probar con dos ventanas en tu
-> ordenador. Para jugar con amigos hay que poner la IP de Tailscale del anfitrión.
+| **Crear sala** | Te conviertes en el **anfitrión** y te sale el código de la sala. |
+| **Tu moco** | Cambias tu ropa, tu color y tu nombre. |
+| **Casilla del código** | Aquí escribe el amigo las 4 letras de la sala. Recuerda el último código. |
+| **Unirse** | Se enciende al escribir las 4 letras. Te mete en esa sala. |
 
 ---
 
 ## 3. Si eres el anfitrión
 
-1. **Abre Tailscale** (icono junto al reloj de Windows, abajo a la derecha) y comprueba que
-   está conectado.
-2. **Copia tu IP.** En el menú de Tailscale, tu PC aparece con una IP que empieza por `100.`
-   (por ejemplo `100.101.7.42`). Haz clic en ella y se copia.
-3. **Pásala** por el grupo de WhatsApp o Discord.
-4. **Abre Rollazo y pulsa Crear partida.** Verás esto:
+1. Pulsa **Crear sala**. En un momento sale arriba el **código de la sala** (por ejemplo `MWUH`):
 
    ![Sala del anfitrión](img/2-anfitrion.png)
 
-   - Tu moco aparece en la azotea con **TÚ** debajo.
-   - Cada amigo que se une cae en un hueco libre (**JUGADOR 2**, **JUGADOR 3**…).
-   - Las opciones de practicar, crear y unirse desaparecen mientras la partida está abierta.
-5. **Cuando estéis todos, pulsa ¡EMPEZAR CARRERA!** Solo lo ve el anfitrión.
+2. Pulsa **COPIAR** y pásalo por el grupo de WhatsApp o Discord.
+3. Cada amigo que entra aparece en un cartel de la azotea.
+4. **Cuando estéis todos, pulsa ¡A CORRER!** Solo lo ve el anfitrión.
 
 > Cuando la carrera ya ha empezado no entra nadie más. Si alguien llega tarde, salid al menú
-> (**Esc**), crea otra partida y que se unan todos otra vez.
+> (**Esc**), crea otra sala y que entren todos con el código nuevo.
 
 ---
 
 ## 4. Si eres un amigo
 
-1. Comprueba que **Tailscale está conectado**: el icono no debe estar tachado.
-2. Abre Rollazo.
-3. **Haz clic en la casilla de IP**, borra `127.0.0.1` y **pega la IP del anfitrión**
-   (la que empieza por `100.`).
-4. Pulsa **Unirse**. Al conectar verás tu moco en la azotea con **TÚ** y el mensaje
-   *"Conectado. Esperando a que el anfitrión empiece…"*:
-
-   ![Sala de un amigo](img/3-amigo.png)
-
-5. Espera a que el anfitrión pulse **¡Empezar carrera!**
+1. Abre Rollazo.
+2. Escribe en la casilla las **4 letras** que te ha pasado el anfitrión.
+3. Pulsa **Unirse**. Al conectar aparece tu moco en la azotea.
+4. Espera a que el anfitrión pulse **¡A CORRER!**
 
 ---
 
@@ -132,14 +112,15 @@ entre nuestros PCs por internet. Es gratis y no hace falta tocar el router.
 
 | Qué pasa | Qué hacer |
 |---|---|
-| **"No se pudo conectar"** | Comprobad que los dos tenéis Tailscale encendido y que la IP es la `100.x` del anfitrión, no la de vuestro wifi. Podéis probar `ping 100.x.y.z` en una terminal. |
-| **"No se pudo conectar" con todo bien** | Puede que ya haya 4 jugadores, o que la carrera haya empezado. Esperad a la siguiente partida. |
-| **"El anfitrión se ha ido"** | El anfitrión cerró el juego o salió al menú. Que cree otra partida y os unís otra vez. |
-| **"No se pudo crear (¿puerto ocupado?)"** | Ya hay otro Rollazo abierto haciendo de anfitrión en ese PC. Cierra las otras ventanas. |
-| **El firewall bloqueó el juego** | En Windows, busca *"Permitir una aplicación a través del Firewall"* y marca Rollazo en **Privada**. |
+| **"ESA SALA NO EXISTE"** | Revisa las 4 letras. Si el anfitrión salió al menú, la sala se cierra: que cree otra. |
+| **"LA SALA ESTÁ LLENA"** | Ya hay 4 jugadores. |
+| **"NO HAY CONEXIÓN CON EL SERVIDOR"** | Revisa tu internet. Si a todos os pasa, el servidor de salas está caído: probad más tarde. |
+| **"NO SE PUDO CONECTAR CON EL ANFITRIÓN"** | Vuestros routers no se dejan hablar directamente (pasa en algunas redes de móvil o de empresa). Probad con el wifi de casa y contádmelo. |
+| **"El anfitrión se ha ido"** | El anfitrión cerró el juego o salió al menú. Que cree otra sala y entráis otra vez. |
+| **El online no hace nada** | Comprueba que el `.dll` está en la misma carpeta que `Rollazo.exe`. |
 | **El columpio va con retraso** | Normal si la conexión es mala. Apuntadlo y contádmelo: se puede mejorar. |
 
 ### Probar en un solo PC (sin amigos)
 
-Abre **dos** `Rollazo.exe`. En uno pulsa **Crear partida** y en el otro deja `127.0.0.1` y pulsa
+Abre **dos** `Rollazo.exe`. En uno pulsa **Crear sala** y en el otro escribe el código y pulsa
 **Unirse**. Manejas un moco en cada ventana.

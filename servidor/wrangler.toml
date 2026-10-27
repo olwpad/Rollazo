@@ -1,0 +1,12 @@
+name = "rollazo-salas"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[[durable_objects.bindings]]
+name = "SALA"
+class_name = "Sala"
+
+# El plan gratuito solo admite Durable Objects con SQLite.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Sala"]

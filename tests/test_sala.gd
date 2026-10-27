@@ -27,27 +27,30 @@ func test_menu_con_cuatro_mocos_y_hasta_4_jugadores() -> void:
 	menu.free()
 
 
-func test_ip_vacia_y_se_recuerda() -> void:
+func test_codigo_vacio_y_se_recuerda() -> void:
 	var cfg := ConfigFile.new()
 	cfg.load("user://ajustes.cfg")
-	var antes: String = cfg.get_value("red", "ultima_ip", "")  # la de verdad del jugador: se repone al final
-	cfg.set_value("red", "ultima_ip", "")
+	var antes: String = cfg.get_value("red", "ultimo_codigo", "")  # el de verdad del jugador: se repone al final
+	cfg.set_value("red", "ultimo_codigo", "")
 	cfg.save("user://ajustes.cfg")
 	var menu := _menu()
-	comprobar(menu.ip.text == "" and menu.ip.placeholder_text == "IP del anfitrión (100.x.x.x)", "vacía con texto guía")
-	comprobar(menu.get_node("Caja/Fila/Unirse").disabled, "sin IP, UNIRSE apagado")
-	menu.ip.text = "100.1.2.3"
-	menu.ip.text_changed.emit(menu.ip.text)
-	comprobar(not menu.get_node("Caja/Fila/Unirse").disabled, "con IP se enciende")
+	comprobar(menu.codigo.text == "" and menu.codigo.placeholder_text == "CÓDIGO", "vacío con texto guía")
+	comprobar(menu.get_node("Caja/Fila/Unirse").disabled, "sin código, UNIRSE apagado")
+	menu.codigo.text = "kap"
+	menu.codigo.text_changed.emit(menu.codigo.text)
+	comprobar(menu.codigo.text == "KAP" and menu.get_node("Caja/Fila/Unirse").disabled, "mayúsculas y con 3 letras sigue apagado")
+	menu.codigo.text = "kapu"
+	menu.codigo.text_changed.emit(menu.codigo.text)
+	comprobar(not menu.get_node("Caja/Fila/Unirse").disabled, "con 4 letras se enciende")
 	comprobar(not "ESC" in menu.get_node("Pie").text.to_upper(), "en el inicio Esc no hace nada: no se anuncia")
 	menu._unirse()
 	menu.free()
 	Engine.get_main_loop().root.get_node("Red").salir()
 	menu = _menu()
-	comprobar(menu.ip.text == "100.1.2.3", "recuerda la última IP")
+	comprobar(menu.codigo.text == "KAPU", "recuerda el último código")
 	menu.free()
 	cfg.load("user://ajustes.cfg")
-	cfg.set_value("red", "ultima_ip", antes)
+	cfg.set_value("red", "ultimo_codigo", antes)
 	cfg.save("user://ajustes.cfg")
 
 
