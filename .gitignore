@@ -2,3 +2,5 @@
 *.import
 .superpowers/
 build/
+servidor/node_modules
+.wrangler
