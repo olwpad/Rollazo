@@ -154,6 +154,8 @@ func _pulsar_principal() -> void:
 
 
 func _actualizar() -> void:
+	if $Vestidor.visible:  # los avisos de la red no pintan la sala encima; al cerrarlo, _vestir lo repinta
+		return
 	var online := Red.es_online()
 	var anfitrion := online and multiplayer.is_server()
 	var en_sala := online and multiplayer.get_unique_id() in Red.ids  # conectando todavía no

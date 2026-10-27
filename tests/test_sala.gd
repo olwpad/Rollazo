@@ -89,3 +89,18 @@ func test_en_partida_son_tarjetas() -> void:
 	comprobar(sala.estado(0) == "LISTO · ANFITRIÓN" and sala.estado(2) == "PENSÁNDOSELO…", "estado de cada uno")
 	comprobar(sala.sello_visible(1) and sala.estado(1) == "", "el listo lleva sello en vez de texto")
 	sala.free()
+
+
+# Con el vestidor abierto en el lobby llegan avisos de los demás (entra alguien, se viste, se pone
+# listo): el menú no debe volver a pintar la sala ni sus botones encima del vestidor.
+func test_aviso_de_red_no_tapa_el_vestidor() -> void:
+	var menu := _menu()
+	menu._vestir(true)
+	Red.jugadores_cambiaron.emit()
+	Red.config_cambiada.emit()
+	for nodo in ["Caja", "Sala", "Columpio", "Pie", "Nota", "SalaUI", "Salir"]:
+		comprobar(not menu.get_node(nodo).visible, nodo + " sigue escondido con el vestidor abierto")
+	comprobar(menu.get_node("Vestidor").visible, "el vestidor sigue abierto")
+	menu._vestir(false)
+	comprobar(menu.get_node("Caja").visible and menu.get_node("Sala").visible, "al cerrar vuelve el menú")
+	menu.free()
