@@ -60,6 +60,12 @@ func test_paloma_cruza_dentro_de_la_ronda_y_empuja_una_vez() -> void:
 	moco.free()
 	for n: Paloma in v + w:
 		n.free()
+	for t in Temas.LISTA:  # cada tema su ave, con cuerpo y pico distintos
+		comprobar(Paloma.ASPECTO.has(t), "aspecto de ave para %s" % t)
+	var vistos := {}
+	for t in Temas.LISTA:
+		vistos[Paloma.ASPECTO[t].cuerpo] = true
+	comprobar(vistos.size() == Temas.LISTA.size(), "cada tema un color de ave distinto")
 
 
 func test_apagones_nunca_dos_techos_seguidos() -> void:
@@ -79,7 +85,7 @@ func test_apagones_nunca_dos_techos_seguidos() -> void:
 func test_cada_elemento_solo_en_su_tema() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.crear_partida(7794)
-	var por_tema := {"mar": "Marea", "cueva": "Estalactita", "azotea": "Paloma", "noche": "Guirnalda", "jungla": ""}
+	var por_tema := {"mar": "Marea", "cueva": "Estalactita", "azotea": "", "noche": "Guirnalda", "jungla": ""}
 	for tema in por_tema:
 		red.config.mapas = [tema]
 		var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
@@ -90,6 +96,9 @@ func test_cada_elemento_solo_en_su_tema() -> void:
 				if hijo.get_script() != null and hijo.get_script().get_global_name() == c:
 					clases[c] += 1
 		for c in clases:
+			if c == "Paloma":  # las aves salen en todos los temas
+				comprobar(clases[c] >= 3, "aves en tema %s: %d" % [tema, clases[c]])
+				continue
 			var debe: bool = c == por_tema[tema] or (tema == "noche" and c == "Apagon")
 			comprobar(clases[c] == 0 if not debe else (clases[c] > 0 or c in ["Estalactita", "Apagon"]), "%s en tema %s: %d" % [c, tema, clases[c]])
 		Engine.get_main_loop().root.remove_child(nivel)

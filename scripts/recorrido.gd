@@ -177,8 +177,11 @@ func _crear_sierras(mapa: Dictionary) -> void:
 		piezas.add_child(s)
 
 
-# Peligros propios de cada tema (marea, estalactitas, palomas, guirnaldas y techos que se apagan).
+# Peligros de cada tema (aves en todos; marea, estalactitas, guirnaldas y techos que se apagan).
 func _poner_vivos(mapa: Dictionary, semilla: int) -> void:
+	for p: Paloma in Paloma.nuevas(semilla, mapa, self, tema):  # aves en todos los temas, cada una la suya
+		p.body_entered.connect(_al_tocar_paloma.bind(p))
+		piezas.add_child(p)
 	match tema:
 		"mar":
 			var marea := Marea.nueva(semilla, mapa, self)
