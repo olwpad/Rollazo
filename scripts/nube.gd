@@ -4,13 +4,14 @@
 class_name Nube
 extends Area2D
 
-const COLOR := Color("8f86b8")
+const COLOR := Color("7f8c99")  # gris de tormenta (el lila se confundía con los techos)
 const CHISPA := Color("f5d38a")
 
 var poly := PackedVector2Array()  # en coordenadas globales (la nube se queda en el origen)
 var tipo := "techo"
 var _nubes := Node2D.new()  # las nubecitas flotan solas: se mueve este nodo, sin redibujar
 var _caja := Rect2()
+var _visible := true
 
 
 func _ready() -> void:
@@ -21,6 +22,8 @@ func _ready() -> void:
 	_caja = Rect2(poly[0], Vector2.ZERO)
 	for v in poly:
 		_caja = _caja.expand(v)
+	# Solo se dibujan algunas: el resto fulmina igual, sin avisar (trol)
+	_visible = hash(int(_caja.position.x / 10.0)) % 3 == 0
 	_nubes.draw.connect(_dibujar_nubes)
 	add_child(_nubes)
 
@@ -28,14 +31,12 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	var t := Time.get_ticks_msec() / 1000.0
 	_nubes.position = Vector2(sin(t * 0.5 + _caja.position.x) * 8.0, sin(t * 0.8 + _caja.position.x * 0.01) * 5.0)
-	if tipo == "techo":
+	if tipo == "techo" and _visible:
 		queue_redraw()  # las chispas parpadean
 
 
 func _draw() -> void:
-	if tipo == "cielo":  # calima solo en la franja de abajo (la columna llega muy arriba)
-		var alto := minf(_caja.size.y, 120.0)
-		draw_rect(Rect2(_caja.position.x, _caja.end.y - alto, _caja.size.x, alto), Color(COLOR, 0.1))
+	if tipo == "cielo" or not _visible:
 		return
 	# Techo: chispitas amarillas que saltan de vez en cuando entre las nubecitas
 	var t := Time.get_ticks_msec() / 1000.0
@@ -49,6 +50,8 @@ func _draw() -> void:
 
 
 func _dibujar_nubes() -> void:
+	if not _visible:
+		return
 	if tipo == "techo":  # nubecitas bajas pegadas a la cara de arriba: avisan sin tapar el mapa
 		var m := maxi(1, int(_caja.size.x / 45.0))
 		for i in m:
@@ -56,9 +59,5 @@ func _dibujar_nubes() -> void:
 			var rx := 18.0 + 5.0 * ((i * 7 + int(_caja.position.x)) % 3)
 			Moviles.mancha(_nubes, Transform2D(0.0, Vector2(x, _caja.end.y - 14.0 - (i % 2) * 5.0)) * Moviles.elipse(rx, rx * 0.5), Color(COLOR, 0.8), i + int(_caja.position.x))
 		return
-	var y := _caja.end.y - 10.0  # cielo: colgando del borde de abajo
-	var n := maxi(1, int(_caja.size.x / 90.0))
-	for i in n:
-		var x := _caja.position.x + (i + 0.5) * _caja.size.x / n
-		var rx := 55.0 + 12.0 * ((i * 7 + int(_caja.position.x)) % 3)
-		Moviles.mancha(_nubes, Transform2D(0.0, Vector2(x, y + (i % 2) * 14.0 - 14.0)) * Moviles.elipse(rx, rx * 0.45), COLOR, i + int(_caja.position.x))
+	var rx := 55.0 + 12.0 * (int(_caja.position.x) % 3)  # cielo: una nube colgando del borde de abajo
+	Moviles.mancha(_nubes, Transform2D(0.0, Vector2(_caja.get_center().x, _caja.end.y - 24.0)) * Moviles.elipse(rx, rx * 0.45), COLOR, int(_caja.position.x))
