@@ -36,6 +36,7 @@ var _serial_mapa := 0  # cada reinicio lo sube: un cambio de mapa pendiente de a
 var ultimos_controles := {}  # id de jugador -> último punto de control
 var clasificacion := Clasificacion.new()
 var desde_primero := -1.0  # segundos desde que llegó el primero; -1 = nadie aún
+var _ultimo_rayo := {}  # nombre de moco -> ms del último rayo
 
 # --- Espectador (moco que ya llegó) ---
 var camara_espectador: Camera2D = null
@@ -92,6 +93,7 @@ func construir(semilla: int) -> void:
 	if Red.config.aros and Temas.DATOS[tema].aros:
 		_crear_aros(mapa)
 	_crear_sierras(mapa)
+	_crear_nubes(mapa)
 	_poner_vivos(mapa, semilla)
 	limites = mapa.limites
 	_poner_moviles(mapa, semilla)
@@ -175,6 +177,17 @@ func _crear_sierras(mapa: Dictionary) -> void:
 		s.nivel = self
 		s.body_entered.connect(_al_tocar_sierra.bind(s))
 		piezas.add_child(s)
+
+
+# Nubes de tormenta: los techos de horizontal y bajada no se andan y el cielo sobre la ruta no se vuela.
+func _crear_nubes(mapa: Dictionary) -> void:
+	for i in mapa.nubes.size():
+		var n := Nube.new()
+		n.name = "Nube%d" % i
+		n.tipo = mapa.nubes[i].tipo
+		n.poly = mapa.nubes[i].poly
+		n.body_entered.connect(_al_tocar_nube)
+		piezas.add_child(n)
 
 
 # Peligros de cada tema (aves en todos; marea, estalactitas, guirnaldas y techos que se apagan).
@@ -533,6 +546,22 @@ func _al_tocar_sierra(cuerpo: Node2D, _sierra: Sierra) -> void:
 		return
 	cuerpo.efecto.rpc("sierra", cuerpo.global_position)  # el "zing" extra, además de la "rotura"
 	_golpe_y_vuelta(cuerpo)
+
+
+# Nube de tormenta: rayo, papel quemado y vuelta al último control. Lo decide el anfitrión.
+func _al_tocar_nube(cuerpo: Node2D) -> void:
+	if not (cuerpo is Jugador and multiplayer.is_server()) or cuerpo.congelado:
+		return
+	var ahora := Time.get_ticks_msec()
+	if ahora - _ultimo_rayo.get(cuerpo.name, -100000) < 500:  # dos nubes pegadas no lo fulminan dos veces
+		return
+	_ultimo_rayo[cuerpo.name] = ahora
+	(cuerpo as Jugador).quemarse()
+	cuerpo.efecto.rpc("rayo", cuerpo.global_position)
+	if Red.es_online() and cuerpo.id_dueno() in clasificacion.llegadas:  # ya llegó: a mirar
+		_mandar_a_mirar(cuerpo as Jugador)
+		return
+	_volver_al_control(cuerpo)
 
 
 # Estalactita cayendo: igual que la sierra pero sin el "zing". Solo la ve caer el área (monitoring).

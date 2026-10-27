@@ -46,6 +46,10 @@ const POZO_ALTO := Vector2(1800.0, 3000.0)
 const POZO_BAJA := Vector2(200.0, 280.0)  # lo que baja cada saliente; se frena enganchando el que se acaba de pasar, así que no hace falta que lleguen todos
 const POZO_FONDO_LIBRE := 380.0  # el último saliente queda al menos a esto sobre el fondo
 const POZO_SALIDA := 280.0  # hueco de la pared derecha sobre el fondo, para salir andando
+# Nubes de tormenta: zonas que fulminan a quien se sube a los techos o vuela muy por encima de la ruta
+const NUBE_ALTO := 50.0  # grosor de la zona sobre cada techo
+const NUBE_MARGEN := 250.0  # el cielo prohibido empieza tanto sobre la pieza más alta de la zona
+const NUBE_COLUMNA := 160.0  # el cielo se parte en columnas: cada una sigue la pieza más alta de su zona
 const ESTRELLON := 1400.0  # velocidad vertical (px/s) con la que el fondo del pozo te estrella: ~700 px de caída libre
 
 
@@ -53,13 +57,15 @@ const ESTRELLON := 1400.0  # velocidad vertical (px/s) con la que el fondo del p
 #   piezas: [{nombre, pos, poly, enganchable}], controles: [Vector2], meta: Vector2,
 #   forma, inicio, limites: Rect2, meta_tam, caida_y, caida_x, caida_ancho, camino: [Vector2] (techos principales, para los tests),
 #   salidas_descanso: [Vector2] (borde de cada descanso, para los tests),
-#   sierras: [{pos, riel: Vector2 (ZERO = quieta), fase, color}]
+#   sierras: [{pos, riel: Vector2 (ZERO = quieta), fase, color}],
+#   tramos: [{tipo, i0, i1}] (los techos del camino i0..i1-1 son de ese tramo),
+#   nubes: [{tipo: "techo"|"cielo", poly}] (zonas que fulminan, en coordenadas globales)
 static func generar(semilla: int, forma := "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla
 	if forma == "":
 		forma = forma_de(semilla)
-	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": [], "pozos": []}
+	var m := {"piezas": [], "controles": [], "camino": [], "salidas_descanso": [], "burbujas": [], "pozos": [], "tramos": []}
 	m.forma = forma if forma in FORMAS else "horizontal"
 	m.huecos_sierra = []
 	var tramos := _tramos(m.forma, rng).map(func(t: Array) -> Array: return [t[0], t[1] * MAS_LARGO])
@@ -81,6 +87,7 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 			fin = _tramo_bajada(m, rng, desde, tramos[i][1])
 		else:
 			fin = _tramo_horizontal(m, rng, desde, tramos[i][1])
+		m.tramos.append({"tipo": tipo, "i0": antes, "i1": m.camino.size()})
 		if tipo != "horizontal":  # el horizontal ya las pone
 			_burbujas_vuelo(m, rng, antes)
 		if i < tramos.size() - 1:
@@ -101,6 +108,7 @@ static func generar(semilla: int, forma := "") -> Dictionary:
 		m.caida_y = maxf(m.caida_y, m.limites.end.y + 150.0)
 	m.aros = _aros(semilla, m)
 	m.sierras = _sierras(semilla, m)
+	m.nubes = _nubes(m)
 	return m
 
 
@@ -451,6 +459,73 @@ static func _sierras(semilla: int, m: Dictionary) -> Array:
 				riel = Vector2.ZERO
 		sierras.append({"pos": pos, "riel": riel, "fase": rng.randf(), "color": rng.randi_range(0, Sierra.COLORES.size() - 1)})
 	return sierras
+
+
+# Nubes de tormenta (sin azar). Solo sobre los tramos horizontal y bajada, donde subirse a los
+# techos o volar por encima ahorra camino: la torre y el pozo se trepan pegados a las paredes.
+#  - "techo": una franja de NUBE_ALTO px pegada a la cara de arriba de cada techo del camino.
+#  - "cielo": columnas desde NUBE_MARGEN px sobre la pieza más alta de la zona (atajos incluidos) hacia arriba.
+# Nunca cubren un control, la salida, la meta, una burbuja ni un atajo: se descarta esa zona.
+static func _nubes(m: Dictionary) -> Array:
+	var nubes := []
+	var puntos: Array = m.controles + [m.inicio, m.meta] + m.burbujas.map(func(b: Dictionary) -> Vector2: return b.pos)
+	var atajos: Array = m.piezas.filter(func(p: Dictionary) -> bool: return p.nombre.begins_with("Atajo")).map(poly_global)
+	var limpia := func(poly: PackedVector2Array) -> bool:
+		var caja := Rect2(poly[0], Vector2.ZERO)
+		for v in poly:
+			caja = caja.expand(v)
+		return not puntos.any(func(v: Vector2) -> bool: return caja.grow(30.0).has_point(v)) 				and not atajos.any(func(a: PackedVector2Array) -> bool: return not Geometry2D.intersect_polygons(poly, a).is_empty())
+	for t: Dictionary in m.tramos:
+		if not t.tipo in ["horizontal", "bajada"] or t.i1 <= t.i0:
+			continue
+		var x0 := INF
+		for i in range(t.i0, t.i1):
+			for p: Dictionary in techos_en(m, m.camino[i]):
+				var poly := poly_global(p)
+				var arriba := PackedVector2Array(poly)
+				for v in poly:
+					arriba.append(v + Vector2(0.0, -NUBE_ALTO))
+				var casco := Geometry2D.convex_hull(arriba)
+				casco.resize(casco.size() - 1)  # el último punto repite el primero
+				if limpia.call(casco):
+					nubes.append({"tipo": "techo", "poly": casco})
+				x0 = minf(x0, caja_de(p).position.x)
+		var x1: float = m.camino[t.i1 - 1].x  # más allá del último techo ya se ve la meta o el empalme
+		var cx := x0
+		while cx < x1:
+			var ancho := minf(NUBE_COLUMNA, x1 - cx)
+			var cima := INF
+			for p: Dictionary in m.piezas:
+				var c := caja_de(p)
+				if not p.nombre.begins_with("Pared") and c.end.x > cx - 120.0 and c.position.x < cx + ancho + 120.0:
+					cima = minf(cima, c.position.y)
+			var limite := cima - NUBE_MARGEN
+			var col := PackedVector2Array([Vector2(cx, limite - 3000.0), Vector2(cx + ancho, limite - 3000.0), Vector2(cx + ancho, limite), Vector2(cx, limite)])
+			if cima < INF and limpia.call(col):
+				nubes.append({"tipo": "cielo", "poly": col})
+			cx += ancho
+	return nubes
+
+
+# Los techos (piezas) de un techo del camino: dos si está roto.
+static func techos_en(m: Dictionary, c: Vector2) -> Array:
+	return m.piezas.filter(func(p: Dictionary) -> bool:
+		return p.enganchable and p.nombre.begins_with("Techo") and absf(p.pos.x - c.x) < 170.0 and absf(p.pos.y - c.y) < 40.0)
+
+
+static func poly_global(p: Dictionary) -> PackedVector2Array:
+	var r := PackedVector2Array()
+	for v: Vector2 in p.poly:
+		r.append(p.pos + v)
+	return r
+
+
+static func caja_de(p: Dictionary) -> Rect2:
+	var poly := poly_global(p)
+	var caja := Rect2(poly[0], Vector2.ZERO)
+	for v in poly:
+		caja = caja.expand(v)
+	return caja
 
 
 # --- Piezas sueltas: techos, estorbos y formas básicas ---
