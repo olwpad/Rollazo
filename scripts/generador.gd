@@ -35,7 +35,7 @@ const BAJADA_ALTO := 1600.0
 const SUELO_BAJO_TECHO := Vector2(300.0, 340.0)  # de la parte de arriba de un suelo al techo a tiro (como en horizontal)
 const SIERRA_BAJO_TECHO := 260.0  # el hueco va en la parte baja del arco, como los aros
 const EMPALME_ANCHO := 250.0  # el descanso entre dos tramos
-const MAS_LARGO := 1.4  # todos los tramos x1.4: con las medidas de antes los mapas se hacían cortos
+const MAS_LARGO := 1.7  # todos los tramos x1.7: con las medidas de antes los mapas se hacían cortos (x1.4 aún se quedaba corto)
 # Cada mapa sortea dentro de estos rangos: así dos de la misma forma no se parecen
 const HORIZONTAL_LARGO := Vector2(0.75, 1.25)  # por cuánto se multiplica LARGO - INICIO_FIN
 const BAJADA_VARIA := Vector2(0.8, 1.4)  # por cuánto se multiplica BAJADA_ALTO
