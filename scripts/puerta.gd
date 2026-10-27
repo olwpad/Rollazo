@@ -1,6 +1,6 @@
 # Mandíbula: un muro altísimo en dos mitades (arriba y abajo) que se separan cada cierto tiempo y
-# se vuelven a cerrar. No se pasa por encima ni por debajo; quien toca cualquier parte, o se queda en
-# el hueco al cerrarse, se lleva el "¡ÑAM!". Las mitades se mueven solo con `nivel.reloj_ronda` (igual en todos los PCs);
+# se vuelven a cerrar. No se pasa por encima ni por debajo; quien toca los dientes, o se queda en
+# el hueco al cerrarse, se lleva el "¡ÑAM!". La pared en sí no mata. Las mitades se mueven solo con `nivel.reloj_ronda` (igual en todos los PCs);
 # el anfitrión decide el mordisco (recorrido.gd, vía la señal `mordio`).
 class_name Puerta
 extends Node2D
@@ -130,7 +130,7 @@ class Mitad extends AnimatableBody2D:
 	var arriba := true
 	var alto := 1000.0  # de colisión
 	var color := Color("7d74b8")
-	var toque := Area2D.new()  # un poco más grande que el muro: tocar cualquier parte de la mandíbula es ¡ñam!
+	var toque := Area2D.new()  # solo los dientes muerden: la pared se puede tocar sin morir
 
 	func _ready() -> void:
 		var forma := CollisionShape2D.new()
@@ -141,8 +141,8 @@ class Mitad extends AnimatableBody2D:
 		toque.collision_mask = 2  # solo mocos
 		var zona := CollisionShape2D.new()
 		zona.shape = RectangleShape2D.new()
-		zona.shape.size = Vector2(ANCHO + 8.0, alto + 8.0)
-		zona.position = forma.position
+		zona.shape.size = Vector2(ANCHO + 8.0, DIENTE_ALTO + 6.0)
+		zona.position.y = (1.0 if arriba else -1.0) * DIENTE_ALTO / 2.0  # los dientes salen hacia el hueco
 		toque.add_child(zona)
 		add_child(toque)
 
