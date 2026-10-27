@@ -1,11 +1,13 @@
-# Menú: practicar, crear sala o unirse con un código. Dentro de una partida, la sala: la azotea
+# Menú: practicar, multijugador (crear sala o unirse con un código), tu moco y opciones. Dentro de una partida, la sala: la azotea
 # con los mocos, el código, la notita con la partida y un único botón grande.
 extends Control
 
-const AJUSTES := "user://ajustes.cfg"  # el mismo archivo que la mira
+const Mira := preload("res://scripts/mira.gd")
+const PANELES := ["Multi", "Opciones"]  # los papeles que tapan el menú; Esc los cierra
 
-@onready var codigo: LineEdit = $Caja/Fila/Codigo
-@onready var estado: Label = $Caja/Estado
+@onready var codigo: LineEdit = $Multi/Papel/Caja/Fila/Codigo
+@onready var estado: Label = $Caja/Estado  # el aviso del inicio; el del panel de multijugador va aparte
+@onready var estado_multi: Label = $Multi/Papel/Caja/Estado
 @onready var principal = $SalaUI/Principal  # sin tipo: es un boton_mancha (tiene progreso)
 @onready var config: Control = $Config
 
@@ -13,7 +15,7 @@ const AJUSTES := "user://ajustes.cfg"  # el mismo archivo que la mira
 func _ready() -> void:
 	Musica.tocar("menu")
 	var cfg := ConfigFile.new()
-	cfg.load(AJUSTES)
+	cfg.load(Ajustes.ruta)
 	codigo.text = Red.normalizar_codigo(cfg.get_value("red", "ultimo_codigo", ""))
 	codigo.text_changed.connect(_al_escribir_codigo)
 	_al_escribir_codigo(codigo.text)
@@ -22,18 +24,26 @@ func _ready() -> void:
 	Red.jugadores_cambiaron.connect(_actualizar)
 	Red.config_cambiada.connect(_actualizar)
 	Red.sala_lista.connect(_actualizar)
-	Red.desconectado.connect(func(motivo): estado.text = motivo)
+	Red.desconectado.connect(_avisar)
 	_actualizar()
 	if Red.ultimo_motivo != "":
-		estado.text = Red.ultimo_motivo
+		_avisar(Red.ultimo_motivo)
 		Red.ultimo_motivo = ""
 
 
 # --- Montaje (solo en _ready) ---
 
 func _conectar_botones() -> void:
-	$Caja/Crear.pressed.connect(_crear)
-	$Caja/Fila/Unirse.pressed.connect(_unirse)
+	$Caja/Multijugador.pressed.connect(_abrir_panel.bind("Multi"))
+	$Caja/Opciones.pressed.connect(_abrir_panel.bind("Opciones"))
+	$Multi/Papel/Caja/Crear.pressed.connect(_crear)
+	$Multi/Papel/Caja/Fila/Unirse.pressed.connect(_unirse)
+	$Multi/Papel/Caja/Volver.pressed.connect(_cerrar_panel)
+	$Opciones/Papel/Caja/Volver.pressed.connect(_cerrar_panel)
+	var op := $Opciones/Papel/Caja
+	op.get_node("Pantalla/Valor").pressed.connect(func(): Ajustes.poner_pantalla_completa(not Ajustes.pantalla_completa); _pintar_opciones())
+	op.get_node("Mira/Valor").pressed.connect(func(): Mira.alternar(); _pintar_opciones())
+	op.get_node("Ayuda/Valor").pressed.connect(func(): Ajustes.poner_ayuda(not Ajustes.ayuda); _pintar_opciones())
 	$Caja/Solo.pressed.connect(_practicar)
 	$Caja/TuMoco.pressed.connect(_vestir.bind(true))
 	$SalaUI/TuMoco.pressed.connect(_vestir.bind(true))  # también desde el lobby
@@ -73,6 +83,11 @@ func _montar_selector_de_mapas() -> void:
 
 # --- Botones del menú ---
 
+func _avisar(texto: String) -> void:
+	estado.text = texto
+	estado_multi.text = texto
+
+
 func _practicar() -> void:
 	Red.semilla = randi()  # cada práctica, un mapa distinto
 	get_tree().change_scene_to_file(Red.RECORRIDO)
@@ -99,7 +114,7 @@ func _tocar_mapa(evento: InputEvent, t: String) -> void:
 
 func _crear() -> void:
 	var err := Red.crear_sala()
-	estado.text = "NO HAY CONEXIÓN CON EL SERVIDOR" if err != OK else ""
+	_avisar("NO HAY CONEXIÓN CON EL SERVIDOR" if err != OK else "")
 	_actualizar()
 
 
@@ -109,26 +124,23 @@ func _al_escribir_codigo(texto: String) -> void:
 	if limpio != texto:
 		codigo.text = limpio
 		codigo.caret_column = limpio.length()
-	$Caja/Fila/Unirse.disabled = not Red.codigo_valido(limpio)
+	$Multi/Papel/Caja/Fila/Unirse.disabled = not Red.codigo_valido(limpio)
 
 
 func _unirse() -> void:
 	var sala := codigo.text
 	if Red.unirse_sala(sala) != OK:
-		estado.text = "NO HAY CONEXIÓN CON EL SERVIDOR"
+		_avisar("NO HAY CONEXIÓN CON EL SERVIDOR")
 	else:
-		estado.text = "Conectando a %s…" % sala
-		var cfg := ConfigFile.new()  # la próxima vez ya sale escrito
-		cfg.load(AJUSTES)
-		cfg.set_value("red", "ultimo_codigo", sala)
-		cfg.save(AJUSTES)
+		_avisar("Conectando a %s…" % sala)
+		Ajustes.guardar("red", "ultimo_codigo", sala)  # la próxima vez ya sale escrito
 	_actualizar()
 
 
 # Atrás desde la sala. Si sale el anfitrión, los demás vuelven solos con "El anfitrión se ha ido".
 func _salir() -> void:
 	Red.salir()
-	estado.text = ""
+	_avisar("")
 	config.visible = false
 	_actualizar()
 
@@ -137,7 +149,9 @@ func _salir() -> void:
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if evento.is_action_pressed("volver_menu") and Red.es_online():  # Esc, como pone el botón
+	if evento.is_action_pressed("volver_menu") and _panel_abierto() != "":
+		_cerrar_panel()
+	elif evento.is_action_pressed("volver_menu") and Red.es_online():  # Esc, como pone el botón
 		if config.visible:
 			config.visible = false
 		else:
@@ -154,11 +168,17 @@ func _pulsar_principal() -> void:
 
 
 func _actualizar() -> void:
+	if $Vestidor.visible or $Opciones.visible:  # los avisos de la red no pintan la sala encima; al cerrarlo, _vestir lo repinta
+		return
 	var online := Red.es_online()
 	var anfitrion := online and multiplayer.is_server()
 	var en_sala := online and multiplayer.get_unique_id() in Red.ids  # conectando todavía no
+	if $Multi.visible:
+		if not en_sala:  # conectando o con un error: el panel sigue
+			return
+		$Multi.visible = false  # ya dentro: a la sala
 	# Ya dentro de una partida: ni practicar, ni crear otra, ni unirse a otra (dejaría a los demás colgados).
-	for opcion in [$Caja/Solo, $Caja/Crear, $Caja/Fila]:
+	for opcion in [$Caja/Solo, $Caja/Multijugador, $Caja/Opciones]:
 		opcion.visible = not online
 	$Caja.visible = not en_sala
 	$SalaUI.visible = en_sala
@@ -168,7 +188,7 @@ func _actualizar() -> void:
 	$Pie.visible = not online  # en la sala, abajo a la izquierda va SALIR
 	$Nota.visible = not online
 	$Salir.visible = online
-	$Sala.position = Vector2(580, 493) if en_sala else Vector2(690, 560)
+	$Sala.position = Vector2(580, 493) if en_sala else Vector2(740, 560)
 	if en_sala:  # sobre la azotea morada, el texto claro
 		$Salir.add_theme_color_override("font_color", Color("fffaf4"))
 	else:
@@ -219,3 +239,40 @@ func _vestir(si: bool) -> void:
 	else:
 		Red.avisar_aspecto()  # en el lobby, los demás te ven cambiado
 		_actualizar()  # el moco «TÚ» de la azotea sale ya vestido
+
+
+func _panel_abierto() -> String:
+	for nombre in PANELES:
+		if get_node(nombre).visible:
+			return nombre
+	return ""
+
+
+# Multijugador y Opciones: papel sobre el cielo. Fuera la lista de opciones, la azotea y el columpio;
+# la notita de la música se queda (el papel no llega hasta ella).
+func _abrir_panel(nombre: String) -> void:
+	for nodo in [$Caja, $Sala, $Columpio]:
+		nodo.visible = false
+	get_node(nombre).visible = true
+	if nombre == "Opciones":
+		_pintar_opciones()
+
+
+func _cerrar_panel() -> void:
+	for nombre in PANELES:
+		get_node(nombre).visible = false
+	if Red.es_online():  # se había pulsado CREAR/UNIRSE y aún conecta: volver atrás lo cancela
+		Red.salir()
+	_avisar("")
+	for nodo in [$Sala, $Columpio]:
+		nodo.visible = true
+	_actualizar()
+
+
+func _pintar_opciones() -> void:
+	var op := $Opciones/Papel/Caja
+	op.get_node("Pantalla/Valor").text = "SÍ" if Ajustes.pantalla_completa else "NO"
+	op.get_node("Mira/Valor").text = "SÍ" if Mira.activa() else "NO"
+	op.get_node("Ayuda/Valor").text = "SÍ" if Ajustes.ayuda else "NO"
+	for valor in [op.get_node("Pantalla/Valor"), op.get_node("Mira/Valor"), op.get_node("Ayuda/Valor")]:
+		valor.queue_redraw()

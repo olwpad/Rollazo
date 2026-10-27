@@ -16,32 +16,34 @@ func test_sala_con_seis_huecos_y_tu_solo_sin_red() -> void:
 	menu.free()
 
 
-func test_menu_con_seis_mocos_y_hasta_6_jugadores() -> void:
+func test_menu_con_cuatro_mocos_y_hasta_6_jugadores() -> void:
 	var menu := _menu()
 	var sala = menu.get_node("Sala")
-	comprobar(sala.huecos.all(func(h: Dictionary) -> bool: return h.moco.visible), "los 6 mocos en la azotea, de adorno")
+	var vistos: Array = sala.huecos.filter(func(h: Dictionary) -> bool: return h.nodo.visible and h.moco.visible)
+	comprobar(vistos.size() == 4, "en el menú, tu moco y 3 de adorno: %d" % vistos.size())
 	comprobar(sala.etiqueta(0) == "TÚ" and sala.etiqueta(1) == "", "solo el tuyo lleva nombre")
 	comprobar(sala.get_node("Capacidad").visible and sala.get_node("Capacidad").text == "HASTA 6 JUGADORES", "un único texto")
 	sala.tarjetas = true
 	comprobar(not sala.get_node("Capacidad").visible, "en la sala de la partida, tarjetas como antes")
+	comprobar(sala.huecos.all(func(h: Dictionary) -> bool: return h.nodo.visible), "en la sala, los 6 huecos")
 	menu.free()
 
 
 func test_codigo_vacio_y_se_recuerda() -> void:
 	var cfg := ConfigFile.new()
-	cfg.load("user://ajustes.cfg")
+	cfg.load(Ajustes.ruta)
 	var antes: String = cfg.get_value("red", "ultimo_codigo", "")  # el de verdad del jugador: se repone al final
 	cfg.set_value("red", "ultimo_codigo", "")
-	cfg.save("user://ajustes.cfg")
+	cfg.save(Ajustes.ruta)
 	var menu := _menu()
 	comprobar(menu.codigo.text == "" and menu.codigo.placeholder_text == "CÓDIGO", "vacío con texto guía")
-	comprobar(menu.get_node("Caja/Fila/Unirse").disabled, "sin código, UNIRSE apagado")
+	comprobar(menu.get_node("Multi/Papel/Caja/Fila/Unirse").disabled, "sin código, UNIRSE apagado")
 	menu.codigo.text = "kap"
 	menu.codigo.text_changed.emit(menu.codigo.text)
-	comprobar(menu.codigo.text == "KAP" and menu.get_node("Caja/Fila/Unirse").disabled, "mayúsculas y con 3 letras sigue apagado")
+	comprobar(menu.codigo.text == "KAP" and menu.get_node("Multi/Papel/Caja/Fila/Unirse").disabled, "mayúsculas y con 3 letras sigue apagado")
 	menu.codigo.text = "kapu"
 	menu.codigo.text_changed.emit(menu.codigo.text)
-	comprobar(not menu.get_node("Caja/Fila/Unirse").disabled, "con 4 letras se enciende")
+	comprobar(not menu.get_node("Multi/Papel/Caja/Fila/Unirse").disabled, "con 4 letras se enciende")
 	comprobar(not "ESC" in menu.get_node("Pie").text.to_upper(), "en el inicio Esc no hace nada: no se anuncia")
 	menu._unirse()
 	menu.free()
@@ -49,9 +51,9 @@ func test_codigo_vacio_y_se_recuerda() -> void:
 	menu = _menu()
 	comprobar(menu.codigo.text == "KAPU", "recuerda el último código")
 	menu.free()
-	cfg.load("user://ajustes.cfg")
+	cfg.load(Ajustes.ruta)
 	cfg.set_value("red", "ultimo_codigo", antes)
-	cfg.save("user://ajustes.cfg")
+	cfg.save(Ajustes.ruta)
 
 
 func test_mostrar_jugadores_que_entran() -> void:
@@ -89,3 +91,18 @@ func test_en_partida_son_tarjetas() -> void:
 	comprobar(sala.estado(0) == "LISTO · ANFITRIÓN" and sala.estado(2) == "PENSÁNDOSELO…", "estado de cada uno")
 	comprobar(sala.sello_visible(1) and sala.estado(1) == "", "el listo lleva sello en vez de texto")
 	sala.free()
+
+
+# Con el vestidor abierto en el lobby llegan avisos de los demás (entra alguien, se viste, se pone
+# listo): el menú no debe volver a pintar la sala ni sus botones encima del vestidor.
+func test_aviso_de_red_no_tapa_el_vestidor() -> void:
+	var menu := _menu()
+	menu._vestir(true)
+	Red.jugadores_cambiaron.emit()
+	Red.config_cambiada.emit()
+	for nodo in ["Caja", "Sala", "Columpio", "Pie", "Nota", "SalaUI", "Salir"]:
+		comprobar(not menu.get_node(nodo).visible, nodo + " sigue escondido con el vestidor abierto")
+	comprobar(menu.get_node("Vestidor").visible, "el vestidor sigue abierto")
+	menu._vestir(false)
+	comprobar(menu.get_node("Caja").visible and menu.get_node("Sala").visible, "al cerrar vuelve el menú")
+	menu.free()

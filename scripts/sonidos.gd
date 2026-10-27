@@ -93,7 +93,7 @@ func _sintetizar(notas: Array) -> AudioStreamWAV:
 
 # pos = null: suena igual en todas partes (interfaz); con posición se atenúa con la distancia.
 func tocar(nombre: String, pos = null) -> void:
-	if not streams.has(nombre) or Musica.callada():
+	if not streams.has(nombre) or Musica.silenciada:  # el volumen de la música no cuenta: los efectos tienen el suyo
 		return
 	var p
 	if pos is Vector2:
@@ -103,7 +103,7 @@ func tocar(nombre: String, pos = null) -> void:
 		p = _planos[_siguiente]
 	_siguiente = (_siguiente + 1) % POOL  # si todos suenan, pisa el más antiguo
 	p.stream = streams[nombre]
-	p.volume_db = BASE_DB  # shortcut: el deslizador es solo de la música (el usuario la baja y los efectos se perdían); si piden bajar efectos, un deslizador propio
+	p.volume_db = BASE_DB + linear_to_db(Ajustes.efectos / 100.0)  # a 0 sale -inf: no se oye
 	p.pitch_scale = 1.0 if nombre in SIN_VARIAR else randf_range(0.94, 1.06)
 	p.play()
 
