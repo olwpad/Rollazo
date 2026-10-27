@@ -1,6 +1,6 @@
 # Mandíbula: un muro altísimo en dos mitades (arriba y abajo) que se separan cada cierto tiempo y
-# se vuelven a cerrar. No se pasa por encima ni por debajo; el que se queda en el hueco al cerrarse
-# se lleva el "¡ÑAM!". Las mitades se mueven solo con `nivel.reloj_ronda` (igual en todos los PCs);
+# se vuelven a cerrar. No se pasa por encima ni por debajo; quien toca cualquier parte, o se queda en
+# el hueco al cerrarse, se lleva el "¡ÑAM!". Las mitades se mueven solo con `nivel.reloj_ronda` (igual en todos los PCs);
 # el anfitrión decide el mordisco (recorrido.gd, vía la señal `mordio`).
 class_name Puerta
 extends Node2D
@@ -106,10 +106,15 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	var a := _mover(nivel.reloj_ronda if nivel != null else 0.0)
-	if multiplayer.is_server() and a < LETAL:
-		for c in _zona.get_overlapping_bodies():
-			if c is Jugador and not c.congelado:
-				mordio.emit(c)
+	if not multiplayer.is_server():
+		return
+	var tocan: Array = _mitades[0].toque.get_overlapping_bodies() + _mitades[1].toque.get_overlapping_bodies()
+	if a < LETAL:
+		tocan += _zona.get_overlapping_bodies()
+	for c in tocan:
+		if c is Jugador and not c.congelado:
+			mordio.emit(c)
+			return  # _golpe_y_vuelta ya lo saca de aquí; uno por frame basta
 
 
 func _mover(t: float) -> float:
@@ -125,6 +130,7 @@ class Mitad extends AnimatableBody2D:
 	var arriba := true
 	var alto := 1000.0  # de colisión
 	var color := Color("7d74b8")
+	var toque := Area2D.new()  # un poco más grande que el muro: tocar cualquier parte de la mandíbula es ¡ñam!
 
 	func _ready() -> void:
 		var forma := CollisionShape2D.new()
@@ -132,6 +138,13 @@ class Mitad extends AnimatableBody2D:
 		forma.shape.size = Vector2(ANCHO, alto)
 		forma.position.y = (-1.0 if arriba else 1.0) * alto / 2.0
 		add_child(forma)
+		toque.collision_mask = 2  # solo mocos
+		var zona := CollisionShape2D.new()
+		zona.shape = RectangleShape2D.new()
+		zona.shape.size = Vector2(ANCHO + 8.0, alto + 8.0)
+		zona.position = forma.position
+		toque.add_child(zona)
+		add_child(toque)
 
 	func _draw() -> void:
 		var s := -1.0 if arriba else 1.0  # hacia dónde crece la mitad
