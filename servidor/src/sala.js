@@ -2,7 +2,7 @@
 // identidad (serializeAttachment) sobreviven aunque el objeto se duerma, así que no hay estado en memoria.
 import { DurableObject } from "cloudflare:workers";
 
-const MAX_JUGADORES = 4; // anfitrión + 3
+const MAX_JUGADORES = 6; // anfitrión + 5
 const RETRANSMITIDOS = ["oferta", "respuesta", "candidato"];
 
 export class Sala extends DurableObject {

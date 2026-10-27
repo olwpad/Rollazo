@@ -4,7 +4,7 @@ extends Caso
 func test_constantes_de_red() -> void:
 	var red: GDScript = load("res://scripts/red.gd")
 	comprobar(red != null and red.PUERTO == 7777, "puerto 7777")
-	comprobar(red != null and red.MAX_JUGADORES == 4, "máximo 4 jugadores")
+	comprobar(red != null and red.MAX_JUGADORES == 6, "máximo 6 jugadores")
 
 
 func test_red_es_autoload() -> void:

@@ -19,7 +19,7 @@ const LARGO_AGARRE := 45.0  # largo del hilo de moco con el que te cuelgas de ot
 const PESO_POR_CARGA := 0.5  # cada moco colgado de ti suma media gravedad
 const DIST_PUNETAZO := 70.0
 const FUERZA_PUNETAZO := 950.0
-const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a")]  # menta, rosa, lavanda, melocotón
+const COLORES := [Color("6cc3b0"), Color("ef8fae"), Color("a99be0"), Color("f5b38a"), Color("f5d38a"), Color("8ec5e8")]  # menta, rosa, lavanda, melocotón, limón, cielo
 
 # Valores iniciales: se ajustan jugando desde el Inspector del editor.
 @export var gravedad := 1400.0

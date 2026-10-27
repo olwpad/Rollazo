@@ -7,21 +7,21 @@ func _menu() -> Node:
 	return menu
 
 
-func test_sala_con_cuatro_huecos_y_tu_solo_sin_red() -> void:
+func test_sala_con_seis_huecos_y_tu_solo_sin_red() -> void:
 	var menu := _menu()
 	var sala = menu.get_node_or_null("Sala")
-	comprobar(sala != null and sala.huecos.size() == 4, "4 huecos en la azotea")
+	comprobar(sala != null and sala.huecos.size() == 6, "6 huecos en la azotea")
 	if sala != null:
 		comprobar(sala.ocupados() == 1 and sala.etiqueta(0) == "TÚ", "sin red solo estás tú")
 	menu.free()
 
 
-func test_menu_con_cuatro_mocos_y_hasta_4_jugadores() -> void:
+func test_menu_con_seis_mocos_y_hasta_6_jugadores() -> void:
 	var menu := _menu()
 	var sala = menu.get_node("Sala")
-	comprobar(sala.huecos.all(func(h: Dictionary) -> bool: return h.moco.visible), "los 4 mocos en la azotea, de adorno")
+	comprobar(sala.huecos.all(func(h: Dictionary) -> bool: return h.moco.visible), "los 6 mocos en la azotea, de adorno")
 	comprobar(sala.etiqueta(0) == "TÚ" and sala.etiqueta(1) == "", "solo el tuyo lleva nombre")
-	comprobar(sala.get_node("Capacidad").visible and sala.get_node("Capacidad").text == "HASTA 4 JUGADORES", "un único texto")
+	comprobar(sala.get_node("Capacidad").visible and sala.get_node("Capacidad").text == "HASTA 6 JUGADORES", "un único texto")
 	sala.tarjetas = true
 	comprobar(not sala.get_node("Capacidad").visible, "en la sala de la partida, tarjetas como antes")
 	menu.free()
@@ -66,6 +66,17 @@ func test_mostrar_jugadores_que_entran() -> void:
 		comprobar(sala.etiqueta(1) == "TÚ" and sala.etiqueta(0) == "JUGADOR 1", "tú y el anfitrión")
 		comprobar(sala.etiqueta(2) == "", "en el menú los huecos libres no dicen nada")
 	menu.free()
+
+
+func test_sala_enseña_seis_jugadores() -> void:
+	var sala: Node2D = load("res://scripts/sala.gd").new()
+	Engine.get_main_loop().root.add_child(sala)
+	sala.tarjetas = true
+	var ids: Array[int] = [1, 2, 3, 4, 5, 6]
+	sala.mostrar(ids, 1)
+	comprobar(sala.ocupados() == 6 and sala.huecos.size() == 6, "seis ocupados")
+	comprobar(sala.huecos[3].nodo.scale.x < sala.huecos[0].nodo.scale.x and sala.huecos[3].nodo.position.y < sala.huecos[0].nodo.position.y, "los de atrás, más pequeños y altos")
+	sala.free()
 
 
 func test_en_partida_son_tarjetas() -> void:

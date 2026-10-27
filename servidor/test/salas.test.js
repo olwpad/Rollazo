@@ -79,16 +79,16 @@ test("código inexistente: no_existe", async () => {
   assert.deepEqual(await c.siguiente(), { tipo: "error", motivo: "no_existe" });
 });
 
-test("quinto jugador: llena; cae el anfitrión: cerrada", async () => {
+test("séptimo jugador: llena; cae el anfitrión: cerrada", async () => {
   const { h, m } = await crear();
   const clientes = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const c = abrir("/sala/" + m.codigo);
     assert.equal((await c.siguiente()).tipo, "sala");
     clientes.push(c);
   }
-  const quinto = abrir("/sala/" + m.codigo);
-  assert.deepEqual(await quinto.siguiente(), { tipo: "error", motivo: "llena" });
+  const septimo = abrir("/sala/" + m.codigo);
+  assert.deepEqual(await septimo.siguiente(), { tipo: "error", motivo: "llena" });
 
   h.ws.close();
   for (const c of clientes) {

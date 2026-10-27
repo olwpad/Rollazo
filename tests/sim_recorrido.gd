@@ -39,7 +39,7 @@ func _physics_process(_delta: float) -> bool:
 		_comprobar(nivel.corriendo and nivel.tiempo < 0.1, "R reinicia el tiempo")
 		_comprobar(j.global_position.distance_to(inicio) < 80, "R vuelve al inicio")
 		var otro: Node2D = nivel.get_node("Jugadores/2")
-		_comprobar(absf(otro.global_position.x - j.global_position.x) >= 80.0, "cada moco reaparece en su sitio, con sitio para columpiarse")
+		_comprobar(absf(otro.global_position.x - j.global_position.x) >= 40.0, "cada moco reaparece en su sitio, sin pisarse")
 		print("sim_recorrido: ", "OK" if fallos.is_empty() else "FALLO " + ", ".join(fallos))
 		quit(0 if fallos.is_empty() else 1)
 	return false

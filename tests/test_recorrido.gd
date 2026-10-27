@@ -1,5 +1,7 @@
 extends Caso
 
+const REC := preload("res://scripts/recorrido.gd")
+
 
 func test_recorrido_tiene_lo_necesario() -> void:
 	var e: PackedScene = load("res://scenes/recorrido_prueba.tscn")
@@ -25,13 +27,30 @@ func test_boton_y_tecla_para_volver_al_menu() -> void:
 	nivel.free()
 
 
-func test_caben_cuatro_mocos_en_la_salida() -> void:
+func test_caben_seis_mocos_en_la_salida() -> void:
 	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
 	var suelo: Node2D = nivel.get_node("SueloInicio")
 	var borde: float = suelo.position.x + suelo.get_node("Forma").shape.size.x / 2.0
-	var ultimo: float = nivel.get_node("Inicio").position.x + 3 * 90.0
-	comprobar(ultimo + 25.0 < borde, "el 4.º moco (x=%.0f) sale encima del suelo (borde %.0f)" % [ultimo, borde])
+	var ultimo: float = nivel.get_node("Inicio").position.x + REC.posicion_salida(5, 6, 0)
+	comprobar(ultimo + 25.0 < borde, "el 6.º moco (x=%.0f) sale encima del suelo (borde %.0f)" % [ultimo, borde])
 	nivel.free()
+
+
+func test_salida_junta_centrada_y_rotando() -> void:
+	for n in range(1, 7):
+		for ronda in range(1, 8):
+			var xs := []
+			for i in n:
+				xs.append(REC.posicion_salida(i, n, ronda))
+			var suma := 0.0
+			for x in xs:
+				suma += x
+			comprobar(absf(suma) < 0.001, "n=%d ronda %d: centrados en Inicio" % [n, ronda])
+			xs.sort()
+			for k in range(1, n):
+				comprobar(xs[k] - xs[k - 1] >= 40.0, "n=%d: ni se pisan ni rebotan al salir" % n)
+			comprobar(xs[n - 1] - xs[0] <= 5 * 44.0 + 0.001, "n=%d: casi juntos" % n)
+	comprobar(REC.posicion_salida(0, 6, 1) != REC.posicion_salida(0, 6, 2), "cada ronda cambia el puesto")
 
 
 func test_meta_alta_para_no_sobrevolarla() -> void:
@@ -73,12 +92,12 @@ func test_construir_se_adapta_a_la_forma() -> void:
 		nivel.free()
 
 
-func test_caben_cuatro_mocos_en_la_salida_de_una_bajada() -> void:
+func test_caben_seis_mocos_en_la_salida_de_una_bajada() -> void:
 	var nivel := _nivel_construido(_semilla_de("bajada"))
 	var suelo: Node2D = nivel.get_node("SueloInicio")
 	var borde: float = suelo.position.x + suelo.get_node("Forma").shape.size.x / 2.0
 	var inicio: Vector2 = nivel.get_node("Inicio").position
-	comprobar(inicio.x + 3 * 90.0 + 25.0 < borde, "el 4.º moco sale encima del suelo de la bajada")
+	comprobar(inicio.x + REC.posicion_salida(5, 6, 0) + 25.0 < borde, "el 6.º moco sale encima del suelo de la bajada")
 	comprobar(suelo.position.y > inicio.y, "el suelo está debajo de la salida")
 	nivel.free()
 

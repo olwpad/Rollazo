@@ -9,6 +9,7 @@ const BURBUJA := preload("res://scripts/burbuja.gd")
 const ARO := preload("res://scripts/aro.gd")
 const FONDO := preload("res://scripts/fondo.gd")
 const ESPERA_TRAS_PRIMERO := 20.0  # segundos que tienen los demás tras llegar el primero
+const SEPARACION_SALIDA := 44.0  # el moco mide 40 de ancho: justo sin tocarse, salen casi juntos
 const SEGUNDOS_RESULTADOS := 5.0
 const SEGUNDOS_POSTAL := 2.5  # la postal de "RONDA N" con los mocos quietos
 const SEGUNDOS_MAPA_NUEVO := 3.0  # solo: tras llegar, el tiempo a la vista antes del mapa siguiente
@@ -57,7 +58,7 @@ func _ready() -> void:
 		if Red.es_online():
 			ids = Red.ids
 		for i in ids.size():
-			$Spawner.spawn([ids[i], i])
+			$Spawner.spawn([ids[i], i, ids.size()])
 		Red.jugadores_cambiaron.connect(_quitar_desconectados)
 	$Caida.body_entered.connect(_al_caer)
 	$Meta.body_entered.connect(_al_llegar)
@@ -426,13 +427,14 @@ func _filas_vista() -> Array:
 	return marcador_filas.map(func(f: Array) -> Array: return [colores.get(f[0], Acuarela.CIRUELA), nombre(f[0]), f[1], f[2], Red.aspecto_de(f[0])])
 
 
-# El MultiplayerSpawner llama a esto en todos los PCs con los mismos datos: [id, índice].
+# El MultiplayerSpawner llama a esto en todos los PCs con los mismos datos: [id, índice, cuántos].
 func crear_jugador(datos: Array) -> Node:
 	var id: int = datos[0]
 	var indice: int = datos[1]
+	var cuantos: int = datos[2]
 	var j: Jugador = ESCENA_JUGADOR.instantiate()
 	j.name = str(id)
-	j.position = $Inicio.global_position + Vector2(indice * 90, 0)
+	j.position = $Inicio.global_position + Vector2(posicion_salida(indice, cuantos, ronda), 0)
 	j.pintar(Red.color_de(id))
 	j.vestir(Red.aspecto_de(id))
 	colores[id] = j.get_node("Visual/Moco").color
@@ -445,6 +447,12 @@ func crear_jugador(datos: Array) -> Node:
 		camara.position_smoothing_enabled = true
 		j.add_child(camara)
 	return j
+
+
+# Desplazamiento en x respecto a Inicio del jugador i de n: el grupo centrado y, cada ronda,
+# rotado, para que nadie salga siempre delante. Solo cuentas, así que da igual en cada PC.
+static func posicion_salida(i: int, n: int, ronda: int) -> float:
+	return (((i + ronda) % n) - (n - 1) / 2.0) * SEPARACION_SALIDA
 
 
 func jugadores() -> Array[Jugador]:
@@ -489,7 +497,7 @@ func reiniciar() -> void:
 	if multiplayer.is_server():
 		var lista := jugadores()
 		for i in lista.size():
-			lista[i].reaparecer($Inicio.global_position + Vector2(i * 90, 0))  # en fila, no apilados
+			lista[i].reaparecer($Inicio.global_position + Vector2(posicion_salida(i, lista.size(), ronda), 0))  # en fila, no apilados
 			lista[i].poder = ""  # cada ronda se empieza sin poderes
 	if Red.es_online():
 		_postal()
