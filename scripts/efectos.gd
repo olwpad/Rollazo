@@ -7,7 +7,7 @@ const ESTELA_PUNTOS := 10
 # Qué suena con cada efecto: este señal llega a todos los PCs, así cada uno oye lo que ve.
 const SONIDOS := {"enganche": "enganchar", "agarrado": "enganchar", "aterrizaje": "salpicar", "choque": "salpicar",
 	"reaparecer": "salpicar", "fuego": "salpicar", "cortado": "soltar", "rotura": "soltar", "corte": "soltar",
-	"meta": "meta", "poder": "poder", "sierra": "sierra", "control": "control", "rayo": "sierra", "boing": "boing"}
+	"meta": "meta", "poder": "poder", "sierra": "sierra", "control": "control", "boing": "boing"}
 
 @onready var jugador: Jugador = get_parent()
 @onready var estela: Line2D = $Estela
@@ -109,21 +109,6 @@ func _process(_delta: float) -> void:
 			estela.remove_point(estela.get_point_count() - 1)
 	elif estela.get_point_count() > 0:
 		estela.remove_point(estela.get_point_count() - 1)
-
-
-# Relámpago amarillo en zigzag que cae del cielo hasta `pos` y se desvanece.
-func _rayo(pos: Vector2) -> void:
-	var linea := Line2D.new()
-	linea.width = 9.0
-	linea.default_color = Color("f5d38a")
-	var puntos := PackedVector2Array()
-	for k in 7:
-		puntos.append(pos + Vector2((k % 2 * 2 - 1) * 26.0 if k < 6 else 0.0, -600.0 + k * 100.0))
-	linea.points = puntos
-	add_child(linea)
-	var tween := linea.create_tween()
-	tween.tween_property(linea, "modulate:a", 0.0, 0.35)
-	tween.tween_callback(linea.queue_free)
 
 
 func _salpicar(pos: Vector2) -> void:
