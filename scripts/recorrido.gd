@@ -209,15 +209,15 @@ func _poner_vivos(mapa: Dictionary, semilla: int) -> void:
 			for e: Estalactita in Estalactita.nuevas(semilla, mapa, self):
 				e.body_entered.connect(_al_tocar_estalactita)
 				piezas.add_child(e)
-		"azotea":
-			for p: Paloma in Paloma.nuevas(semilla, mapa, self):
-				p.body_entered.connect(_al_tocar_paloma.bind(p))
-				piezas.add_child(p)
 		"noche":
 			for g in Guirnalda.nuevas(semilla, mapa, self):
 				piezas.add_child(g)
 			for a in Apagon.nuevos(semilla, mapa, self, piezas):
 				piezas.add_child(a)
+	# Techos agrietados, en todos los temas (en la noche, sin los que ya se apagan)
+	var apagan := Apagon.indices(semilla, mapa.camino.size()) if tema == "noche" else []
+	for ag in Agrietado.nuevos(semilla, mapa, self, piezas, apagan):
+		piezas.add_child(ag)
 
 
 # Lo que se mueve y se puede agarrar de cada tema (Moviles decide dónde); con las piezas, se borra con ellas.
@@ -603,6 +603,14 @@ func _golpe_y_vuelta(cuerpo: Node2D) -> void:
 		_mandar_a_mirar(cuerpo as Jugador)
 		return
 	_volver_al_control(cuerpo)  # con el efecto "reaparecer": la salpicadura
+
+
+# Un techo agrietado tiembla, cae o vuelve (Agrietado.Estado): el anfitrión lo decide y todos lo ven igual.
+@rpc("authority", "call_local", "reliable")
+func techo_estado(nombre_techo: String, estado: int) -> void:
+	var a := piezas.get_node_or_null(nombre_techo) as Agrietado
+	if a != null:
+		a.aplicar(estado)
 
 
 @rpc("authority", "call_local", "reliable")

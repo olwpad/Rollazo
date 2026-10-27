@@ -42,6 +42,7 @@ func test_trampolines_deterministas_y_en_sitio_libre() -> void:
 func test_trampolin_rebota_al_que_cae() -> void:
 	var red: Node = Engine.get_main_loop().root.get_node("Red")
 	red.crear_partida(7794)
+	var mapas_antes: Array = red.config.mapas
 	red.config.mapas = ["azotea"]
 	var nivel: Node = load("res://scenes/recorrido_prueba.tscn").instantiate()
 	Engine.get_main_loop().root.add_child(nivel)
@@ -61,3 +62,4 @@ func test_trampolin_rebota_al_que_cae() -> void:
 		comprobar(j.velocity.y == Trampolin.velocidad_rebote(900.0), "cayendo rebota")
 	Engine.get_main_loop().root.remove_child(nivel)
 	nivel.free()
+	red.config.mapas = mapas_antes  # la config es global: que no les cambie el mapa a otros tests

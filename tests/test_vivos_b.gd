@@ -97,7 +97,7 @@ func test_cada_elemento_solo_en_su_tema() -> void:
 					clases[c] += 1
 		for c in clases:
 			if c == "Paloma":  # las aves salen en todos los temas
-				comprobar(clases[c] >= 3, "aves en tema %s: %d" % [tema, clases[c]])
+				comprobar(clases[c] >= 3 and clases[c] <= 5, "aves en tema %s: %d" % [tema, clases[c]])
 				continue
 			var debe: bool = c == por_tema[tema] or (tema == "noche" and c == "Apagon")
 			comprobar(clases[c] == 0 if not debe else (clases[c] > 0 or c in ["Estalactita", "Apagon"]), "%s en tema %s: %d" % [c, tema, clases[c]])
