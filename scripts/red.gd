@@ -11,7 +11,7 @@ signal sala_lista  # el servidor ya nos dio el código de la sala
 const PUERTO := 7777
 const MAX_JUGADORES := 4
 # Servidor de salas (ver servidor/). Pruebas y desarrollo local: variable de entorno ROLLAZO_SALAS.
-const SERVIDOR_SALAS := "wss://rollazo-salas.REEMPLAZAR.workers.dev"
+const SERVIDOR_SALAS := "wss://rollazo-salas.rollazo-salas.workers.dev"
 const ALFABETO := "ABCDEFGHJKMNPQRSTUVWXYZ"  # sin I, L ni O: se confunden con 1 y 0
 const LARGO_CODIGO := 4
 const ESPERA_RTC := 15.0  # segundos para que el amigo conecte; sin TURN, algunas redes no pueden
