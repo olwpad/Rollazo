@@ -177,6 +177,9 @@ func _actualizar() -> void:
 		if not en_sala:  # conectando o con un error: el panel sigue
 			return
 		$Multi.visible = false  # ya dentro: a la sala
+	# Aquí no hay papel ni vestidor encima: la azotea (con los huecos) y el columpio, siempre a la vista
+	$Sala.visible = true
+	$Columpio.visible = true
 	# Ya dentro de una partida: ni practicar, ni crear otra, ni unirse a otra (dejaría a los demás colgados).
 	for opcion in [$Caja/Solo, $Caja/Multijugador, $Caja/Opciones]:
 		opcion.visible = not online

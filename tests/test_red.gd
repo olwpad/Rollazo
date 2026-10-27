@@ -125,3 +125,19 @@ func test_practicar_solo_oculto_en_partida_online() -> void:
 	comprobar(not menu.get_node("Caja/Multijugador").visible and not menu.get_node("Caja/Opciones").visible, "ni multijugador ni opciones en medio de la partida")
 	menu.free()
 	red.salir()
+
+
+# CREAR SALA desde el papel de Multijugador: al entrar en la sala, el papel se va y la azotea con los
+# huecos vuelve (antes se quedaba escondida hasta abrir y cerrar el vestidor).
+func test_crear_sala_desde_el_papel_enseña_los_huecos() -> void:
+	var red: Node = Engine.get_main_loop().root.get_node("Red")
+	var menu: Node = load("res://scenes/menu.tscn").instantiate()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.get_node("Caja/Multijugador").pressed.emit()
+	comprobar(menu.get_node("Multi").visible and not menu.get_node("Sala").visible, "el papel tapa la azotea")
+	red.crear_partida(7798)  # como si la sala ya estuviera lista
+	menu._actualizar()
+	comprobar(not menu.get_node("Multi").visible, "dentro de la sala, el papel se va")
+	comprobar(menu.get_node("Sala").visible and menu.get_node("Columpio").visible, "y vuelven la azotea con los huecos y el columpio")
+	red.salir()
+	menu.free()
