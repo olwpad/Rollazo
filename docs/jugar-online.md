@@ -113,7 +113,7 @@ escriben ese código y entran. No hace falta instalar nada más ni saber ninguna
 | Qué pasa | Qué hacer |
 |---|---|
 | **"ESA SALA NO EXISTE"** | Revisa las 4 letras. Si el anfitrión salió al menú, la sala se cierra: que cree otra. |
-| **"LA SALA ESTÁ LLENA"** | Ya hay 4 jugadores. |
+| **"LA SALA ESTÁ LLENA"** | Ya hay 6 jugadores. |
 | **"NO HAY CONEXIÓN CON EL SERVIDOR"** | Revisa tu internet. Si a todos os pasa, el servidor de salas está caído: probad más tarde. |
 | **"NO SE PUDO CONECTAR CON EL ANFITRIÓN"** | Vuestros routers no se dejan hablar directamente (pasa en algunas redes de móvil o de empresa). Probad con el wifi de casa y contádmelo. |
 | **"El anfitrión se ha ido"** | El anfitrión cerró el juego o salió al menú. Que cree otra sala y entráis otra vez. |
