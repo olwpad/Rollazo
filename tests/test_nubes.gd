@@ -67,3 +67,15 @@ func test_nubes_de_techo_cubren_la_cara_de_arriba() -> void:
 				for v in Generador.poly_global(p):
 					alta = v if v.y < alta.y else alta
 				comprobar(_dentro(m, alta - Vector2(0.0, Generador.NUBE_ALTO / 2.0)), "semilla %d: techo %d sin nube encima" % [s, i])
+
+
+# Encoger el papel te pega a la cara de abajo del techo: ahí no puede haber nube.
+func test_bajo_el_techo_no_hay_nube() -> void:
+	for f in ["horizontal", "bajada"]:
+		for s in 15:
+			var m := Generador.generar(s, f)
+			for c: Vector2 in m.camino:
+				for p: Dictionary in Generador.techos_en(m, c):
+					var caja := Generador.caja_de(p)
+					var bajo := Vector2(caja.get_center().x, caja.end.y + 2.0)
+					comprobar(not _dentro(m, bajo) and not _dentro(m, caja.get_center()), "%s %d: ni dentro ni justo bajo el techo %s" % [f, s, p.nombre])

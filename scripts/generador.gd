@@ -474,7 +474,8 @@ static func _nubes(m: Dictionary) -> Array:
 		var caja := Rect2(poly[0], Vector2.ZERO)
 		for v in poly:
 			caja = caja.expand(v)
-		return not puntos.any(func(v: Vector2) -> bool: return caja.grow(30.0).has_point(v)) 				and not atajos.any(func(a: PackedVector2Array) -> bool: return not Geometry2D.intersect_polygons(poly, a).is_empty())
+		return not puntos.any(func(v: Vector2) -> bool: return caja.grow(30.0).has_point(v)) \
+				and not atajos.any(func(a: PackedVector2Array) -> bool: return not Geometry2D.intersect_polygons(poly, a).is_empty())
 	for t: Dictionary in m.tramos:
 		if not t.tipo in ["horizontal", "bajada"] or t.i1 <= t.i0:
 			continue
@@ -487,8 +488,10 @@ static func _nubes(m: Dictionary) -> Array:
 					arriba.append(v + Vector2(0.0, -NUBE_ALTO))
 				var casco := Geometry2D.convex_hull(arriba)
 				casco.resize(casco.size() - 1)  # el último punto repite el primero
-				if limpia.call(casco):
-					nubes.append({"tipo": "techo", "poly": casco})
+				# Sin el propio techo: quien encoge el papel y se pega por debajo no toca la nube
+				for franja: PackedVector2Array in Geometry2D.clip_polygons(casco, poly):
+					if limpia.call(franja):
+						nubes.append({"tipo": "techo", "poly": franja})
 				x0 = minf(x0, caja_de(p).position.x)
 		var x1: float = m.camino[t.i1 - 1].x  # más allá del último techo ya se ve la meta o el empalme
 		var cx := x0
